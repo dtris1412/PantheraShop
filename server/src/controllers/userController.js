@@ -1,6 +1,7 @@
 import {
   getAllUsers as getAllUsersService,
   getUserById as getUserByIdService,
+  getProfile as getProfileService,
 } from "../services/userService.js";
 
 const getAllUsers = async (req, res) => {
@@ -24,12 +25,21 @@ const getUserById = async (req, res) => {
   }
 };
 
-const createUser = async (req, res) => {
+const getProfile = async (req, res) => {
   try {
+    // ⚠️ lấy user_id từ token (req.user) hoặc query
+    const user_id = req.user?.user_id || req.query.user_id;
+
+    if (!user_id)
+      return res.status(400).json({ message: "Missing user_id or token" });
+
+    const user = await getProfileService(user_id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.status(200).json(user);
   } catch (err) {
-    console.err("Error in create user", err);
-    res.status(500).json("Internal server error");
+    console.error("Error in getProfile:", err);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
-
-export { getAllUsers, getUserById };
+export { getAllUsers, getUserById, getProfile };

@@ -1,27 +1,49 @@
 import { useState } from "react";
-import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, User } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/authContext"; // ✅ thêm dòng này
 
-interface LoginProps {
-  onNavigate: (page: string) => void;
-}
+export default function Login() {
+  const navigate = useNavigate();
+  const { login, register } = useAuth(); // ✅ lấy từ context
 
-export default function Login({ onNavigate }: LoginProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
+    username: "",
     email: "",
     password: "",
-    fullName: "",
+    confirmPassword: "",
   });
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert(
-      isLogin
-        ? "Login functionality would go here"
-        : "Registration functionality would go here"
-    );
-    onNavigate("home");
+    setError(null);
+
+    if (!isLogin && formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      if (isLogin) {
+        // ✅ dùng context login
+        await login(formData.email, formData.password);
+      } else {
+        // ✅ dùng context register
+        await register(formData.username, formData.email, formData.password);
+      }
+
+      navigate("/"); // ✅ chuyển hướng sau khi login/register thành công
+    } catch (err: any) {
+      setError(err.message || "Internal error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -29,8 +51,7 @@ export default function Login({ onNavigate }: LoginProps) {
       <div className="max-w-md mx-auto px-6">
         <div className="text-center mb-8">
           <div className="w-16 h-16 mx-auto flex items-center justify-center mb-4">
-            {/* <span className="text-white font-bold text-2xl">S</span> */}
-            <img src="/assets/img/logo/logo_PantheraShop.png" alt="" />
+            <img src="/assets/img/logo/logo_PantheraShop.png" alt="Logo" />
           </div>
           <h1 className="text-3xl font-bold mb-2">
             {isLogin ? "Welcome Back" : "Create Account"}
@@ -42,22 +63,27 @@ export default function Login({ onNavigate }: LoginProps) {
           </p>
         </div>
 
+        {error && (
+          <div className="mb-4 text-red-600 font-medium text-sm">{error}</div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isLogin && (
             <div>
-              <label className="block text-sm font-medium mb-2">
-                Full Name
-              </label>
-              <input
-                type="text"
-                value={formData.fullName}
-                onChange={(e) =>
-                  setFormData({ ...formData, fullName: e.target.value })
-                }
-                className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-black"
-                placeholder="John Doe"
-                required={!isLogin}
-              />
+              <label className="block text-sm font-medium mb-2">Username</label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  value={formData.username}
+                  onChange={(e) =>
+                    setFormData({ ...formData, username: e.target.value })
+                  }
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 focus:outline-none focus:border-black"
+                  placeholder="JohnDoe"
+                  required={!isLogin}
+                />
+              </div>
             </div>
           )}
 
@@ -106,23 +132,47 @@ export default function Login({ onNavigate }: LoginProps) {
             </div>
           </div>
 
-          {isLogin && (
-            <div className="flex items-center justify-between text-sm">
-              <label className="flex items-center space-x-2">
-                <input type="checkbox" className="w-4 h-4" />
-                <span className="text-gray-600">Remember me</span>
+          {!isLogin && (
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Confirm Password
               </label>
-              <a href="#" className="text-black hover:underline font-medium">
-                Forgot password?
-              </a>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={formData.confirmPassword}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      confirmPassword: e.target.value,
+                    })
+                  }
+                  className="w-full pl-10 pr-12 py-3 border border-gray-300 focus:outline-none focus:border-black"
+                  placeholder="••••••••"
+                  required={!isLogin}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
             </div>
           )}
 
           <button
             type="submit"
-            className="w-full bg-black text-white py-3 font-semibold hover:bg-gray-800 transition-colors"
+            disabled={loading}
+            className="w-full bg-black text-white py-3 font-semibold hover:bg-gray-800 transition-colors disabled:opacity-50"
           >
-            {isLogin ? "Sign In" : "Create Account"}
+            {loading ? "Processing..." : isLogin ? "Sign In" : "Create Account"}
           </button>
         </form>
 
@@ -135,13 +185,6 @@ export default function Login({ onNavigate }: LoginProps) {
             >
               {isLogin ? "Sign Up" : "Sign In"}
             </button>
-          </p>
-        </div>
-
-        <div className="mt-8 pt-6 border-t border-gray-200">
-          <p className="text-xs text-gray-500 text-center leading-relaxed">
-            By continuing, you agree to our Terms of Service and Privacy Policy.
-            We respect your privacy and will never share your information.
           </p>
         </div>
       </div>

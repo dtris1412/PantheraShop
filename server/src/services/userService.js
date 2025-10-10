@@ -15,44 +15,13 @@ const getUserById = async (user_id) => {
   return user;
 };
 
-const createUser = async (
-  user_name,
-  user_email,
-  user_password,
-  user_phone,
-  role_id,
-  avatar
-) => {
-  //khong nhap du du lieu
-  if (!user_name || !user_email || !user_password || !user_phone) {
-    return { succes: false, message: "Please enter all required information" };
-  }
-  //check email correct
-  if (!emailRegex.test(user_email))
-    return { succes: false, message: "Email is incorrect format" };
-  if (!phoneRegex.test(user_phone))
-    return { succes: false, message: "Number phone is in correct format" };
-  if (!passwordRegex.test(user_password))
-    return { succes: false, message: "Password is incorrect format" };
-
-  //check existed
-  const existedUser = await db.User.findOne({
-    where: [{ user_email }, { user_name }],
+const getProfile = async (user_id) => {
+  if (!user_id) return null;
+  const user = await db.User.findOne({
+    where: { user_id },
+    attributes: ["user_id", "user_name", "user_email", "user_phone"], // chọn field cần trả
   });
-
-  if (existedUser)
-    return { succes: false, message: "Email or username is already" };
-  //craete user
-
-  const newUser = await db.User.craete(
-    user_name,
-    user_email,
-    user_password,
-    user_phone,
-    role_id || 2,
-    avatar || null
-  );
-
-  return { succes: false, message: "Create new user succesful" };
+  return user;
 };
-export { getAllUsers, getUserById };
+
+export { getAllUsers, getUserById, getProfile };

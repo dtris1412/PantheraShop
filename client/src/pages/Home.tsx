@@ -1,11 +1,10 @@
 import { ArrowRight, TrendingUp } from "lucide-react";
 import ProductCard from "../components/ProductCard";
+import { useNavigate } from "react-router-dom";
 
-interface HomeProps {
-  onNavigate: (page: string, productId?: string) => void;
-}
+export default function Home() {
+  const navigate = useNavigate();
 
-export default function Home({ onNavigate }: HomeProps) {
   const featuredProducts = [
     {
       id: "1",
@@ -72,6 +71,7 @@ export default function Home({ onNavigate }: HomeProps) {
 
   return (
     <div className="min-h-screen">
+      {/* HERO SECTION */}
       <section className="relative h-screen bg-gray-100">
         <img
           src="/assets/img/banner/banner1.png"
@@ -89,7 +89,7 @@ export default function Home({ onNavigate }: HomeProps) {
                 with cutting-edge technology.
               </p>
               <button
-                onClick={() => onNavigate("products")}
+                onClick={() => navigate("/products")}
                 className="bg-white text-black px-8 py-4 font-semibold hover:bg-gray-200 transition-colors inline-flex items-center space-x-2 group"
               >
                 <span>Shop Now</span>
@@ -100,6 +100,7 @@ export default function Home({ onNavigate }: HomeProps) {
         </div>
       </section>
 
+      {/* FEATURED PRODUCTS */}
       <section className="max-w-7xl mx-auto px-6 py-16">
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -114,7 +115,7 @@ export default function Home({ onNavigate }: HomeProps) {
             </h2>
           </div>
           <button
-            onClick={() => onNavigate("products")}
+            onClick={() => navigate("/products")}
             className="hidden md:flex items-center space-x-2 hover:underline font-medium"
           >
             <span>View All</span>
@@ -127,12 +128,13 @@ export default function Home({ onNavigate }: HomeProps) {
             <ProductCard
               key={product.id}
               product={product}
-              onViewDetails={(id) => onNavigate("product-details", id)}
+              onViewDetails={() => navigate(`/product/${product.id}`)}
             />
           ))}
         </div>
       </section>
 
+      {/* SHOP BY SPORT */}
       <section className="max-w-7xl mx-auto px-6 py-16">
         <h2 className="text-3xl md:text-4xl font-bold mb-12">Shop by Sport</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -140,7 +142,7 @@ export default function Home({ onNavigate }: HomeProps) {
             <div
               key={category.name}
               className="group relative h-96 overflow-hidden cursor-pointer"
-              onClick={() => onNavigate("products")}
+              onClick={() => navigate("/products")}
             >
               <img
                 src={category.image}
@@ -164,6 +166,7 @@ export default function Home({ onNavigate }: HomeProps) {
         </div>
       </section>
 
+      {/* NEW COLLECTION */}
       <section className="bg-gray-100 py-20">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
@@ -184,7 +187,7 @@ export default function Home({ onNavigate }: HomeProps) {
                 excellence.
               </p>
               <button
-                onClick={() => onNavigate("products")}
+                onClick={() => navigate("/products")}
                 className="bg-black text-white px-8 py-4 font-semibold hover:bg-gray-800 transition-colors inline-flex items-center space-x-2"
               >
                 <span>Shop Collection</span>

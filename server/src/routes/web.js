@@ -1,18 +1,24 @@
 import express from "express";
-import { getAllUsers, getUserById } from "../controllers/userController.js";
-import { register } from "../controllers/authController.js";
+import {
+  getAllUsers,
+  getUserById,
+  getProfile,
+} from "../controllers/userController.js";
+import { register, login } from "../controllers/authController.js";
+// import verifyToken nếu bạn đã có
+import { verifyToken } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
 const initWebRoutes = (app) => {
-  //api user
+  // user APIs
   router.get("/api/users", getAllUsers);
-  //api getUserById
   router.get("/api/user/:user_id", getUserById);
-  //api register
   router.post("/api/register", register);
+  router.post("/api/login", login);
 
-  //api
+  // ✅ get profile (protected route)
+  router.get("/api/user/profile", verifyToken, getProfile);
 
   return app.use("/", router);
 };

@@ -1,69 +1,74 @@
-import { useState } from "react";
-import Header from "./components/Header.tsx";
-import Footer from "./components/Footer.tsx";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { AuthProvider, useAuth } from "./contexts/authContext";
+import Header from "./components/Header";
+import Footer from "./components/Footer";
 import Home from "./pages/Home";
-import Products from "./pages/Products.tsx";
+import Products from "./pages/Products";
 import ProductDetails from "./pages/ProductDetails";
 import Cart from "./pages/Cart";
 import Orders from "./pages/Orders";
 import Blog from "./pages/Blog";
 import Login from "./pages/Login";
+import Profile from "./pages/Profile.tsx";
 
-function App() {
-  const [currentPage, setCurrentPage] = useState("home");
-  const [selectedProductId, setSelectedProductId] = useState("");
-  const [cartItemCount, setCartItemCount] = useState(2);
+function ProtectedRoute({ children }: { children: JSX.Element }) {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
+}
 
-  const handleNavigate = (page: string, productId?: string) => {
-    setCurrentPage(page);
-    if (productId) {
-      setSelectedProductId(productId);
-    }
-    window.scrollTo(0, 0);
-  };
-
-  const handleAddToCart = (item: any) => {
-    setCartItemCount((prev) => prev + 1);
-  };
-
-  const renderPage = () => {
-    switch (currentPage) {
-      case "home":
-        return <Home onNavigate={handleNavigate} />;
-      case "products":
-        return <Products onNavigate={handleNavigate} />;
-      case "product-details":
-        return (
-          <ProductDetails
-            productId={selectedProductId}
-            onNavigate={handleNavigate}
-            onAddToCart={handleAddToCart}
-          />
-        );
-      case "cart":
-        return <Cart onNavigate={handleNavigate} />;
-      case "orders":
-        return <Orders onNavigate={handleNavigate} />;
-      case "blog":
-        return <Blog onNavigate={handleNavigate} />;
-      case "login":
-        return <Login onNavigate={handleNavigate} />;
-      default:
-        return <Home onNavigate={handleNavigate} />;
-    }
-  };
+function AppContent() {
+  const { user, logout } = useAuth();
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header
-        onNavigate={handleNavigate}
-        currentPage={currentPage}
-        cartItemCount={cartItemCount}
-      />
-      <main className="flex-1">{renderPage()}</main>
+    <>
+      <Header user={user} onLogout={logout} />
+      <main className="flex-1 min-h-screen">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/product/:id" element={<ProductDetails />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/profile" element={<Profile />} />
+
+          {/* Route cần đăng nhập */}
+          <Route
+            path="/cart"
+            element={
+              <ProtectedRoute>
+                <Cart />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/orders"
+            element={
+              <ProtectedRoute>
+                <Orders />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
       <Footer />
-    </div>
+    </>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </AuthProvider>
+  );
+}

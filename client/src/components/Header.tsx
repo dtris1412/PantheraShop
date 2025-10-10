@@ -1,35 +1,34 @@
 import { Search, ShoppingBag, User, Heart, Menu, X } from "lucide-react";
 import { useState } from "react";
-
-interface HeaderProps {
-  onNavigate: (page: string) => void;
-  currentPage: string;
-  cartItemCount?: number;
-}
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/authContext.tsx"; // 👈 thêm dòng này
 
 export default function Header({
-  onNavigate,
-  currentPage,
   cartItemCount = 0,
-}: HeaderProps) {
+}: {
+  cartItemCount?: number;
+}) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
+  const { user, logout, isAuthenticated } = useAuth(); // 👈 lấy dữ liệu từ context
 
   const navLinks = [
-    { name: "New & Featured", page: "home" },
-    { name: "Men", page: "products", filter: "men" },
-    { name: "Women", page: "products", filter: "women" },
-    { name: "Kids", page: "products", filter: "kids" },
-    { name: "Sale", page: "products", filter: "sale" },
-    { name: "Blog", page: "blog" },
+    { name: "New & Featured", path: "/" },
+    { name: "Products", path: "/products" },
+    { name: "Blog", path: "/blog" },
   ];
+
+  const handleUserClick = () => {
+    if (isAuthenticated) {
+      navigate("/profile"); // ✅ vào trang profile nếu đã login
+    } else {
+      navigate("/login"); // ✅ nếu chưa đăng nhập thì vào trang login
+    }
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 bg-white z-50 border-b border-gray-200">
-      {/* <div className="bg-gray-100 py-2 px-6 text-right text-xs">
-        <span className="text-gray-700">Free shipping on orders over $150</span>
-      </div> */}
-
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center justify-between h-16">
           <button
@@ -45,26 +44,21 @@ export default function Header({
 
           <div
             className="flex items-center cursor-pointer"
-            onClick={() => onNavigate("home")}
+            onClick={() => navigate("/")}
           >
-            <div className="w-12 h-12  flex items-center justify-center">
-              {/* <span className="text-white font-bold text-xl">
-               
-              </span> */}
-              <img src="/assets/img/logo/logo_PantheraShop.png" alt="" />
-            </div>
+            <img
+              src="/assets/img/logo/logo_PantheraShop.png"
+              alt="Logo"
+              className="w-12 h-12"
+            />
           </div>
 
           <nav className="hidden lg:flex items-center space-x-8 flex-1 justify-center">
             {navLinks.map((link) => (
               <button
                 key={link.name}
-                onClick={() => onNavigate(link.page)}
-                className={`text-sm font-medium transition-colors hover:text-black ${
-                  currentPage === link.page
-                    ? "text-black border-b-2 border-black"
-                    : "text-gray-600"
-                }`}
+                onClick={() => navigate(link.path)}
+                className="text-sm font-medium hover:text-black"
               >
                 {link.name}
               </button>
@@ -83,13 +77,13 @@ export default function Header({
               />
             </div>
 
-            <button className="hidden md:block p-2 hover:bg-gray-100 rounded-full transition-colors">
+            <button className="hidden md:block p-2 hover:bg-gray-100 rounded-full">
               <Heart className="w-5 h-5" />
             </button>
 
             <button
-              className="relative p-2 hover:bg-gray-100 rounded-full transition-colors"
-              onClick={() => onNavigate("cart")}
+              className="relative p-2 hover:bg-gray-100 rounded-full"
+              onClick={() => navigate("/cart")}
             >
               <ShoppingBag className="w-5 h-5" />
               {cartItemCount > 0 && (
@@ -99,36 +93,32 @@ export default function Header({
               )}
             </button>
 
-            <button
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              onClick={() => onNavigate("login")}
-            >
-              <User className="w-5 h-5" />
-            </button>
+            {/* ✅ User icon */}
+            <div className="relative group">
+              <button
+                className="p-2 hover:bg-gray-100 rounded-full"
+                onClick={handleUserClick}
+              >
+                <User className="w-5 h-5" />
+              </button>
+
+              {isAuthenticated && (
+                <div className="absolute right-0 mt-2 bg-white border border-gray-200 rounded-md shadow-md py-2 hidden group-hover:block">
+                  <p className="px-4 py-2 text-sm text-gray-700">
+                    {user?.user_name}
+                  </p>
+                  <button
+                    onClick={logout}
+                    className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-gray-100"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
-
-      {isMenuOpen && (
-        <div className="lg:hidden bg-white border-t border-gray-200 py-4">
-          <nav className="flex flex-col space-y-4 px-6">
-            {navLinks.map((link) => (
-              <button
-                key={link.name}
-                onClick={() => {
-                  onNavigate(link.page);
-                  setIsMenuOpen(false);
-                }}
-                className={`text-left text-base font-medium transition-colors ${
-                  currentPage === link.page ? "text-black" : "text-gray-600"
-                }`}
-              >
-                {link.name}
-              </button>
-            ))}
-          </nav>
-        </div>
-      )}
     </header>
   );
 }

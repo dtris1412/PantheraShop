@@ -1,35 +1,36 @@
-import { useState } from 'react';
-import { Minus, Plus, Trash2, ArrowRight } from 'lucide-react';
+import { useState } from "react";
+import { Minus, Plus, Trash2, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom"; // ✅ thêm dòng này
 
-interface CartProps {
-  onNavigate: (page: string) => void;
-}
+export default function Cart() {
+  const navigate = useNavigate(); // ✅ khởi tạo hàm điều hướng
 
-export default function Cart({ onNavigate }: CartProps) {
   const [cartItems, setCartItems] = useState([
     {
-      id: '1',
-      name: 'Air Max Performance Running Shoes',
+      id: "1",
+      name: "Air Max Performance Running Shoes",
       price: 149.99,
-      size: 'US 10',
-      color: 'Black/White',
-      image: 'https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg?auto=compress&cs=tinysrgb&w=400',
+      size: "US 10",
+      color: "Black/White",
+      image:
+        "https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg?auto=compress&cs=tinysrgb&w=400",
       quantity: 1,
     },
     {
-      id: '2',
-      name: 'Pro Basketball Jersey',
+      id: "2",
+      name: "Pro Basketball Jersey",
       price: 89.99,
-      size: 'L',
-      color: 'Blue',
-      image: 'https://images.pexels.com/photos/8007412/pexels-photo-8007412.jpeg?auto=compress&cs=tinysrgb&w=400',
+      size: "L",
+      color: "Blue",
+      image:
+        "https://images.pexels.com/photos/8007412/pexels-photo-8007412.jpeg?auto=compress&cs=tinysrgb&w=400",
       quantity: 2,
     },
   ]);
 
   const updateQuantity = (id: string, change: number) => {
-    setCartItems(items =>
-      items.map(item =>
+    setCartItems((items) =>
+      items.map((item) =>
         item.id === id
           ? { ...item, quantity: Math.max(1, item.quantity + change) }
           : item
@@ -38,10 +39,13 @@ export default function Cart({ onNavigate }: CartProps) {
   };
 
   const removeItem = (id: string) => {
-    setCartItems(items => items.filter(item => item.id !== id));
+    setCartItems((items) => items.filter((item) => item.id !== id));
   };
 
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const subtotal = cartItems.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
   const shipping = subtotal > 150 ? 0 : 15;
   const tax = subtotal * 0.08;
   const total = subtotal + shipping + tax;
@@ -55,7 +59,7 @@ export default function Cart({ onNavigate }: CartProps) {
           <div className="text-center py-16">
             <p className="text-gray-500 text-lg mb-6">Your cart is empty</p>
             <button
-              onClick={() => onNavigate('products')}
+              onClick={() => navigate("/products")} // ✅ dùng react-router
               className="bg-black text-white px-8 py-3 font-semibold hover:bg-gray-800 transition-colors"
             >
               Continue Shopping
@@ -65,7 +69,10 @@ export default function Cart({ onNavigate }: CartProps) {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-4">
               {cartItems.map((item) => (
-                <div key={item.id} className="flex items-center space-x-4 bg-white border border-gray-200 p-4">
+                <div
+                  key={item.id}
+                  className="flex items-center space-x-4 bg-white border border-gray-200 p-4"
+                >
                   <img
                     src={item.image}
                     alt={item.name}
@@ -73,7 +80,9 @@ export default function Cart({ onNavigate }: CartProps) {
                   />
 
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-lg mb-1 truncate">{item.name}</h3>
+                    <h3 className="font-semibold text-lg mb-1 truncate">
+                      {item.name}
+                    </h3>
                     <p className="text-sm text-gray-600 mb-2">
                       Size: {item.size} | Color: {item.color}
                     </p>
@@ -87,7 +96,9 @@ export default function Cart({ onNavigate }: CartProps) {
                     >
                       <Minus className="w-4 h-4" />
                     </button>
-                    <span className="w-8 text-center font-medium">{item.quantity}</span>
+                    <span className="w-8 text-center font-medium">
+                      {item.quantity}
+                    </span>
                     <button
                       onClick={() => updateQuantity(item.id, 1)}
                       className="w-8 h-8 border border-gray-300 flex items-center justify-center hover:bg-gray-100 transition-colors"
@@ -118,7 +129,7 @@ export default function Cart({ onNavigate }: CartProps) {
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Shipping</span>
                     <span className="font-medium">
-                      {shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}
+                      {shipping === 0 ? "FREE" : `$${shipping.toFixed(2)}`}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
@@ -139,7 +150,7 @@ export default function Cart({ onNavigate }: CartProps) {
                 </div>
 
                 <button
-                  onClick={() => onNavigate('checkout')}
+                  onClick={() => navigate("/checkout")} // ✅ chuyển trang checkout
                   className="w-full bg-black text-white py-4 font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center space-x-2 mb-3"
                 >
                   <span>Proceed to Checkout</span>
@@ -147,7 +158,7 @@ export default function Cart({ onNavigate }: CartProps) {
                 </button>
 
                 <button
-                  onClick={() => onNavigate('products')}
+                  onClick={() => navigate("/products")}
                   className="w-full border-2 border-black text-black py-4 font-semibold hover:bg-gray-100 transition-colors"
                 >
                   Continue Shopping

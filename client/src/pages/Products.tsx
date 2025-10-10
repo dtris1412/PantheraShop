@@ -1,12 +1,10 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ChevronDown, SlidersHorizontal } from "lucide-react";
 import ProductCard from "../components/ProductCard";
 
-interface ProductsProps {
-  onNavigate: (page: string, productId?: string) => void;
-}
-
-export default function Products({ onNavigate }: ProductsProps) {
+export default function Products() {
+  const navigate = useNavigate(); // ✅ dùng react-router để điều hướng
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedSort, setSelectedSort] = useState("featured");
@@ -187,7 +185,8 @@ export default function Products({ onNavigate }: ProductsProps) {
             <ProductCard
               key={product.id}
               product={product}
-              onViewDetails={(id) => onNavigate("product-details", id)}
+              // ✅ dùng navigate để chuyển sang chi tiết sản phẩm
+              onViewDetails={(id) => navigate(`/product/${id}`)}
             />
           ))}
         </div>
