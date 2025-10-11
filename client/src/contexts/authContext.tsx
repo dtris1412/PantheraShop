@@ -24,6 +24,7 @@ interface AuthContextType {
     password: string
   ) => Promise<void>;
   logout: () => void;
+  fetchProfile: () => Promise<User | null>;
   isAuthenticated: boolean;
   loading: boolean;
 }
@@ -37,22 +38,22 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true); // ✅ thêm
+  const [loading, setLoading] = useState(true);
 
   const isAuthenticated = !!token;
 
+  // load token & user từ localStorage
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
-
     if (storedToken && storedUser) {
       setToken(storedToken);
       setUser(JSON.parse(storedUser));
     }
-
-    setLoading(false); // ✅ chỉ tắt loading sau khi kiểm tra localStorage
+    setLoading(false);
   }, []);
 
+  // login
   const login = async (email: string, password: string) => {
     const res = await fetch("http://localhost:8080/api/login", {
       method: "POST",
@@ -66,11 +67,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     setToken(data.token);
     setUser(data.user);
-
     localStorage.setItem("token", data.token);
     localStorage.setItem("user", JSON.stringify(data.user));
   };
 
+  // register
   const register = async (
     username: string,
     email: string,
@@ -92,11 +93,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     setToken(data.token);
     setUser(data.user);
-
     localStorage.setItem("token", data.token);
     localStorage.setItem("user", JSON.stringify(data.user));
   };
 
+  // logout
   const logout = () => {
     setToken(null);
     setUser(null);
@@ -104,9 +105,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.removeItem("user");
   };
 
+  // fetch profile từ backend
+  const fetchProfile = async (): Promise<User | null> => {
+    if (!token) return null;
+
+    const res = await fetch("http://localhost:8080/api/user/profile", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) throw new Error("Failed to fetch profile");
+
+    const data = await res.json();
+    setUser(data);
+    localStorage.setItem("user", JSON.stringify(data));
+    return data;
+  };
+
   return (
     <AuthContext.Provider
-      value={{ user, token, login, register, logout, isAuthenticated, loading }}
+      value={{
+        user,
+        token,
+        login,
+        register,
+        logout,
+        fetchProfile,
+        isAuthenticated,
+        loading,
+      }}
     >
       {children}
     </AuthContext.Provider>

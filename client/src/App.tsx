@@ -15,14 +15,19 @@ import Orders from "./pages/Orders";
 import Blog from "./pages/Blog";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile.tsx";
+import Loading from "./components/Loading"; // Đảm bảo đã có component này
+import OrderHistory from "./pages/OrderHistory";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) return <Loading />;
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 }
 
 function AppContent() {
-  const { user, logout } = useAuth();
+  const { user, logout, loading } = useAuth();
+
+  if (loading) return <Loading />;
 
   return (
     <>
@@ -34,9 +39,17 @@ function AppContent() {
           <Route path="/product/:id" element={<ProductDetails />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/profile" element={<Profile />} />
 
-          {/* Route cần đăng nhập */}
+          {/* Bọc profile vào ProtectedRoute */}
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+
           <Route
             path="/cart"
             element={
@@ -53,8 +66,15 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/order-history"
+            element={
+              <ProtectedRoute>
+                <OrderHistory />
+              </ProtectedRoute>
+            }
+          />
 
-          {/* fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

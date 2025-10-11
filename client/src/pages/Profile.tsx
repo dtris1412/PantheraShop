@@ -1,120 +1,324 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useAuth } from "../contexts/authContext";
 import { useNavigate } from "react-router-dom";
 import Loading from "../components/Loading";
-import { useAuth } from "../contexts/authContext";
+import { User, Mail, Phone, MapPin, Edit2, Save, Lock } from "lucide-react";
+import { showToast } from "../components/Toast.tsx";
 
-// ✅ Định nghĩa kiểu dữ liệu cho user
-interface User {
-  user_id: number;
-  user_name: string;
-  user_email: string;
-  role_id: number;
-  avatar?: string;
-}
-
-export default function Profile() {
-  const { token, logout, isAuthenticated, loading } = useAuth();
+export default function ProfilePage() {
+  const { token, fetchProfile, logout } = useAuth();
+  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
   const navigate = useNavigate();
 
-  // ✅ Khai báo kiểu cho useState
-  const [user, setUser] = useState<User | null>(null);
-  const [fetching, setFetching] = useState(true);
+  // Di chuyển useState này lên đây!
+  const [editData, setEditData] = useState({
+    user_name: "",
+    user_email: "",
+    user_phone: "",
+    address: "",
+  });
 
-  // ✅ Kiểm tra trạng thái đăng nhập
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      navigate("/login");
-    }
-  }, [loading, isAuthenticated, navigate]);
-
-  // ✅ Lấy thông tin profile từ backend
-  useEffect(() => {
-    const fetchProfile = async () => {
+    if (!token) return;
+    const getProfile = async () => {
       try {
-        setFetching(true);
-        const res = await fetch("http://localhost:8080/api/user/profile", {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!res.ok) {
-          // token hết hạn hoặc lỗi
-          logout();
-          navigate("/login");
-          return;
-        }
-
-        const data: User = await res.json();
-        setUser(data);
+        const data = await fetchProfile();
+        setProfile(data);
       } catch (err) {
-        console.error("Error fetching profile:", err);
+        navigate("/login");
       } finally {
-        setFetching(false);
+        setLoading(false);
       }
     };
+    getProfile();
+  }, [token]);
 
-    if (isAuthenticated && token) {
-      fetchProfile();
+  // Update editData when profile changes
+  useEffect(() => {
+    if (profile) {
+      setEditData({
+        user_name: profile.user_name || "",
+        user_email: profile.user_email || "",
+        user_phone: profile.user_phone || "",
+        address: profile.address || "",
+      });
     }
-  }, [isAuthenticated, token, logout, navigate]);
+  }, [profile]);
 
-  // ✅ Hiển thị loading trong khi đang fetch
-  if (loading || fetching) return <Loading />;
+  if (loading) return <Loading />;
+  if (!profile) return <p>Không thể tải thông tin người dùng</p>;
 
-  // ✅ Nếu không có user thì không render
-  if (!user) return null;
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsEditing(false);
+    // TODO: Gửi API cập nhật profile ở đây nếu muốn
+    showToast("Profile updated successfully!", "success");
+    setProfile({ ...profile, ...editData });
+  };
+
+  const handleChangePassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      showToast("Passwords do not match", "error");
+      return;
+    }
+    if (passwordData.newPassword.length < 8) {
+      showToast("Password must be at least 8 characters", "error");
+      return;
+    }
+    setIsChangingPassword(false);
+    setPasswordData({
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    });
+    showToast("Password changed successfully!", "success");
+    // TODO: Gửi API đổi mật khẩu ở đây nếu muốn
+  };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
-      <div className="bg-white shadow-md rounded-lg p-8 w-full max-w-md">
-        <div className="text-center mb-6">
-          {user.avatar ? (
-            <img
-              src={user.avatar}
-              alt="Avatar"
-              className="w-24 h-24 rounded-full mx-auto object-cover border"
-            />
-          ) : (
-            <div className="w-24 h-24 rounded-full mx-auto bg-gray-200 flex items-center justify-center text-gray-500 text-xl">
-              {user.user_name?.charAt(0).toUpperCase()}
+    <div className="min-h-screen pt-24 pb-12">
+      <div className="max-w-4xl mx-auto px-6">
+        <h1 className="text-4xl font-bold mb-8">My Profile</h1>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-1">
+            <div className="bg-white border border-gray-200 p-6">
+              <div className="flex flex-col items-center text-center mb-6">
+                <div className="w-24 h-24 bg-black rounded-full flex items-center justify-center mb-4">
+                  <User className="w-12 h-12 text-white" />
+                </div>
+                <h2 className="text-xl font-bold mb-1">{profile.user_name}</h2>
+                <p className="text-sm text-gray-600">{profile.user_email}</p>
+              </div>
+              <div className="space-y-3 text-sm">
+                <button
+                  onClick={() => navigate("/order-history")}
+                  className="w-full text-left px-4 py-3 border border-gray-200 hover:bg-gray-50 transition-colors font-medium"
+                >
+                  Order History
+                </button>
+                <button
+                  onClick={() => setIsChangingPassword(true)}
+                  className="w-full text-left px-4 py-3 border border-gray-200 hover:bg-gray-50 transition-colors font-medium"
+                >
+                  Change Password
+                </button>
+                <button
+                  onClick={() => {
+                    logout();
+                    navigate("/login");
+                  }}
+                  className="w-full text-left px-4 py-3 border border-gray-200 hover:bg-gray-50 transition-colors font-medium text-red-600"
+                >
+                  Sign Out
+                </button>
+              </div>
             </div>
-          )}
-          <h1 className="text-2xl font-bold mt-4">{user.user_name}</h1>
-          <p className="text-gray-600">{user.user_email}</p>
-          <p className="text-sm text-gray-500 mt-1">
-            {user.role_id === 1 ? "Admin" : "Khách hàng"}
-          </p>
-        </div>
-
-        <div className="space-y-4 text-sm text-gray-700">
-          <div className="flex justify-between">
-            <span className="font-medium">User ID:</span>
-            <span>{user.user_id}</span>
           </div>
-          <div className="flex justify-between">
-            <span className="font-medium">Role ID:</span>
-            <span>{user.role_id}</span>
+          <div className="lg:col-span-2 space-y-6">
+            <div className="bg-white border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold">Personal Information</h2>
+                {!isEditing ? (
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="flex items-center space-x-2 text-sm font-medium hover:underline"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                    <span>Edit</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setIsEditing(false)}
+                    className="text-sm font-medium text-gray-600 hover:underline"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+              <form onSubmit={handleSaveProfile} className="space-y-4">
+                <div>
+                  <label className="flex items-center space-x-2 text-sm font-medium mb-2">
+                    <User className="w-4 h-4" />
+                    <span>Full Name</span>
+                  </label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editData.user_name}
+                      onChange={(e) =>
+                        setEditData({ ...editData, user_name: e.target.value })
+                      }
+                      className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-black"
+                      required
+                    />
+                  ) : (
+                    <p className="px-4 py-3 bg-gray-50 border border-gray-200">
+                      {profile.user_name}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="flex items-center space-x-2 text-sm font-medium mb-2">
+                    <Mail className="w-4 h-4" />
+                    <span>Email Address</span>
+                  </label>
+                  {isEditing ? (
+                    <input
+                      type="email"
+                      value={editData.user_email}
+                      onChange={(e) =>
+                        setEditData({ ...editData, user_email: e.target.value })
+                      }
+                      className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-black"
+                      required
+                    />
+                  ) : (
+                    <p className="px-4 py-3 bg-gray-50 border border-gray-200">
+                      {profile.user_email}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="flex items-center space-x-2 text-sm font-medium mb-2">
+                    <Phone className="w-4 h-4" />
+                    <span>Phone Number</span>
+                  </label>
+                  {isEditing ? (
+                    <input
+                      type="tel"
+                      value={editData.user_phone}
+                      onChange={(e) =>
+                        setEditData({ ...editData, user_phone: e.target.value })
+                      }
+                      className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-black"
+                    />
+                  ) : (
+                    <p className="px-4 py-3 bg-gray-50 border border-gray-200">
+                      {profile.user_phone || "Chưa cập nhật"}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="flex items-center space-x-2 text-sm font-medium mb-2">
+                    <MapPin className="w-4 h-4" />
+                    <span>Address</span>
+                  </label>
+                  {isEditing ? (
+                    <textarea
+                      value={editData.address}
+                      onChange={(e) =>
+                        setEditData({ ...editData, address: e.target.value })
+                      }
+                      className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-black"
+                      rows={3}
+                    />
+                  ) : (
+                    <p className="px-4 py-3 bg-gray-50 border border-gray-200">
+                      {profile.address || "Chưa cập nhật"}
+                    </p>
+                  )}
+                </div>
+                {isEditing && (
+                  <button
+                    type="submit"
+                    className="w-full bg-black text-white py-3 font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center space-x-2"
+                  >
+                    <Save className="w-5 h-5" />
+                    <span>Save Changes</span>
+                  </button>
+                )}
+              </form>
+            </div>
+            {isChangingPassword && (
+              <div className="bg-white border border-gray-200 p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold">Change Password</h2>
+                  <button
+                    onClick={() => setIsChangingPassword(false)}
+                    className="text-sm font-medium text-gray-600 hover:underline"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                <form onSubmit={handleChangePassword} className="space-y-4">
+                  <div>
+                    <label className="flex items-center space-x-2 text-sm font-medium mb-2">
+                      <Lock className="w-4 h-4" />
+                      <span>Current Password</span>
+                    </label>
+                    <input
+                      type="password"
+                      value={passwordData.currentPassword}
+                      onChange={(e) =>
+                        setPasswordData({
+                          ...passwordData,
+                          currentPassword: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-black"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="flex items-center space-x-2 text-sm font-medium mb-2">
+                      <Lock className="w-4 h-4" />
+                      <span>New Password</span>
+                    </label>
+                    <input
+                      type="password"
+                      value={passwordData.newPassword}
+                      onChange={(e) =>
+                        setPasswordData({
+                          ...passwordData,
+                          newPassword: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-black"
+                      required
+                      minLength={8}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Minimum 8 characters
+                    </p>
+                  </div>
+                  <div>
+                    <label className="flex items-center space-x-2 text-sm font-medium mb-2">
+                      <Lock className="w-4 h-4" />
+                      <span>Confirm New Password</span>
+                    </label>
+                    <input
+                      type="password"
+                      value={passwordData.confirmPassword}
+                      onChange={(e) =>
+                        setPasswordData({
+                          ...passwordData,
+                          confirmPassword: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-black"
+                      required
+                      minLength={8}
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full bg-black text-white py-3 font-semibold hover:bg-gray-800 transition-colors"
+                  >
+                    Update Password
+                  </button>
+                </form>
+              </div>
+            )}
           </div>
-        </div>
-
-        <div className="mt-6 flex flex-col gap-3">
-          <button
-            onClick={() => navigate("/")}
-            className="bg-gray-100 py-2 rounded hover:bg-gray-200 transition"
-          >
-            Quay về trang chủ
-          </button>
-          <button
-            onClick={() => {
-              logout();
-              navigate("/login");
-            }}
-            className="bg-red-600 text-white py-2 rounded hover:bg-red-700 transition"
-          >
-            Đăng xuất
-          </button>
         </div>
       </div>
     </div>

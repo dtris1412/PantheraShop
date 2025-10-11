@@ -11,7 +11,7 @@ export default function Header({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
-  const { user, logout, isAuthenticated } = useAuth(); // 👈 lấy dữ liệu từ context
+  const { user, logout, isAuthenticated } = useAuth(); // lấy dữ liệu từ context
 
   const navLinks = [
     { name: "New & Featured", path: "/" },

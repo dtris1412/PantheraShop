@@ -13,12 +13,12 @@ const router = express.Router();
 const initWebRoutes = (app) => {
   // user APIs
   router.get("/api/users", getAllUsers);
-  router.get("/api/user/:user_id", getUserById);
   router.post("/api/register", register);
   router.post("/api/login", login);
 
-  // ✅ get profile (protected route)
+  //get profile (protected route)
   router.get("/api/user/profile", verifyToken, getProfile);
+  router.get("/api/user/:user_id", getUserById);
 
   return app.use("/", router);
 };

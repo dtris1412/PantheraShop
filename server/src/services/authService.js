@@ -1,10 +1,12 @@
 import db from "../models/index.js";
 import { Op } from "sequelize";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phoneRegex = /^\d{9,11}$/;
 const passwordRegex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).{6,}$/;
+const SALT_ROUDS = 10;
 
 const register = async (
   user_name,
@@ -39,11 +41,12 @@ const register = async (
   if (existedUser)
     return { success: false, message: "Email or username already exists" };
 
+  const hashedPassword = await bcrypt.hash(user_password, SALT_ROUDS);
   // Tạo user mới
   const newUser = await db.User.create({
     user_name,
     user_email,
-    user_password, // có thể hash bcrypt
+    user_password: hashedPassword,
     user_phone,
     role_id: role_id || 2,
     avatar: avatar || null,
@@ -71,7 +74,9 @@ const login = async (user_email, user_password) => {
   if (!user) return null;
 
   console.log("User from DB:", user.user_email, user.user_password);
-  const isMatch = user_password === user.user_password;
+
+  // const isMatch = user_password === user.user_password;
+  const isMatch = await bcrypt.compare(user_password, user.user_password);
   console.log("Password match?", isMatch);
 
   if (!isMatch) return null;
