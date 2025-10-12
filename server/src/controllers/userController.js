@@ -4,6 +4,7 @@ import {
   getProfile as getProfileService,
   updateProfile as updateProfileService,
   updatePassword as updatePasswordService,
+  updateAvatar as updateAvatarService,
 } from "../services/userService.js";
 
 const getAllUsers = async (req, res) => {
@@ -105,4 +106,31 @@ const updatePassword = async (req, res) => {
   }
 };
 
-export { getAllUsers, getUserById, getProfile, updateProfile, updatePassword };
+// const updateAvatar = async (req, res) => {
+//   try {
+//     const user_id = req.user?.user_id;
+//     if (!user_id) {
+//       console.warn("Unauthorized access to updateAvatar: missing user_id");
+//       return res.status(401).json({ message: "Unauthorized" });
+//     }
+//     const { avatar_url } = req.body;
+//     const result = await updateAvatarService(user_id, avatar_url);
+//     if (!result.success) {
+//       res.status(400).json(result);
+//     } else {
+//       res.json(result);
+//     }
+//   } catch (err) {
+//     console.error("Error in updateAvatar: ", err);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
+export {
+  getAllUsers,
+  getUserById,
+  getProfile,
+  updateProfile,
+  updatePassword,
+  // updateAvatar,
+};

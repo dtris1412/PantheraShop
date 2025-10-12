@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "../contexts/authContext";
 import { useNavigate } from "react-router-dom";
 import Loading from "../components/Loading";
@@ -16,8 +16,14 @@ import {
 import { showToast } from "../components/Toast";
 
 export default function ProfilePage() {
-  const { token, fetchProfile, logout, updateProfile, updatePassword } =
-    useAuth();
+  const {
+    token,
+    fetchProfile,
+    logout,
+    updateProfile,
+    updatePassword,
+    updateAvatar,
+  } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -36,6 +42,7 @@ export default function ProfilePage() {
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -65,8 +72,46 @@ export default function ProfilePage() {
     }
   }, [profile]);
 
-  if (loading) return <Loading />;
-  if (!profile) return <p>Không thể tải thông tin người dùng</p>;
+  // const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const file = e.target.files?.[0];
+  //   if (!file) return;
+  //   try {
+
+  //     const url = await updateAvatar(file);
+  //     setProfile((prev: any) => ({ ...prev, avatar: url }));
+  //     showToast("Avatar updated!", "success");
+  //   } catch (err: any) {
+  //     showToast(err.message || "Upload failed!", "error");
+  //   }
+  // };
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const url = await updateAvatar(file);
+
+      // ⚡ Thêm timestamp để phá cache ảnh cũ
+      const updatedUrl = `${url}?t=${Date.now()}`;
+
+      // ✅ Cập nhật ngay ảnh mới
+      setProfile((prev: any) => ({
+        ...prev,
+        avatar: updatedUrl,
+      }));
+
+      showToast("Avatar updated!", "success");
+
+      // (tuỳ chọn) Gọi lại fetchProfile để đồng bộ dữ liệu
+      const newProfile = await fetchProfile();
+      setProfile({
+        ...newProfile,
+        avatar: updatedUrl, // giữ lại URL mới tránh cache
+      });
+    } catch (err: any) {
+      showToast(err.message || "Upload failed!", "error");
+    }
+  };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,6 +162,9 @@ export default function ProfilePage() {
     }
   };
 
+  if (loading) return <Loading />;
+  if (!profile) return <p>Không thể tải thông tin người dùng</p>;
+
   return (
     <div className="min-h-screen pt-24 pb-12">
       <div className="max-w-4xl mx-auto px-6">
@@ -125,8 +173,27 @@ export default function ProfilePage() {
           <div className="lg:col-span-1">
             <div className="bg-white border border-gray-200 p-6">
               <div className="flex flex-col items-center text-center mb-6">
-                <div className="w-24 h-24 bg-black rounded-full flex items-center justify-center mb-4">
-                  <User className="w-12 h-12 text-white" />
+                <div className="relative w-24 h-24 mb-4">
+                  <img
+                    src={profile.avatar || "/default-avatar.png"}
+                    alt="Avatar"
+                    className="w-24 h-24 rounded-full object-cover border border-gray-300"
+                  />
+                  <button
+                    className="absolute bottom-0 right-0 bg-black text-white rounded-full p-2 hover:bg-gray-800"
+                    onClick={() => fileInputRef.current?.click()}
+                    title="Change avatar"
+                    type="button"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={fileInputRef}
+                    className="hidden"
+                    onChange={handleAvatarChange}
+                  />
                 </div>
                 <h2 className="text-xl font-bold mb-1">{profile.user_name}</h2>
                 <p className="text-sm text-gray-600">{profile.user_email}</p>

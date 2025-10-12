@@ -35,6 +35,7 @@ interface AuthContextType {
     current_password: string,
     new_password: string
   ) => Promise<any>;
+  updateAvatar: (file: File) => Promise<string | undefined>;
   isAuthenticated: boolean;
   loading: boolean;
 }
@@ -177,6 +178,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return result;
   };
 
+  const updateAvatar = async (file: File) => {
+    if (!token) throw new Error("No token");
+    const formData = new FormData();
+    formData.append("avatar", file);
+
+    const res = await fetch("http://localhost:8080/api/user/avatar", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+    if (!res.ok) throw new Error("Upload failed");
+    const data = await res.json();
+    setUser(data.user);
+    localStorage.setItem("user", JSON.stringify(data.user));
+    return data.user.avatar; // trả về url mới
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -188,6 +208,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         fetchProfile,
         updateProfile,
         updatePassword,
+        updateAvatar,
         isAuthenticated,
         loading,
       }}

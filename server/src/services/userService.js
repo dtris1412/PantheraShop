@@ -27,6 +27,7 @@ const getProfile = async (user_id) => {
       "user_email",
       "user_phone",
       "user_address",
+      "avatar",
     ], // chọn field cần trả
   });
   return user;
@@ -102,4 +103,29 @@ const updatePassword = async (user_id, current_password, new_password) => {
   };
 };
 
-export { getAllUsers, getUserById, getProfile, updateProfile, updatePassword };
+const updateAvatar = async (user_id, avatar_url) => {
+  if (!user_id) {
+    return { success: false, message: "Missing user_id" };
+  }
+  await db.User.update(
+    {
+      avatar: avatar_url,
+    },
+    { where: { user_id } }
+  );
+  const updatedUser = await db.User.findOne({ where: { user_id } });
+  return {
+    success: true,
+    message: "Avatar updated successfully",
+    user: updatedUser,
+  };
+};
+
+export {
+  getAllUsers,
+  getUserById,
+  getProfile,
+  updateProfile,
+  updatePassword,
+  updateAvatar,
+};
