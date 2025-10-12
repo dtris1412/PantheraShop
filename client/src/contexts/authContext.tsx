@@ -192,9 +192,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     });
     if (!res.ok) throw new Error("Upload failed");
     const data = await res.json();
-    setUser(data.user);
-    localStorage.setItem("user", JSON.stringify(data.user));
-    return data.user.avatar; // trả về url mới
+    setUser(data.user.user); // cập nhật user mới với avatar mới
+    localStorage.setItem("user", JSON.stringify(data.user.user));
+    return data.user.user.avatar; // trả về url mới
   };
 
   return (

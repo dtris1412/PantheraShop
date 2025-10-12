@@ -91,10 +91,10 @@ export default function ProfilePage() {
     try {
       const url = await updateAvatar(file);
 
-      // ⚡ Thêm timestamp để phá cache ảnh cũ
+      // Thêm timestamp để phá cache ảnh cũ
       const updatedUrl = `${url}?t=${Date.now()}`;
 
-      // ✅ Cập nhật ngay ảnh mới
+      // Cập nhật ngay ảnh mới
       setProfile((prev: any) => ({
         ...prev,
         avatar: updatedUrl,
@@ -103,11 +103,13 @@ export default function ProfilePage() {
       showToast("Avatar updated!", "success");
 
       // (tuỳ chọn) Gọi lại fetchProfile để đồng bộ dữ liệu
-      const newProfile = await fetchProfile();
-      setProfile({
-        ...newProfile,
-        avatar: updatedUrl, // giữ lại URL mới tránh cache
-      });
+      setTimeout(async () => {
+        const newProfile = await fetchProfile();
+        setProfile({
+          ...newProfile,
+          avatar: updatedUrl, // giữ lại URL mới tránh cache
+        });
+      }, 1000);
     } catch (err: any) {
       showToast(err.message || "Upload failed!", "error");
     }
