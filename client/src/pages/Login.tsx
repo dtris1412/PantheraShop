@@ -31,14 +31,14 @@ export default function Login() {
     setLoading(true);
     try {
       if (isLogin) {
-        // ✅ dùng context login
+        // dùng context login
         await login(formData.email, formData.password);
       } else {
-        // ✅ dùng context register
+        // dùng context register
         await register(formData.username, formData.email, formData.password);
       }
 
-      navigate("/"); // ✅ chuyển hướng sau khi login/register thành công
+      navigate("/"); // chuyển hướng sau khi login/register thành công
     } catch (err: any) {
       setError(err.message || "Internal error");
     } finally {

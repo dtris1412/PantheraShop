@@ -17,6 +17,7 @@ export default (sequelize, DataTypes) => {
       user_email: DataTypes.STRING,
       user_password: DataTypes.STRING,
       user_phone: DataTypes.STRING,
+      user_address: DataTypes.STRING,
       role_id: DataTypes.INTEGER,
       created_at: DataTypes.DATE,
       updated_at: DataTypes.DATE,

@@ -2,29 +2,41 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../contexts/authContext";
 import { useNavigate } from "react-router-dom";
 import Loading from "../components/Loading";
-import { User, Mail, Phone, MapPin, Edit2, Save, Lock } from "lucide-react";
-import { showToast } from "../components/Toast.tsx";
+import {
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Edit2,
+  Save,
+  Lock,
+  Eye,
+  EyeOff,
+} from "lucide-react";
+import { showToast } from "../components/Toast";
 
 export default function ProfilePage() {
-  const { token, fetchProfile, logout } = useAuth();
+  const { token, fetchProfile, logout, updateProfile, updatePassword } =
+    useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [editData, setEditData] = useState({
+    user_name: "",
+    user_email: "",
+    user_phone: "",
+    user_address: "",
+  });
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const navigate = useNavigate();
-
-  // Di chuyển useState này lên đây!
-  const [editData, setEditData] = useState({
-    user_name: "",
-    user_email: "",
-    user_phone: "",
-    address: "",
-  });
 
   useEffect(() => {
     if (!token) return;
@@ -48,7 +60,7 @@ export default function ProfilePage() {
         user_name: profile.user_name || "",
         user_email: profile.user_email || "",
         user_phone: profile.user_phone || "",
-        address: profile.address || "",
+        user_address: profile.user_address || "",
       });
     }
   }, [profile]);
@@ -56,16 +68,25 @@ export default function ProfilePage() {
   if (loading) return <Loading />;
   if (!profile) return <p>Không thể tải thông tin người dùng</p>;
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsEditing(false);
-    // TODO: Gửi API cập nhật profile ở đây nếu muốn
-    showToast("Profile updated successfully!", "success");
-    setProfile({ ...profile, ...editData });
+    try {
+      await updateProfile(editData);
+      showToast("Profile updated successfully!", "success");
+      setIsEditing(false);
+
+      // Gọi lại fetchProfile để lấy thông tin mới nhất
+      const newProfile = await fetchProfile();
+      setProfile(newProfile);
+      showToast("Profile updated successfully!", "success");
+    } catch (err) {
+      showToast("Update failed!", "error");
+    }
   };
 
-  const handleChangePassword = (e: React.FormEvent) => {
+  const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       showToast("Passwords do not match", "error");
       return;
@@ -74,14 +95,26 @@ export default function ProfilePage() {
       showToast("Password must be at least 8 characters", "error");
       return;
     }
-    setIsChangingPassword(false);
-    setPasswordData({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    });
-    showToast("Password changed successfully!", "success");
-    // TODO: Gửi API đổi mật khẩu ở đây nếu muốn
+
+    try {
+      const result = await updatePassword(
+        passwordData.currentPassword,
+        passwordData.newPassword
+      );
+      if (result && result.success) {
+        showToast("Password changed successfully!", "success");
+        setPasswordData({
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+        // Đóng form đổi mật khẩu nếu có
+      } else {
+        showToast(result?.message || "Change password failed!", "error");
+      }
+    } catch (err: any) {
+      showToast(err.message || "Change password failed!", "error");
+    }
   };
 
   return (
@@ -214,16 +247,19 @@ export default function ProfilePage() {
                   </label>
                   {isEditing ? (
                     <textarea
-                      value={editData.address}
+                      value={editData.user_address}
                       onChange={(e) =>
-                        setEditData({ ...editData, address: e.target.value })
+                        setEditData({
+                          ...editData,
+                          user_address: e.target.value,
+                        })
                       }
                       className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-black"
                       rows={3}
                     />
                   ) : (
                     <p className="px-4 py-3 bg-gray-50 border border-gray-200">
-                      {profile.address || "Chưa cập nhật"}
+                      {profile.user_address || "Chưa cập nhật"}
                     </p>
                   )}
                 </div>
@@ -255,39 +291,69 @@ export default function ProfilePage() {
                       <Lock className="w-4 h-4" />
                       <span>Current Password</span>
                     </label>
-                    <input
-                      type="password"
-                      value={passwordData.currentPassword}
-                      onChange={(e) =>
-                        setPasswordData({
-                          ...passwordData,
-                          currentPassword: e.target.value,
-                        })
-                      }
-                      className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-black"
-                      required
-                    />
+                    <div className="relative">
+                      <input
+                        placeholder="CurrentPassword123"
+                        type={showCurrent ? "text" : "password"}
+                        value={passwordData.currentPassword}
+                        onChange={(e) =>
+                          setPasswordData({
+                            ...passwordData,
+                            currentPassword: e.target.value,
+                          })
+                        }
+                        className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-black pr-10"
+                        required
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                        onClick={() => setShowCurrent((v) => !v)}
+                        tabIndex={-1}
+                      >
+                        {showCurrent ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                   <div>
                     <label className="flex items-center space-x-2 text-sm font-medium mb-2">
                       <Lock className="w-4 h-4" />
                       <span>New Password</span>
                     </label>
-                    <input
-                      type="password"
-                      value={passwordData.newPassword}
-                      onChange={(e) =>
-                        setPasswordData({
-                          ...passwordData,
-                          newPassword: e.target.value,
-                        })
-                      }
-                      className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-black"
-                      required
-                      minLength={8}
-                    />
+                    <div className="relative">
+                      <input
+                        placeholder="NewPassword123"
+                        type={showNew ? "text" : "password"}
+                        value={passwordData.newPassword}
+                        onChange={(e) =>
+                          setPasswordData({
+                            ...passwordData,
+                            newPassword: e.target.value,
+                          })
+                        }
+                        className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-black pr-10"
+                        required
+                        minLength={8}
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                        onClick={() => setShowNew((v) => !v)}
+                        tabIndex={-1}
+                      >
+                        {showNew ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
+                      </button>
+                    </div>
                     <p className="text-xs text-gray-500 mt-1">
-                      Minimum 8 characters
+                      Minimum 6 characters
                     </p>
                   </div>
                   <div>
@@ -295,19 +361,34 @@ export default function ProfilePage() {
                       <Lock className="w-4 h-4" />
                       <span>Confirm New Password</span>
                     </label>
-                    <input
-                      type="password"
-                      value={passwordData.confirmPassword}
-                      onChange={(e) =>
-                        setPasswordData({
-                          ...passwordData,
-                          confirmPassword: e.target.value,
-                        })
-                      }
-                      className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-black"
-                      required
-                      minLength={8}
-                    />
+                    <div className="relative">
+                      <input
+                        placeholder="NewPassword123"
+                        type={showConfirm ? "text" : "password"}
+                        value={passwordData.confirmPassword}
+                        onChange={(e) =>
+                          setPasswordData({
+                            ...passwordData,
+                            confirmPassword: e.target.value,
+                          })
+                        }
+                        className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-black pr-10"
+                        required
+                        minLength={8}
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                        onClick={() => setShowConfirm((v) => !v)}
+                        tabIndex={-1}
+                      >
+                        {showConfirm ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                   <button
                     type="submit"

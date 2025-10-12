@@ -2,6 +2,8 @@ import {
   getAllUsers as getAllUsersService,
   getUserById as getUserByIdService,
   getProfile as getProfileService,
+  updateProfile as updateProfileService,
+  updatePassword as updatePasswordService,
 } from "../services/userService.js";
 
 const getAllUsers = async (req, res) => {
@@ -52,4 +54,55 @@ const getProfile = async (req, res) => {
   }
 };
 
-export { getAllUsers, getUserById, getProfile };
+const updateProfile = async (req, res) => {
+  try {
+    const user_id = req.user?.user_id;
+    if (!user_id) {
+      console.warn(
+        "Unauthorized access to updateProfile: missing user_id in token"
+      );
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const { user_name, user_email, user_phone, user_address } = req.body;
+    const result = await updateProfileService(user_id, {
+      user_name,
+      user_email,
+      user_phone,
+      user_address,
+    });
+    if (!result.success) {
+      res.status(400).json(result);
+    } else {
+      res.json(result);
+    }
+  } catch (err) {
+    console.error("Error in updateProfile: ", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const updatePassword = async (req, res) => {
+  try {
+    const user_id = req.user?.user_id;
+    if (!user_id) {
+      console.warn("Unauthorized access to updatePassword: missing user_id");
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const { current_password, new_password } = req.body;
+    const result = await updatePasswordService(
+      user_id,
+      current_password,
+      new_password
+    );
+    if (!result.success) {
+      res.status(400).json(result);
+    } else {
+      res.json(result);
+    }
+  } catch (err) {
+    console.error("Error in updatePassword: ", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export { getAllUsers, getUserById, getProfile, updateProfile, updatePassword };

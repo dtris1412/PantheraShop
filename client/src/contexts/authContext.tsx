@@ -25,6 +25,16 @@ interface AuthContextType {
   ) => Promise<void>;
   logout: () => void;
   fetchProfile: () => Promise<User | null>;
+  updateProfile: (data: {
+    user_name: string;
+    user_email: string;
+    user_phone?: string;
+    user_address?: string;
+  }) => Promise<void>;
+  updatePassword: (
+    current_password: string,
+    new_password: string
+  ) => Promise<any>;
   isAuthenticated: boolean;
   loading: boolean;
 }
@@ -125,6 +135,48 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return data;
   };
 
+  const updateProfile = async (data: {
+    user_name: string;
+    user_email: string;
+    user_phone?: string;
+    user_address?: string;
+  }) => {
+    if (!token) return;
+    const res = await fetch("http://localhost:8080/api/user/profile", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error("Update failed");
+    const updated = await res.json();
+    setUser(updated.user); // hoặc setUser(updated) tùy backend trả về
+    localStorage.setItem("user", JSON.stringify(updated.user));
+  };
+
+  const updatePassword = async (
+    current_password: string,
+    new_password: string
+  ) => {
+    if (!token) return;
+    const res = await fetch("http://localhost:8080/api/user/password", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        current_password, // Đảm bảo tên trường đúng với backend
+        new_password,
+      }),
+    });
+    if (!res.ok) throw new Error("Update failed");
+    const result = await res.json();
+    return result;
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -134,6 +186,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         register,
         logout,
         fetchProfile,
+        updateProfile,
+        updatePassword,
         isAuthenticated,
         loading,
       }}

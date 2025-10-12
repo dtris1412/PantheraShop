@@ -17,6 +17,7 @@ import Login from "./pages/Login";
 import Profile from "./pages/Profile.tsx";
 import Loading from "./components/Loading"; // Đảm bảo đã có component này
 import OrderHistory from "./pages/OrderHistory";
+import { ToastContainer } from "./components/Toast";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { isAuthenticated, loading } = useAuth();
@@ -31,6 +32,7 @@ function AppContent() {
 
   return (
     <>
+      <ToastContainer /> {/* Đặt ở đây để Toast luôn hiển thị trên mọi trang */}
       <Header user={user} onLogout={logout} />
       <main className="flex-1 min-h-screen">
         <Routes>

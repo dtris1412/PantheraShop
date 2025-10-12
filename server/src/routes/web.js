@@ -3,6 +3,8 @@ import {
   getAllUsers,
   getUserById,
   getProfile,
+  updateProfile,
+  updatePassword,
 } from "../controllers/userController.js";
 import { register, login } from "../controllers/authController.js";
 // import verifyToken nếu bạn đã có
@@ -19,6 +21,10 @@ const initWebRoutes = (app) => {
   //get profile (protected route)
   router.get("/api/user/profile", verifyToken, getProfile);
   router.get("/api/user/:user_id", getUserById);
+  //update profile (protected route)
+  router.put("/api/user/profile", verifyToken, updateProfile);
+  //updatepassword
+  router.put("/api/user/password", verifyToken, updatePassword);
 
   return app.use("/", router);
 };

@@ -47,12 +47,16 @@ export default function Toast({
 
   return (
     <div
-      className={`fixed top-24 right-6 z-50 transition-all duration-300 ${
-        isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-4"
+      className={`fixed top-24 right-6 z-50 transition-all duration-500
+      ${
+        isVisible
+          ? "opacity-100 translate-x-0 scale-100"
+          : "opacity-0 translate-x-4 scale-95"
       }`}
+      style={{ transitionProperty: "opacity, transform" }}
     >
       <div
-        className={`flex items-center space-x-3 px-4 py-3 border ${bgColors[type]} shadow-lg min-w-80`}
+        className={`flex items-center space-x-3 px-4 py-3 border ${bgColors[type]} shadow-2xl min-w-80`}
       >
         {icons[type]}
         <p className={`flex-1 font-medium ${textColors[type]}`}>{message}</p>
