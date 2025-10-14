@@ -38,7 +38,7 @@ export default function Products() {
   const [selectedTeam, setSelectedTeam] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const productsPerPage = 16;
+  const productsPerPage = 15;
 
   // Lọc sản phẩm theo category
   const filteredProducts = useMemo(() => {
@@ -132,6 +132,7 @@ export default function Products() {
 
   return (
     <div className="min-h-screen pt-24 pb-12 bg-white">
+      <div ref={topRef} />
       <div className="max-w-7xl mx-auto px-6">
         <div className="mb-8">
           <h1 className="text-4xl md:text-5xl font-bold mb-2">All Products</h1>
@@ -159,17 +160,10 @@ export default function Products() {
           </aside>
           {/* Grid sản phẩm bên phải */}
           <main className="flex-1">
-            <div ref={topRef} />
             {/* Thanh tìm kiếm và sort bar */}
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
               <div className="flex-1">
-                <SearchProduct
-                  products={filteredProducts}
-                  onSelect={(product) =>
-                    navigate(`/product/${product.product_id}`)
-                  }
-                  setQuery={setSearchQuery}
-                />
+                <SearchProduct setQuery={setSearchQuery} />
               </div>
               <div>
                 <ProductSortBar
@@ -178,12 +172,11 @@ export default function Products() {
                 />
               </div>
             </div>
-            {/* Grid sản phẩm không có khung, không bo góc, không scroll riêng */}
             <ProductGrid
               products={paginatedProducts}
               onViewDetails={(id) => navigate(`/product/${id}`)}
             />
-            {/* Pagination controls */}
+
             {totalPages > 1 && (
               <div className="flex justify-center mt-12 gap-2 select-none">
                 <button
