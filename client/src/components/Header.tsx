@@ -1,17 +1,26 @@
+import React, { useState } from "react";
 import { Search, ShoppingBag, User, Heart, Menu, X } from "lucide-react";
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/authContext.tsx"; // 👈 thêm dòng này
 
-export default function Header({
-  cartItemCount = 0,
-}: {
+interface HeaderProps {
+  user?: {
+    name?: string;
+    avatar?: string | null; // Cho phép null
+  } | null;
+  onLogout?: () => void;
   cartItemCount?: number;
-}) {
+}
+
+export default function Header({
+  user,
+  onLogout,
+  cartItemCount = 0,
+}: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
-  const { user, logout, isAuthenticated } = useAuth(); // lấy dữ liệu từ context
+  const { logout, isAuthenticated } = useAuth(); // lấy dữ liệu từ context
 
   const navLinks = [
     { name: "New & Featured", path: "/" },
@@ -105,7 +114,7 @@ export default function Header({
               {isAuthenticated && (
                 <div className="absolute right-0 mt-2 bg-white border border-gray-200 rounded-md shadow-md py-2 hidden group-hover:block">
                   <p className="px-4 py-2 text-sm text-gray-700">
-                    {user?.user_name}
+                    {user?.name}
                   </p>
                   <button
                     onClick={logout}
