@@ -1,73 +1,15 @@
 import { ArrowRight, TrendingUp } from "lucide-react";
 import ProductCard from "../components/ProductCard";
 import { useNavigate } from "react-router-dom";
+import { useProduct } from "../contexts/productContext.tsx";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/navigation";
 
 export default function Home() {
   const navigate = useNavigate();
-
-  const featuredProducts = [
-    {
-      id: "1",
-      name: "Air Max Performance Running Shoes",
-      price: 179.99,
-      discountPrice: 149.99,
-      image:
-        "https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg?auto=compress&cs=tinysrgb&w=800",
-      category: "Running",
-      isNew: true,
-      colors: 4,
-    },
-    {
-      id: "2",
-      name: "Pro Basketball Jersey",
-      price: 89.99,
-      image:
-        "https://images.pexels.com/photos/8007412/pexels-photo-8007412.jpeg?auto=compress&cs=tinysrgb&w=800",
-      category: "Basketball",
-      colors: 6,
-    },
-    {
-      id: "3",
-      name: "Elite Training Shorts",
-      price: 54.99,
-      discountPrice: 39.99,
-      image:
-        "https://images.pexels.com/photos/7859406/pexels-photo-7859406.jpeg?auto=compress&cs=tinysrgb&w=800",
-      category: "Training",
-      colors: 3,
-    },
-    {
-      id: "4",
-      name: "Professional Football Cleats",
-      price: 199.99,
-      image:
-        "https://images.pexels.com/photos/1263349/pexels-photo-1263349.jpeg?auto=compress&cs=tinysrgb&w=800",
-      category: "Football",
-      isNew: true,
-      colors: 5,
-    },
-  ];
-
-  const categories = [
-    {
-      name: "Running",
-      image:
-        "https://images.pexels.com/photos/2803158/pexels-photo-2803158.jpeg?auto=compress&cs=tinysrgb&w=1200",
-      description: "Chase your goals",
-    },
-    {
-      name: "Basketball",
-      image:
-        "https://images.pexels.com/photos/1080882/pexels-photo-1080882.jpeg?auto=compress&cs=tinysrgb&w=1200",
-      description: "Own the court",
-    },
-    {
-      name: "Training",
-      image:
-        "https://images.pexels.com/photos/416778/pexels-photo-416778.jpeg?auto=compress&cs=tinysrgb&w=1200",
-      description: "Build your strength",
-    },
-  ];
+  const { topProducts, products, sports } = useProduct();
 
   return (
     <div className="min-h-screen">
@@ -101,13 +43,13 @@ export default function Home() {
       </section>
 
       {/* FEATURED PRODUCTS */}
-      <section className="max-w-7xl mx-auto px-6 py-16">
+      <section className="max-w-7xl mx-auto px-6 py-16 relative">
         <div className="flex items-center justify-between mb-8">
           <div>
             <div className="flex items-center space-x-2 mb-2">
               <TrendingUp className="w-5 h-5" />
               <span className="text-sm font-semibold uppercase tracking-wider">
-                Trending
+                Top Rated
               </span>
             </div>
             <h2 className="text-3xl md:text-4xl font-bold">
@@ -123,14 +65,75 @@ export default function Home() {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {featuredProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onViewDetails={() => navigate(`/product/${product.id}`)}
-            />
-          ))}
+        {/* Swiper wrapper with extra padding for arrows */}
+        <div className="relative">
+          <Swiper
+            modules={[Navigation]}
+            navigation={{
+              nextEl: ".custom-swiper-next",
+              prevEl: ".custom-swiper-prev",
+            }}
+            spaceBetween={24}
+            slidesPerView={1}
+            breakpoints={{
+              640: { slidesPerView: 2 },
+              1024: { slidesPerView: 4 },
+            }}
+            className="!pb-10"
+          >
+            {topProducts.slice(0, 10).map((product) => (
+              <SwiperSlide key={product.product_id}>
+                <ProductCard
+                  product={{
+                    id: String(product.product_id),
+                    name: product.product_name,
+                    price: Number(product.product_price),
+                    image: product.product_image,
+                    rating: product.product_rating,
+                    description: product.product_description,
+                    sport: product.Team?.Tournament?.Sport?.sport_name, // lấy sport_name từ nested object
+                  }}
+                  onViewDetails={() =>
+                    navigate(`/product/${product.product_id}`)
+                  }
+                />
+              </SwiperSlide>
+            ))}
+          </Swiper>
+
+          {/* Custom navigation arrows OUTSIDE swiper area */}
+          <button
+            className="custom-swiper-prev absolute left-[-36px] top-1/2 -translate-y-1/2 z-20 bg-black shadow-lg rounded-full w-12 h-12 flex items-center justify-center text-gray-500 hover:bg-yellow-100 transition"
+            tabIndex={0}
+            aria-label="Previous"
+            type="button"
+          >
+            <svg
+              width="24"
+              height="24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
+          <button
+            className="custom-swiper-next absolute right-[-36px] top-1/2 -translate-y-1/2 z-20 bg-black shadow-lg rounded-full w-12 h-12 flex items-center justify-center text-gray-500 hover:bg-yellow-100 transition"
+            tabIndex={0}
+            aria-label="Next"
+            type="button"
+          >
+            <svg
+              width="24"
+              height="24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M9 6l6 6-6 6" />
+            </svg>
+          </button>
         </div>
       </section>
 
@@ -138,24 +141,21 @@ export default function Home() {
       <section className="max-w-7xl mx-auto px-6 py-16">
         <h2 className="text-3xl md:text-4xl font-bold mb-12">Shop by Sport</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {categories.map((category) => (
+          {sports.map((sport) => (
             <div
-              key={category.name}
+              key={sport.sport_id}
               className="group relative h-96 overflow-hidden cursor-pointer"
-              onClick={() => navigate("/products")}
+              onClick={() => navigate(`/products?sport=${sport.sport_id}`)}
             >
               <img
-                src={category.image}
-                alt={category.name}
+                src={sport.sport_icon}
+                alt={sport.sport_name}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
               <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col justify-end p-8">
                 <h3 className="text-3xl font-bold text-white mb-2">
-                  {category.name}
+                  {sport.sport_name}
                 </h3>
-                <p className="text-lg text-white mb-4">
-                  {category.description}
-                </p>
                 <div className="inline-flex items-center space-x-2 text-white font-medium group-hover:underline">
                   <span>Explore</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />

@@ -21,9 +21,9 @@ export default function Header({
 
   const handleUserClick = () => {
     if (isAuthenticated) {
-      navigate("/profile"); // ✅ vào trang profile nếu đã login
+      navigate("/profile"); // vào trang profile nếu đã login
     } else {
-      navigate("/login"); // ✅ nếu chưa đăng nhập thì vào trang login
+      navigate("/login"); // nếu chưa đăng nhập thì vào trang login
     }
   };
 
@@ -93,7 +93,7 @@ export default function Header({
               )}
             </button>
 
-            {/* ✅ User icon */}
+            {/* User icon */}
             <div className="relative group">
               <button
                 className="p-2 hover:bg-gray-100 rounded-full"

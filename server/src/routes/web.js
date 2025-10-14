@@ -11,7 +11,12 @@ import multer from "multer";
 import { uploadAvatar } from "../controllers/uploadController.js";
 // import verifyToken nếu bạn đã có
 import { verifyToken } from "../middlewares/authMiddleware.js";
-
+//product
+import {
+  getAllProducts,
+  getTopRatedProducts,
+} from "../controllers/productController.js";
+import { getAllSports } from "../controllers/sportController.js";
 const router = express.Router();
 const upload = multer({ dest: "uploads/" });
 
@@ -34,6 +39,14 @@ const initWebRoutes = (app) => {
     upload.single("avatar"), // phải có dòng này!
     uploadAvatar
   );
+
+  //product APIs
+  router.get("/api/products", getAllProducts);
+  router.get("/api/products/top-rated", getTopRatedProducts);
+
+  //sport APIs
+
+  router.get("/api/sports", getAllSports);
 
   return app.use("/", router);
 };
