@@ -2,6 +2,7 @@ import {
   getAllProducts as getAllProductsService,
   getTopRatedProducts as getTopRatedProductsService,
   getFilteredProducts as getFilteredProductsService,
+  getProductBySport as getProductBySportService,
 } from "../services/productService.js";
 
 const getAllProducts = async (req, res) => {
@@ -44,4 +45,23 @@ const getFilteredProducts = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-export { getAllProducts, getTopRatedProducts, getFilteredProducts };
+
+const getProductBySport = async (req, res) => {
+  try {
+    const { sport_id } = req.params;
+    const result = await getProductBySportService(sport_id);
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+    res.status(200).json(result.attributes);
+  } catch (err) {
+    console.log("Error in getProductBySport: ", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+export {
+  getAllProducts,
+  getTopRatedProducts,
+  getFilteredProducts,
+  getProductBySport,
+};

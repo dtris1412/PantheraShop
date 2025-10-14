@@ -178,6 +178,10 @@ const getProductBySport = async (sport_id) => {
       },
     ],
   });
+  if (!products || products.length === 0) {
+    return { success: false, message: "No products found for this Sport ID" };
+  }
+  return { success: true, attributes: products.map((p) => p.sport_id) };
 };
 
 export {
@@ -185,4 +189,5 @@ export {
   getProductById,
   getTopRatedProducts,
   getFilteredProducts,
+  getProductBySport,
 };

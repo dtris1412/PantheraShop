@@ -3,13 +3,14 @@ import SearchProduct from "../components/SearchProduct";
 import ProductSortBar from "../components/ProductSortBar";
 import ProductGrid from "../components/ProductGrid";
 import { useState, useMemo, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useProduct } from "../contexts/productContext";
 
 export default function Products() {
   const navigate = useNavigate();
-  const { products } = useProduct();
+  const { products, sports } = useProduct();
   const topRef = useRef<HTMLDivElement>(null);
+  const [searchParams] = useSearchParams();
 
   console.log(products[0]);
 
@@ -120,6 +121,15 @@ export default function Products() {
     }
   }, [currentPage]);
 
+  useEffect(() => {
+    const sportId = searchParams.get("sport");
+    if (sportId && sports.length > 0) {
+      // Tìm tên môn thể thao theo id
+      const sport = sports.find((s) => String(s.sport_id) === String(sportId));
+      if (sport) setSelectedSport(sport.sport_name);
+    }
+  }, [searchParams, sports]);
+
   return (
     <div className="min-h-screen pt-24 pb-12 bg-white">
       <div className="max-w-7xl mx-auto px-6">
@@ -133,23 +143,24 @@ export default function Products() {
         <div className="flex gap-8">
           {/* Sidebar filter bên trái */}
           <aside className="w-64 hidden md:block">
-            <ProductFilterBar
-              categories={categories}
-              selectedCategory={selectedCategory}
-              setSelectedCategory={setSelectedCategory}
-              selectedSport={selectedSport}
-              setSelectedSport={setSelectedSport}
-              selectedTournament={selectedTournament}
-              setSelectedTournament={setSelectedTournament}
-              selectedTeam={selectedTeam}
-              setSelectedTeam={setSelectedTeam}
-            />
-            {/* Bạn có thể thêm filter theo giá, sport, team... ở đây */}
+            <div className="sticky top-28">
+              <ProductFilterBar
+                categories={categories}
+                selectedCategory={selectedCategory}
+                setSelectedCategory={setSelectedCategory}
+                selectedSport={selectedSport}
+                setSelectedSport={setSelectedSport}
+                selectedTournament={selectedTournament}
+                setSelectedTournament={setSelectedTournament}
+                selectedTeam={selectedTeam}
+                setSelectedTeam={setSelectedTeam}
+              />
+            </div>
           </aside>
           {/* Grid sản phẩm bên phải */}
           <main className="flex-1">
             <div ref={topRef} />
-            {/* Thanh tìm kiếm và sort bar chỉ trong grid */}
+            {/* Thanh tìm kiếm và sort bar */}
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
               <div className="flex-1">
                 <SearchProduct
@@ -157,6 +168,7 @@ export default function Products() {
                   onSelect={(product) =>
                     navigate(`/product/${product.product_id}`)
                   }
+                  setQuery={setSearchQuery}
                 />
               </div>
               <div>
@@ -166,6 +178,7 @@ export default function Products() {
                 />
               </div>
             </div>
+            {/* Grid sản phẩm không có khung, không bo góc, không scroll riêng */}
             <ProductGrid
               products={paginatedProducts}
               onViewDetails={(id) => navigate(`/product/${id}`)}
@@ -185,12 +198,12 @@ export default function Products() {
                   <button
                     key={i + 1}
                     className={`w-10 h-10 flex items-center justify-center rounded-full border transition font-semibold shadow
-                      ${
-                        currentPage === i + 1
-                          ? "bg-black text-white border-black scale-110"
-                          : "bg-white text-gray-800 border-gray-300 hover:bg-gray-100"
-                      }
-                    `}
+                    ${
+                      currentPage === i + 1
+                        ? "bg-black text-white border-black scale-110"
+                        : "bg-white text-gray-800 border-gray-300 hover:bg-gray-100"
+                    }
+                  `}
                     onClick={() => setCurrentPage(i + 1)}
                     aria-current={currentPage === i + 1 ? "page" : undefined}
                   >

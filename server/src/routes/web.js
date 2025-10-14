@@ -16,6 +16,7 @@ import {
   getAllProducts,
   getTopRatedProducts,
   getFilteredProducts,
+  getProductBySport,
 } from "../controllers/productController.js";
 import { getAllSports } from "../controllers/sportController.js";
 const router = express.Router();
@@ -45,6 +46,8 @@ const initWebRoutes = (app) => {
   router.get("/api/products", getAllProducts);
   router.get("/api/products/top-rated", getTopRatedProducts);
   router.post("/api/products/filter", getFilteredProducts);
+
+  router.get("/api/products/sport/:sport_id", getProductBySport);
 
   //sport APIs
 
