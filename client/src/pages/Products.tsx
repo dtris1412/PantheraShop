@@ -185,7 +185,7 @@ export default function Products() {
             <ProductCard
               key={product.id}
               product={product}
-              // ✅ dùng navigate để chuyển sang chi tiết sản phẩm
+              //dùng navigate để chuyển sang chi tiết sản phẩm
               onViewDetails={(id) => navigate(`/product/${id}`)}
             />
           ))}
