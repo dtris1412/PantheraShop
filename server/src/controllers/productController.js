@@ -1,6 +1,7 @@
 import {
   getAllProducts as getAllProductsService,
   getTopRatedProducts as getTopRatedProductsService,
+  getFilteredProducts as getFilteredProductsService,
 } from "../services/productService.js";
 
 const getAllProducts = async (req, res) => {
@@ -29,4 +30,18 @@ const getTopRatedProducts = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-export { getAllProducts, getTopRatedProducts };
+
+const getFilteredProducts = async (req, res) => {
+  try {
+    const filters = req.body;
+    const result = await getFilteredProductsService(filters);
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+    res.status(200).json(result.products);
+  } catch (err) {
+    console.log("Error in getFilteredProducts: ", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+export { getAllProducts, getTopRatedProducts, getFilteredProducts };

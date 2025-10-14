@@ -6,7 +6,7 @@ export default function HeroSection() {
   return (
     <section className="relative h-screen bg-gray-100">
       <img
-        src="/assets/img/banner/banner1.png"
+        src="https://www.hdwallpapers.in/download/nike_shoe_in_background_of_banner_hd_nike-HD.jpg"
         alt="Hero"
         className="w-full h-full object-cover"
       />

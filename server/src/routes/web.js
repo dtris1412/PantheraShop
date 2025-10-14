@@ -15,6 +15,7 @@ import { verifyToken } from "../middlewares/authMiddleware.js";
 import {
   getAllProducts,
   getTopRatedProducts,
+  getFilteredProducts,
 } from "../controllers/productController.js";
 import { getAllSports } from "../controllers/sportController.js";
 const router = express.Router();
@@ -43,6 +44,7 @@ const initWebRoutes = (app) => {
   //product APIs
   router.get("/api/products", getAllProducts);
   router.get("/api/products/top-rated", getTopRatedProducts);
+  router.post("/api/products/filter", getFilteredProducts);
 
   //sport APIs
 
