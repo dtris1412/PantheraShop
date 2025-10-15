@@ -35,6 +35,10 @@ const getProductById = async (product_id) => {
     where: { product_id },
     include: [
       {
+        model: db.Category,
+        attributes: ["category_id", "category_name"],
+      },
+      {
         model: db.Team,
         include: [
           {
@@ -47,6 +51,9 @@ const getProductById = async (product_id) => {
             ],
           },
         ],
+      },
+      {
+        model: db.Variant,
       },
     ],
   });

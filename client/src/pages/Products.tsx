@@ -3,7 +3,7 @@ import SearchProduct from "../components/SearchProduct";
 import ProductSortBar from "../components/ProductSortBar";
 import ProductGrid from "../components/ProductGrid";
 import { useState, useMemo, useEffect, useRef } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useParams } from "react-router-dom";
 import { useProduct } from "../contexts/productContext";
 
 export default function Products() {
@@ -11,6 +11,7 @@ export default function Products() {
   const { products, sports } = useProduct();
   const topRef = useRef<HTMLDivElement>(null);
   const [searchParams] = useSearchParams();
+  const { id } = useParams<{ id: string }>();
 
   console.log(products[0]);
 

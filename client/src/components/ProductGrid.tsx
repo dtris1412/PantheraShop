@@ -33,7 +33,7 @@ export default function ProductGrid({
             description: product.product_description,
             sport: product.Team?.Tournament?.Sport?.sport_name,
           }}
-          onViewDetails={() => onViewDetails(String(product.product_id))}
+          onViewDetails={onViewDetails}
         />
       ))}
     </div>
