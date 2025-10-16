@@ -117,28 +117,30 @@ export default function ProductDetails() {
   console.log("variants", variants);
 
   // Tìm variant theo lựa chọn
-  const selectedVariant = variants.find((v: any) => {
+  const selectedVariant = (() => {
     if (isClothing) {
-      return v.variant_size === selectedSize;
+      return variants.find((v: any) => v.variant_size === selectedSize);
     }
     if (isShoe) {
-      return (
-        v.variant_size === selectedSize &&
-        v.variant_color?.toLowerCase() ===
-          SHOE_COLORS[selectedColor].name.toLowerCase()
+      return variants.find(
+        (v: any) =>
+          v.variant_size === selectedSize &&
+          v.variant_color?.toLowerCase() ===
+            SHOE_COLORS[selectedColor].name.toLowerCase()
       );
     }
     if (isGear) {
-      return (
-        v.variant_color?.toLowerCase() ===
-        SHOE_COLORS[selectedColor].name.toLowerCase()
+      return variants.find(
+        (v: any) =>
+          v.variant_color?.toLowerCase() ===
+          SHOE_COLORS[selectedColor].name.toLowerCase()
       );
     }
     if (isBall) {
-      return true;
+      return variants[0];
     }
-    return false;
-  });
+    return undefined;
+  })();
 
   const handleAddToCart = async () => {
     const token = localStorage.getItem("token");
@@ -310,27 +312,32 @@ export default function ProductDetails() {
                     </span>
                   </div>
                 )}
-                {/* Giày hoặc phụ kiện: chọn size và màu mới hiển thị số lượng */}
-                {(isShoe || isGear) &&
-                  selectedSize &&
-                  SHOE_COLORS[selectedColor] &&
-                  selectedVariant && (
-                    <div className="mt-2 text-sm text-gray-600">
-                      Số lượng còn lại:{" "}
-                      <span className="font-semibold">
-                        {selectedVariant.variant_stock}
-                      </span>
-                    </div>
-                  )}
-                {/* Bóng: luôn hiển thị số lượng của variant đầu tiên */}
-                {isBall && variants.length > 0 && (
+
+                {/* Giày: chọn size và màu mới hiển thị số lượng */}
+                {isShoe && selectedSize && selectedVariant && (
                   <div className="mt-2 text-sm text-gray-600">
                     Số lượng còn lại:{" "}
                     <span className="font-semibold">
-                      {variants[0].variant_stock}
+                      {selectedVariant.variant_stock}
                     </span>
                   </div>
                 )}
+              </div>
+            )}
+            {isBall && variants.length > 0 && (
+              <div className="mt-2 text-sm text-gray-600">
+                Số lượng còn lại:{" "}
+                <span className="font-semibold">
+                  {variants[0].variant_stock}
+                </span>
+              </div>
+            )}
+            {isGear && selectedVariant && (
+              <div className="mt-2 text-sm text-gray-600">
+                Số lượng còn lại:{" "}
+                <span className="font-semibold">
+                  {selectedVariant.variant_stock}
+                </span>
               </div>
             )}
             {/* Hiển thị chọn màu cho giày và phụ kiện */}
