@@ -25,6 +25,7 @@ export default function Cart({ onNavigate }: CartProps) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [cartId, setCartId] = useState<string | null>(null);
+  const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null); // <--- Thêm state này
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -79,10 +80,16 @@ export default function Cart({ onNavigate }: CartProps) {
     }
   }, []);
 
+  // Sửa hàm updateQuantity:
   const updateQuantity = async (id: string, change: number) => {
     const item = cartItems.find((i) => i.id === id);
     if (!item) return;
-    const newQuantity = Math.max(1, item.quantity + change);
+    const newQuantity = item.quantity + change;
+
+    if (newQuantity <= 0) {
+      setConfirmRemoveId(id); // Hiện dialog xác nhận xóa
+      return;
+    }
 
     if (isLoggedIn && cartId) {
       const token = localStorage.getItem("token");
@@ -301,6 +308,54 @@ export default function Cart({ onNavigate }: CartProps) {
                 </button>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Dialog xác nhận xóa */}
+        {confirmRemoveId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="bg-white border border-black rounded-lg shadow-lg p-7 w-[340px] animate-fade-in">
+              <div className="flex flex-col items-center">
+                <div className="w-11 h-11 flex items-center justify-center rounded-full bg-gray-100 mb-4">
+                  <Trash2 className="w-6 h-6 text-black" />
+                </div>
+                <h3 className="font-bold text-lg mb-2 text-black text-center">
+                  Xác nhận xóa sản phẩm?
+                </h3>
+                <p className="text-gray-700 text-center mb-6">
+                  Sản phẩm sẽ bị xóa khỏi giỏ hàng của bạn. Bạn chắc chắn muốn
+                  tiếp tục?
+                </p>
+                <div className="flex gap-3 w-full">
+                  <button
+                    onClick={() => setConfirmRemoveId(null)}
+                    className="flex-1 py-2 rounded-lg border border-black text-black font-semibold hover:bg-gray-100 transition"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    onClick={() => {
+                      removeItem(confirmRemoveId);
+                      setConfirmRemoveId(null);
+                    }}
+                    className="flex-1 py-2 rounded-lg bg-black text-white font-semibold hover:bg-gray-900 transition"
+                  >
+                    Xóa
+                  </button>
+                </div>
+              </div>
+            </div>
+            <style>
+              {`
+                .animate-fade-in {
+                  animation: fadeInModal 0.18s cubic-bezier(.4,0,.2,1);
+                }
+                @keyframes fadeInModal {
+                  from { opacity: 0; transform: translateY(24px);}
+                  to { opacity: 1; transform: none;}
+                }
+              `}
+            </style>
           </div>
         )}
       </div>
