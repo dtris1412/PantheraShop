@@ -55,14 +55,7 @@ function AppContent() {
             }
           />
 
-          <Route
-            path="/cart"
-            element={
-              <ProtectedRoute>
-                <Cart onNavigate={navigate} />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/cart" element={<Cart onNavigate={navigate} />} />
           <Route
             path="/orders"
             element={
