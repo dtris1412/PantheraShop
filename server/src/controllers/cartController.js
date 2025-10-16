@@ -5,6 +5,7 @@ import {
   addItemToCart as addItemToCartService,
   removeItemFromCart as removeItemFromCartService,
   updateItemQuantity as updateItemQuantityService,
+  changeVariantInCart as changeVariantInCartService,
 } from "../services/cartService.js";
 
 const getCartByUserId = async (req, res) => {
@@ -108,10 +109,36 @@ const updateItemQuantity = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+const changeVariantInCart = async (req, res) => {
+  try {
+    const user_id = req.user.user_id;
+    const { cart_id, old_variant_id, new_variant_id, quantity } = req.body;
+    const cart = await getCartByUserIdService(user_id);
+    if (!cart || cart.cart_id != cart_id) {
+      return res.status(404).json({ message: "Cart not found" });
+    }
+
+    const result = await changeVariantInCartService(
+      cart_id,
+      old_variant_id,
+      new_variant_id,
+      quantity
+    );
+    if (result && result.success === false) {
+      return res.status(400).json(result);
+    }
+    res.status(200).json(result);
+  } catch (err) {
+    console.error("Error changing variant in cart: ", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 export {
   getCartByUserId,
   getCartItems,
   addItemToCart,
   removeItemFromCart,
+  changeVariantInCart,
   updateItemQuantity,
 };

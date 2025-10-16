@@ -202,14 +202,15 @@ export default function ProductDetails() {
         cart[existingIndex].quantity += 1;
       } else {
         cart.push({
-          id: selectedVariant.variant_id, // luôn có id
-          variant_id: selectedVariant.variant_id, // nếu muốn giữ
+          id: selectedVariant.variant_id,
+          product_id: product.product_id, // <-- thêm dòng này!
+          variant_id: selectedVariant.variant_id,
           quantity: 1,
           name: product.product_name,
-          price: variantToAdd.variant_price || product.product_price,
+          price: product.product_price,
           image: product.product_image,
-          size: variantToAdd.variant_size,
-          color: variantToAdd.variant_color,
+          size: selectedVariant.variant_size,
+          color: selectedVariant.variant_color,
         });
       }
       localStorage.setItem("cart", JSON.stringify(cart));

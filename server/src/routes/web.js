@@ -27,6 +27,7 @@ import {
   addItemToCart,
   removeItemFromCart,
   updateItemQuantity,
+  changeVariantInCart,
 } from "../controllers/cartController.js";
 
 const router = express.Router();
@@ -69,6 +70,7 @@ const initWebRoutes = (app) => {
   router.get("/api/cart/items/:cart_id", verifyToken, getCartItems);
   router.post("/api/cart/add", verifyToken, addItemToCart);
   router.put("/api/cart/update", verifyToken, updateItemQuantity);
+  router.put("/api/cart/change-variant", verifyToken, changeVariantInCart);
   router.delete(
     "/api/cart/remove/:cart_id/:variant_id",
     verifyToken,

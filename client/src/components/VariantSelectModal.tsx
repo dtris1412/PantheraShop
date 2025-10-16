@@ -2,19 +2,21 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 
 interface VariantOption {
-  id: number | string;
-  size?: string;
-  color?: string;
-  stock?: number;
+  variant_id: number;
+  variant_size: string | null;
+  variant_color: string | null;
+  variant_stock: number;
 }
 
 interface VariantSelectModalProps {
-  productId: number | string;
+  productId: number;
   currentSize?: string;
   currentColor?: string;
   onClose: () => void;
-  onUpdate?: (variant: VariantOption) => void;
+  onUpdate: (variant: VariantOption) => void;
 }
+
+const ACCESSORY_SIZES = ["M", "L", "XL"];
 
 export default function VariantSelectModal({
   productId,
@@ -26,75 +28,93 @@ export default function VariantSelectModal({
   const [loading, setLoading] = useState(true);
   const [product, setProduct] = useState<any>(null);
   const [variants, setVariants] = useState<VariantOption[]>([]);
-  const [sizes, setSizes] = useState<string[]>([]);
-  const [colors, setColors] = useState<string[]>([]);
   const [selectedSize, setSelectedSize] = useState(currentSize || "");
   const [selectedColor, setSelectedColor] = useState(currentColor || "");
   const [selectedVariant, setSelectedVariant] = useState<VariantOption | null>(
     null
   );
 
-  // Fetch chi tiết sản phẩm khi mở modal
   useEffect(() => {
     setLoading(true);
     fetch(`http://localhost:8080/api/products/${productId}`)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return res.json();
+      })
       .then((data) => {
-        setProduct(data.product);
-        // Map variants
-        const mappedVariants = (data.product.Variants || []).map((v: any) => ({
-          id: v.variant_id,
-          size: v.variant_size,
-          color: v.variant_color,
-          stock: v.variant_stock,
-        }));
-        setVariants(mappedVariants);
-        // Lấy danh sách size, color duy nhất
-        const sizes = [
-          ...new Set(
-            mappedVariants
-              .map((v: VariantOption) => v.size as string)
-              .filter(Boolean)
-          ),
-        ];
-        const colors = [
-          ...new Set(
-            mappedVariants
-              .map((v: VariantOption) => v.color as string)
-              .filter(Boolean)
-          ),
-        ];
-        setSizes([
-          ...new Set(
-            mappedVariants
-              .map((v: VariantOption) => v.size as string)
-              .filter(Boolean)
-          ),
-        ] as string[]);
-
-        setColors([
-          ...new Set(
-            mappedVariants
-              .map((v: VariantOption) => v.color as string)
-              .filter(Boolean)
-          ),
-        ] as string[]);
+        // Nếu data.product không tồn tại, dùng luôn data
+        const prod = data.product ? data.product : data;
+        console.log("API DATA:", prod);
+        setProduct(prod);
+        setVariants(prod.Variants || []);
         setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Lỗi khi fetch sản phẩm:", err);
+        setLoading(false);
+        setProduct(null);
       });
   }, [productId]);
 
-  // Tìm variant phù hợp khi chọn size/màu
-  useEffect(() => {
-    if (!variants.length) return;
-    const found = variants.find(
-      (v) =>
-        (sizes.length > 0 ? v.size === selectedSize : true) &&
-        (colors.length > 0 ? v.color === selectedColor : true)
-    );
-    setSelectedVariant(found || null);
-  }, [selectedSize, selectedColor, variants, sizes, colors]);
+  // Xác định loại sản phẩm
+  const categoryName = product?.Category?.category_name?.toLowerCase() || "";
+  console.log("categoryName:", categoryName);
+  const isJersey = categoryName.includes("áo đấu");
+  const isShoe = categoryName.includes("giày");
+  const isBall = categoryName.includes("bóng");
+  const isAccessory = categoryName.includes("phụ kiện");
 
-  if (loading || !product) {
+  // Lấy danh sách size và màu duy nhất
+  let sizes: string[] = [];
+  let colors: string[] = [];
+
+  if (isAccessory) {
+    sizes = ACCESSORY_SIZES;
+  } else if (isJersey || isShoe) {
+    sizes = [
+      ...new Set(
+        variants.map((v) => v.variant_size).filter((s): s is string => !!s)
+      ),
+    ];
+  }
+
+  if (isShoe) {
+    colors = [
+      ...new Set(
+        variants.map((v) => v.variant_color).filter((c): c is string => !!c)
+      ),
+    ];
+  }
+
+  console.log("sizes:", sizes);
+  console.log("colors:", colors);
+  console.log("variants:", variants);
+
+  // Tìm variant phù hợp
+  useEffect(() => {
+    let found: VariantOption | undefined;
+    if (isJersey || isAccessory) {
+      found = variants.find((v) => v.variant_size === selectedSize);
+    } else if (isShoe) {
+      found = variants.find(
+        (v) =>
+          v.variant_size === selectedSize && v.variant_color === selectedColor
+      );
+    } else if (isBall) {
+      found = variants[0];
+    }
+    setSelectedVariant(found || null);
+  }, [
+    selectedSize,
+    selectedColor,
+    variants,
+    isJersey,
+    isShoe,
+    isAccessory,
+    isBall,
+  ]);
+
+  if (loading) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
         <div className="bg-white rounded-xl shadow-2xl p-12 text-xl font-semibold">
@@ -103,6 +123,24 @@ export default function VariantSelectModal({
       </div>
     );
   }
+
+  if (!product) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="bg-white rounded-xl shadow-2xl p-12 text-xl font-semibold text-red-600">
+          Không thể tải dữ liệu sản phẩm. Vui lòng thử lại!
+        </div>
+      </div>
+    );
+  }
+
+  // if (!loading && product) {
+  //   return (
+  //     <div>
+  //       <pre>{JSON.stringify(product, null, 2)}</pre>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -129,22 +167,29 @@ export default function VariantSelectModal({
           <div className="text-gray-700 mb-6 text-lg font-semibold">
             {Number(product.product_price).toLocaleString("vi-VN")}₫
           </div>
-          {/* Chọn size nếu có */}
-          {sizes.length > 0 && (
+          {/* Chọn size cho áo đấu, giày, phụ kiện */}
+          {(isJersey || isShoe || isAccessory) && (
             <div className="mb-6">
               <div className="mb-2 font-semibold text-base">Chọn kích cỡ</div>
               <div className="grid grid-cols-3 gap-3">
                 {sizes.map((size) => {
-                  const variant = variants.find(
-                    (v) =>
-                      v.size === size &&
-                      (colors.length > 0 ? v.color === selectedColor : true)
-                  );
-                  const outOfStock = !variant || variant.stock === 0;
+                  let outOfStock = false;
+                  if (isJersey || isAccessory) {
+                    outOfStock = !variants.find(
+                      (v) => v.variant_size === size && v.variant_stock > 0
+                    );
+                  } else if (isShoe) {
+                    outOfStock = !variants.find(
+                      (v) =>
+                        v.variant_size === size &&
+                        v.variant_color === selectedColor &&
+                        v.variant_stock > 0
+                    );
+                  }
                   return (
                     <button
                       key={size}
-                      onClick={() => !outOfStock && setSelectedSize(size)}
+                      onClick={() => setSelectedSize(size)}
                       className={`py-3 rounded-md border text-base font-medium transition-colors ${
                         selectedSize === size
                           ? "border-black bg-black text-white"
@@ -159,22 +204,22 @@ export default function VariantSelectModal({
               </div>
             </div>
           )}
-          {/* Chọn màu nếu có */}
-          {colors.length > 0 && (
+          {/* Chọn màu cho giày */}
+          {isShoe && (
             <div className="mb-6">
               <div className="mb-2 font-semibold text-base">Chọn màu</div>
               <div className="flex gap-3">
                 {colors.map((color) => {
-                  const variant = variants.find(
+                  const outOfStock = !variants.find(
                     (v) =>
-                      v.color === color &&
-                      (sizes.length > 0 ? v.size === selectedSize : true)
+                      v.variant_color === color &&
+                      v.variant_size === selectedSize &&
+                      v.variant_stock > 0
                   );
-                  const outOfStock = !variant || variant.stock === 0;
                   return (
                     <button
                       key={color}
-                      onClick={() => !outOfStock && setSelectedColor(color)}
+                      onClick={() => setSelectedColor(color)}
                       className={`px-6 py-3 rounded-md border text-base font-medium transition-colors ${
                         selectedColor === color
                           ? "border-black bg-black text-white"
@@ -193,7 +238,9 @@ export default function VariantSelectModal({
           {selectedVariant && (
             <div className="mb-6 text-gray-600 text-sm">
               Số lượng còn lại:{" "}
-              <span className="font-semibold">{selectedVariant.stock}</span>
+              <span className="font-semibold">
+                {selectedVariant.variant_stock}
+              </span>
             </div>
           )}
           <div className="mt-auto flex flex-col gap-2">
@@ -204,9 +251,7 @@ export default function VariantSelectModal({
                   : "bg-gray-200 text-gray-400 cursor-not-allowed"
               }`}
               disabled={!selectedVariant}
-              onClick={() =>
-                selectedVariant && onUpdate && onUpdate(selectedVariant)
-              }
+              onClick={() => selectedVariant && onUpdate(selectedVariant)}
             >
               Cập nhật sản phẩm
             </button>

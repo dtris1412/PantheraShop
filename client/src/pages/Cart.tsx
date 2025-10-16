@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Minus, Plus, Trash2, ArrowRight } from "lucide-react";
 import { showToast } from "../components/Toast";
+import VariantSelectModal from "../components/VariantSelectModal"; // Import component ở đây
 
 interface CartProps {
   onNavigate: (page: string) => void;
@@ -8,6 +9,7 @@ interface CartProps {
 
 interface CartItem {
   id: string; // variant_id
+  product_id: number; // <-- thêm dòng này
   name: string;
   price: number;
   size: string;
@@ -26,6 +28,7 @@ export default function Cart({ onNavigate }: CartProps) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [cartId, setCartId] = useState<string | null>(null);
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null); // <--- Thêm state này
+  const [editingItem, setEditingItem] = useState<CartItem | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -60,6 +63,7 @@ export default function Cart({ onNavigate }: CartProps) {
                 const normalized = Array.isArray(items)
                   ? items.map((item: any) => ({
                       id: item.variant_id,
+                      product_id: item.Variant?.product_id, // <-- thêm dòng này
                       name: item.Variant?.Product?.product_name || "",
                       price: Number(item.Variant?.Product?.product_price) || 0,
                       image: item.Variant?.Product?.product_image || "",
@@ -117,6 +121,7 @@ export default function Cart({ onNavigate }: CartProps) {
         const normalized = Array.isArray(items)
           ? items.map((item: any) => ({
               id: item.variant_id,
+              product_id: item.Variant?.product_id, // <-- add product_id here
               name: item.Variant?.Product?.product_name || "",
               price: Number(item.Variant?.Product?.product_price) || 0,
               image: item.Variant?.Product?.product_image || "",
@@ -164,6 +169,7 @@ export default function Cart({ onNavigate }: CartProps) {
         const normalized = Array.isArray(items)
           ? items.map((item: any) => ({
               id: item.variant_id,
+              product_id: item.Variant?.product_id,
               name: item.Variant?.Product?.product_name || "",
               price: Number(item.Variant?.Product?.product_price) || 0,
               image: item.Variant?.Product?.product_image || "",
@@ -185,6 +191,138 @@ export default function Cart({ onNavigate }: CartProps) {
         return newItems;
       });
     }
+  };
+
+  const handleChangeVariant = async (
+    id: string,
+    variantId: string,
+    quantity: number,
+    size: string,
+    color: string
+  ) => {
+    if (isLoggedIn && cartId) {
+      const token = localStorage.getItem("token");
+      try {
+        const res = await fetch(`http://localhost:8080/api/cart/update`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            cart_id: cartId,
+            variant_id: variantId,
+            quantity,
+          }),
+        });
+        if (!res.ok) throw new Error("Cập nhật thất bại");
+        const itemsRes = await fetch(
+          `http://localhost:8080/api/cart/items/${cartId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        const items = await itemsRes.json();
+        const normalized = Array.isArray(items)
+          ? items.map((item: any) => ({
+              id: item.variant_id,
+              product_id: item.Variant?.product_id, // <-- add this line
+              name: item.Variant?.Product?.product_name || "",
+              price: Number(item.Variant?.Product?.product_price) || 0,
+              image: item.Variant?.Product?.product_image || "",
+              size: item.Variant?.variant_size || "",
+              color: item.Variant?.variant_color || "",
+              quantity: item.quantity,
+            }))
+          : [];
+        setCartItems(normalized);
+        showToast("Đã cập nhật sản phẩm thành công!", "success");
+      } catch (err) {
+        showToast("Cập nhật sản phẩm thất bại!", "error");
+      }
+    } else {
+      setCartItems((items) => {
+        const newItems = items.map((item) =>
+          item.id === id ? { ...item, id: variantId, size, color } : item
+        );
+        localStorage.setItem("cart", JSON.stringify(newItems));
+        return newItems;
+      });
+    }
+  };
+
+  // Hàm đổi variant trong giỏ hàng
+  const updateCartVariant = async (variant: {
+    variant_id: string | number;
+    variant_size?: string;
+    variant_color?: string;
+  }) => {
+    if (!editingItem) return;
+    if (isLoggedIn && cartId) {
+      const token = localStorage.getItem("token");
+      try {
+        // Gọi API đổi variant (cần backend hỗ trợ endpoint này, ví dụ: /api/cart/change-variant)
+        const res = await fetch(
+          `http://localhost:8080/api/cart/change-variant`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              cart_id: cartId,
+              old_variant_id: editingItem.id,
+              new_variant_id: variant.variant_id,
+              quantity: editingItem.quantity,
+            }),
+          }
+        );
+        if (!res.ok) throw new Error("Cập nhật thất bại");
+        // Lấy lại cart mới
+        const itemsRes = await fetch(
+          `http://localhost:8080/api/cart/items/${cartId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        const items = await itemsRes.json();
+        const normalized = Array.isArray(items)
+          ? items.map((item: any) => ({
+              id: item.variant_id,
+              product_id: item.Variant?.product_id,
+              name: item.Variant?.Product?.product_name || "",
+              price: Number(item.Variant?.Product?.product_price) || 0,
+              image: item.Variant?.Product?.product_image || "",
+              size: item.Variant?.variant_size || "",
+              color: item.Variant?.variant_color || "",
+              quantity: item.quantity,
+            }))
+          : [];
+        setCartItems(normalized);
+        showToast("Đã cập nhật sản phẩm thành công!", "success");
+      } catch (err) {
+        showToast("Cập nhật sản phẩm thất bại!", "error");
+      }
+    } else {
+      // Guest: đổi variant trong localStorage
+      setCartItems((items) => {
+        const newItems = items.map((item) =>
+          item.id === editingItem.id
+            ? {
+                ...item,
+                id: String(variant.variant_id),
+                size: variant.variant_size || "",
+                color: variant.variant_color || "",
+              }
+            : item
+        );
+        localStorage.setItem("cart", JSON.stringify(newItems));
+        return newItems;
+      });
+      showToast("Đã cập nhật sản phẩm thành công!", "success");
+    }
+    setEditingItem(null);
   };
 
   const subtotal = cartItems.reduce(
@@ -258,6 +396,13 @@ export default function Cart({ onNavigate }: CartProps) {
                     className="p-2 hover:bg-gray-100 rounded transition-colors"
                   >
                     <Trash2 className="w-5 h-5 text-gray-500" />
+                  </button>
+
+                  <button
+                    className="ml-2 px-3 py-1 border border-black rounded text-sm hover:bg-gray-100 transition"
+                    onClick={() => setEditingItem(item)}
+                  >
+                    Đổi size/màu
                   </button>
                 </div>
               ))}
@@ -357,6 +502,23 @@ export default function Cart({ onNavigate }: CartProps) {
               `}
             </style>
           </div>
+        )}
+
+        {editingItem && (
+          <VariantSelectModal
+            productId={editingItem.product_id} // <-- dùng product_id, không dùng id
+            currentSize={editingItem.size}
+            currentColor={editingItem.color}
+            onClose={() => setEditingItem(null)}
+            onUpdate={(variant) => {
+              // Gọi API đổi variant ở đây
+              updateCartVariant({
+                ...variant,
+                variant_size: variant.variant_size ?? "",
+                variant_color: variant.variant_color ?? "",
+              });
+            }}
+          />
         )}
       </div>
     </div>

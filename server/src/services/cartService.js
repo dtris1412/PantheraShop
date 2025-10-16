@@ -83,6 +83,24 @@ const updateItemQuantity = async (cart_id, variant_id, quantity) => {
   return { message: "Cập nhật số lượng thành công", item };
 };
 
+const changeVariantInCart = async (
+  cart_id,
+  old_variant_id,
+  new_variant_id,
+  quantity
+) => {
+  if (!cart_id || !old_variant_id || !new_variant_id || !quantity)
+    throw new Error("All fields are required");
+  const item = await db.CartProduct.findOne({
+    where: { cart_id, variant_id: old_variant_id },
+  });
+  if (!item) throw new Error("Item not found in cart");
+  item.variant_id = new_variant_id;
+  item.quantity = quantity;
+  await item.save();
+  return { message: "Thay đổi biến thể thành công", item };
+};
+
 export {
   createCart,
   getCartByUserId,
@@ -90,4 +108,5 @@ export {
   addItemToCart,
   removeItemFromCart,
   updateItemQuantity,
+  changeVariantInCart,
 };
