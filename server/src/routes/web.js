@@ -20,6 +20,15 @@ import {
   getProductById,
 } from "../controllers/productController.js";
 import { getAllSports } from "../controllers/sportController.js";
+
+import {
+  getCartByUserId,
+  getCartItems,
+  addItemToCart,
+  removeItemFromCart,
+  updateItemQuantity,
+} from "../controllers/cartController.js";
+
 const router = express.Router();
 const upload = multer({ dest: "uploads/" });
 
@@ -54,6 +63,17 @@ const initWebRoutes = (app) => {
   //sport APIs
 
   router.get("/api/sports", getAllSports);
+
+  //cart APIs
+  router.get("/api/cart/:user_id", verifyToken, getCartByUserId);
+  router.get("/api/cart/items/:cart_id", verifyToken, getCartItems);
+  router.post("/api/cart/add", verifyToken, addItemToCart);
+  router.put("/api/cart/update", verifyToken, updateItemQuantity);
+  router.delete(
+    "/api/cart/remove/:cart_id/:variant_id",
+    verifyToken,
+    removeItemFromCart
+  );
 
   return app.use("/", router);
 };

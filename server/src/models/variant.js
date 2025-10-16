@@ -15,6 +15,7 @@ export default (sequelize, DataTypes) => {
         autoIncrement: true,
       },
       variant_size: DataTypes.STRING,
+      variant_color: DataTypes.STRING,
       variant_stock: DataTypes.INTEGER,
       product_id: {
         type: DataTypes.INTEGER,

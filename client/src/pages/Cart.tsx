@@ -1,68 +1,207 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Minus, Plus, Trash2, ArrowRight } from "lucide-react";
-import { useNavigate } from "react-router-dom"; // ✅ thêm dòng này
+import { showToast } from "../components/Toast";
 
-export default function Cart() {
-  const navigate = useNavigate(); // ✅ khởi tạo hàm điều hướng
+interface CartProps {
+  onNavigate: (page: string) => void;
+}
 
-  const [cartItems, setCartItems] = useState([
-    {
-      id: "1",
-      name: "Air Max Performance Running Shoes",
-      price: 149.99,
-      size: "US 10",
-      color: "Black/White",
-      image:
-        "https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg?auto=compress&cs=tinysrgb&w=400",
-      quantity: 1,
-    },
-    {
-      id: "2",
-      name: "Pro Basketball Jersey",
-      price: 89.99,
-      size: "L",
-      color: "Blue",
-      image:
-        "https://images.pexels.com/photos/8007412/pexels-photo-8007412.jpeg?auto=compress&cs=tinysrgb&w=400",
-      quantity: 2,
-    },
-  ]);
+interface CartItem {
+  id: string; // variant_id
+  name: string;
+  price: number;
+  size: string;
+  color: string;
+  image: string;
+  quantity: number;
+}
 
-  const updateQuantity = (id: string, change: number) => {
-    setCartItems((items) =>
-      items.map((item) =>
-        item.id === id
-          ? { ...item, quantity: Math.max(1, item.quantity + change) }
-          : item
-      )
-    );
+const formatVND = (value: number) =>
+  new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
+    value
+  );
+
+export default function Cart({ onNavigate }: CartProps) {
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [cartId, setCartId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    setIsLoggedIn(!!token);
+
+    if (token) {
+      let user_id = "";
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        user_id = payload.user_id;
+      } catch {
+        setIsLoggedIn(false);
+      }
+
+      if (user_id) {
+        fetch(`http://localhost:8080/api/cart/${user_id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then((res) => res.json())
+          .then((cartData) => {
+            if (!cartData.cart_id) {
+              setCartItems([]);
+              setCartId(null);
+              return;
+            }
+            setCartId(cartData.cart_id);
+            fetch(`http://localhost:8080/api/cart/items/${cartData.cart_id}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            })
+              .then((res) => res.json())
+              .then((items) => {
+                const normalized = Array.isArray(items)
+                  ? items.map((item: any) => ({
+                      id: item.variant_id,
+                      name: item.Variant?.Product?.product_name || "",
+                      price: Number(item.Variant?.Product?.product_price) || 0,
+                      image: item.Variant?.Product?.product_image || "",
+                      size: item.Variant?.variant_size || "",
+                      color: item.Variant?.variant_color || "",
+                      quantity: item.quantity,
+                    }))
+                  : [];
+                setCartItems(normalized);
+              })
+              .catch(() => setCartItems([]));
+          })
+          .catch(() => setCartItems([]));
+      }
+    } else {
+      const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+      setCartItems(cart);
+    }
+  }, []);
+
+  const updateQuantity = async (id: string, change: number) => {
+    const item = cartItems.find((i) => i.id === id);
+    if (!item) return;
+    const newQuantity = Math.max(1, item.quantity + change);
+
+    if (isLoggedIn && cartId) {
+      const token = localStorage.getItem("token");
+      try {
+        const res = await fetch(`http://localhost:8080/api/cart/update`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            cart_id: cartId,
+            variant_id: id,
+            quantity: newQuantity,
+          }),
+        });
+        if (!res.ok) throw new Error("Cập nhật thất bại");
+        const itemsRes = await fetch(
+          `http://localhost:8080/api/cart/items/${cartId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        const items = await itemsRes.json();
+        const normalized = Array.isArray(items)
+          ? items.map((item: any) => ({
+              id: item.variant_id,
+              name: item.Variant?.Product?.product_name || "",
+              price: Number(item.Variant?.Product?.product_price) || 0,
+              image: item.Variant?.Product?.product_image || "",
+              size: item.Variant?.variant_size || "",
+              color: item.Variant?.variant_color || "",
+              quantity: item.quantity,
+            }))
+          : [];
+        setCartItems(normalized);
+      } catch (err) {
+        showToast("Cập nhật số lượng thất bại!", "error");
+      }
+    } else {
+      setCartItems((items) => {
+        const newItems = items.map((item) =>
+          item.id === id ? { ...item, quantity: newQuantity } : item
+        );
+        localStorage.setItem("cart", JSON.stringify(newItems));
+        return newItems;
+      });
+    }
   };
 
-  const removeItem = (id: string) => {
-    setCartItems((items) => items.filter((item) => item.id !== id));
+  const removeItem = async (id: string) => {
+    if (isLoggedIn && cartId) {
+      const token = localStorage.getItem("token");
+      try {
+        const res = await fetch(
+          `http://localhost:8080/api/cart/remove/${cartId}/${id}`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        if (!res.ok) throw new Error("Xóa thất bại");
+        const itemsRes = await fetch(
+          `http://localhost:8080/api/cart/items/${cartId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        const items = await itemsRes.json();
+        const normalized = Array.isArray(items)
+          ? items.map((item: any) => ({
+              id: item.variant_id,
+              name: item.Variant?.Product?.product_name || "",
+              price: Number(item.Variant?.Product?.product_price) || 0,
+              image: item.Variant?.Product?.product_image || "",
+              size: item.Variant?.variant_size || "",
+              color: item.Variant?.variant_color || "",
+              quantity: item.quantity,
+            }))
+          : [];
+        setCartItems(normalized);
+        showToast("Đã xóa sản phẩm thành công!", "success");
+      } catch (err) {
+        showToast("Xóa sản phẩm thất bại!", "error");
+      }
+    } else {
+      setCartItems((items) => {
+        const newItems = items.filter((item) => item.id !== id);
+        localStorage.setItem("cart", JSON.stringify(newItems));
+        showToast("Đã xóa sản phẩm thành công!", "success");
+        return newItems;
+      });
+    }
   };
 
   const subtotal = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
-  const shipping = subtotal > 150 ? 0 : 15;
-  const tax = subtotal * 0.08;
-  const total = subtotal + shipping + tax;
+  const shipping = subtotal > 1500000 ? 0 : 15000;
+  const total = subtotal + shipping;
 
   return (
     <div className="min-h-screen pt-24 pb-12">
       <div className="max-w-7xl mx-auto px-6">
-        <h1 className="text-4xl font-bold mb-8">Shopping Cart</h1>
+        <h1 className="text-4xl font-bold mb-8">Giỏ hàng</h1>
 
         {cartItems.length === 0 ? (
           <div className="text-center py-16">
-            <p className="text-gray-500 text-lg mb-6">Your cart is empty</p>
+            <p className="text-gray-500 text-lg mb-6">
+              Giỏ hàng của bạn đang trống
+            </p>
             <button
-              onClick={() => navigate("/products")} // ✅ dùng react-router
+              onClick={() => onNavigate("products")}
               className="bg-black text-white px-8 py-3 font-semibold hover:bg-gray-800 transition-colors"
             >
-              Continue Shopping
+              Tiếp tục mua sắm
             </button>
           </div>
         ) : (
@@ -84,9 +223,9 @@ export default function Cart() {
                       {item.name}
                     </h3>
                     <p className="text-sm text-gray-600 mb-2">
-                      Size: {item.size} | Color: {item.color}
+                      Kích cỡ: {item.size} | Màu: {item.color}
                     </p>
-                    <p className="font-semibold">${item.price.toFixed(2)}</p>
+                    <p className="font-semibold">{formatVND(item.price)}</p>
                   </div>
 
                   <div className="flex items-center space-x-3">
@@ -119,49 +258,46 @@ export default function Cart() {
 
             <div className="lg:col-span-1">
               <div className="bg-gray-50 border border-gray-200 p-6 sticky top-24">
-                <h2 className="text-xl font-bold mb-6">Order Summary</h2>
+                <h2 className="text-xl font-bold mb-6">Tóm tắt đơn hàng</h2>
 
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Subtotal</span>
-                    <span className="font-medium">${subtotal.toFixed(2)}</span>
+                    <span className="text-gray-600">Tạm tính</span>
+                    <span className="font-medium">{formatVND(subtotal)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Shipping</span>
+                    <span className="text-gray-600">Phí vận chuyển</span>
                     <span className="font-medium">
-                      {shipping === 0 ? "FREE" : `$${shipping.toFixed(2)}`}
+                      {shipping === 0 ? "Miễn phí" : formatVND(shipping)}
                     </span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Tax (8%)</span>
-                    <span className="font-medium">${tax.toFixed(2)}</span>
-                  </div>
 
-                  {subtotal < 150 && (
+                  {subtotal < 1500000 && (
                     <div className="text-xs text-gray-600 pt-2 border-t border-gray-300">
-                      Add ${(150 - subtotal).toFixed(2)} more for free shipping
+                      Mua thêm {formatVND(1500000 - subtotal)} để được miễn phí
+                      vận chuyển
                     </div>
                   )}
                 </div>
 
                 <div className="flex justify-between text-lg font-bold mb-6 pt-4 border-t border-gray-300">
-                  <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>Tổng cộng</span>
+                  <span>{formatVND(total)}</span>
                 </div>
 
                 <button
-                  onClick={() => navigate("/checkout")} // ✅ chuyển trang checkout
+                  onClick={() => onNavigate("checkout")}
                   className="w-full bg-black text-white py-4 font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center space-x-2 mb-3"
                 >
-                  <span>Proceed to Checkout</span>
+                  <span>Tiến hành thanh toán</span>
                   <ArrowRight className="w-5 h-5" />
                 </button>
 
                 <button
-                  onClick={() => navigate("/products")}
+                  onClick={() => onNavigate("products")}
                   className="w-full border-2 border-black text-black py-4 font-semibold hover:bg-gray-100 transition-colors"
                 >
-                  Continue Shopping
+                  Tiếp tục mua sắm
                 </button>
               </div>
             </div>

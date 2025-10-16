@@ -19,6 +19,7 @@ import Profile from "./pages/Profile.tsx";
 import Loading from "./components/Loading"; // Đảm bảo đã có component này
 import OrderHistory from "./pages/OrderHistory";
 import { ToastContainer } from "./components/Toast";
+import { useNavigate } from "react-router-dom";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { isAuthenticated, loading } = useAuth();
@@ -28,6 +29,7 @@ function ProtectedRoute({ children }: { children: JSX.Element }) {
 
 function AppContent() {
   const { user, logout, loading } = useAuth();
+  const navigate = useNavigate();
 
   if (loading) return <Loading />;
 
@@ -57,7 +59,7 @@ function AppContent() {
             path="/cart"
             element={
               <ProtectedRoute>
-                <Cart />
+                <Cart onNavigate={navigate} />
               </ProtectedRoute>
             }
           />

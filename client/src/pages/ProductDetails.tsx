@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { ShoppingBag, Heart, Truck, RotateCcw, Shield } from "lucide-react";
+import { showToast } from "../components/Toast";
 
 const formatVND = (value: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
@@ -9,7 +10,7 @@ const formatVND = (value: number) =>
 
 // Danh sách size cho áo đấu
 const CLOTHING_SIZES = ["M", "L", "XL"];
-const SHOE_SIZES = ["39", "40", "41", "42", "43", "44", "45"];
+const SHOE_SIZES = ["40", "41", "42"];
 // Danh sách màu cho giày
 const SHOE_COLORS = [
   { name: "Đen", hex: "#222" },
@@ -74,6 +75,8 @@ export default function ProductDetails() {
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColor, setSelectedColor] = useState(0);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [error, setError] = useState(""); // Thêm state cho lỗi
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function fetchProduct() {
@@ -111,10 +114,81 @@ export default function ProductDetails() {
   // Lấy danh sách variants từ product (nếu có)
   const variants = product?.Variants || product?.variants || [];
 
+  console.log("variants", variants);
+
   // Tìm variant theo kích cỡ đã chọn (cho áo đấu hoặc giày)
   const selectedVariant = variants.find(
-    (v: any) => v.variant_size === selectedSize
+    (v: any) =>
+      v.variant_size === selectedSize &&
+      (!isShoe || v.variant_color === SHOE_COLORS[selectedColor].name)
   );
+
+  const handleAddToCart = async () => {
+    const token = localStorage.getItem("token");
+    const isLoggedIn = !!token;
+
+    // Kiểm tra đã chọn size (và màu nếu là giày)
+    if (!selectedSize || (isShoe && !SHOE_COLORS[selectedColor])) {
+      setError("Vui lòng chọn size và màu (nếu có)!");
+      return;
+    }
+
+    // Tìm đúng variant
+    const selectedVariant = variants.find(
+      (v: any) =>
+        v.variant_size === selectedSize &&
+        (!isShoe || v.variant_color === SHOE_COLORS[selectedColor].name)
+    );
+    if (!selectedVariant) {
+      setError("Không tìm thấy phiên bản sản phẩm phù hợp!");
+      return;
+    }
+
+    if (isLoggedIn) {
+      // Gọi API thêm vào giỏ hàng trên server
+      try {
+        const res = await fetch("http://localhost:8080/api/cart/add", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            variant_id: selectedVariant.variant_id,
+            quantity: 1,
+          }),
+        });
+        if (!res.ok) throw new Error("Thêm vào giỏ hàng thất bại!");
+        showToast("Thêm sản phẩm vào giỏ hàng thành công!", "success");
+        navigate("/cart");
+      } catch (err) {
+        setError("Thêm vào giỏ hàng thất bại!");
+        showToast("Thêm vào giỏ hàng thất bại!", "error");
+      }
+    } else {
+      // Lưu vào localStorage theo variant_id
+      const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+      const existingIndex = cart.findIndex(
+        (item: any) => item.variant_id === selectedVariant.variant_id
+      );
+      if (existingIndex !== -1) {
+        cart[existingIndex].quantity += 1;
+      } else {
+        cart.push({
+          variant_id: selectedVariant.variant_id,
+          quantity: 1,
+          name: product.product_name,
+          price: selectedVariant.variant_price || product.product_price,
+          image: product.product_image,
+          size: selectedVariant.variant_size,
+          color: selectedVariant.variant_color,
+        });
+      }
+      localStorage.setItem("cart", JSON.stringify(cart));
+      showToast("Thêm sản phẩm vào giỏ hàng thành công!", "success");
+      navigate("/cart");
+    }
+  };
 
   return (
     <div className="min-h-screen pt-24 pb-12">
@@ -202,7 +276,7 @@ export default function ProductDetails() {
                   ))}
                 </div>
                 {/* Hiển thị tồn kho nếu đã chọn size và có variant */}
-                {selectedSize && selectedVariant && (
+                {isClothing && selectedSize && selectedVariant && (
                   <div className="mt-2 text-sm text-gray-600">
                     Số lượng còn lại:{" "}
                     <span className="font-semibold">
@@ -210,6 +284,17 @@ export default function ProductDetails() {
                     </span>
                   </div>
                 )}
+                {isShoe &&
+                  selectedSize &&
+                  SHOE_COLORS[selectedColor] &&
+                  selectedVariant && (
+                    <div className="mt-2 text-sm text-gray-600">
+                      Số lượng còn lại:{" "}
+                      <span className="font-semibold">
+                        {selectedVariant.variant_stock}
+                      </span>
+                    </div>
+                  )}
               </div>
             )}
             {/* Hiển thị chọn màu nếu là giày */}
@@ -243,6 +328,7 @@ export default function ProductDetails() {
               <button
                 className="flex-1 bg-black text-white py-4 font-semibold hover:bg-gray-900 transition-colors flex items-center justify-center gap-2"
                 style={{ borderRadius: 0 }}
+                onClick={handleAddToCart}
               >
                 <ShoppingBag className="w-5 h-5" />
                 Thêm vào giỏ hàng
@@ -254,6 +340,7 @@ export default function ProductDetails() {
                 <Heart className="w-5 h-5" />
               </button>
             </div>
+            {error && <div className="text-red-600 text-sm mt-2">{error}</div>}
             <div className="border-t border-gray-200 pt-6 space-y-4">
               <h3 className="font-semibold text-lg">Tính năng</h3>
               <ul className="space-y-2">
