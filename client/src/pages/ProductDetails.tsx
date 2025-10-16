@@ -218,6 +218,9 @@ export default function ProductDetails() {
     }
   };
 
+  const isBallOutOfStock =
+    isBall && variants.length > 0 && variants[0].variant_stock === 0;
+
   return (
     <div className="min-h-screen pt-24 pb-12">
       <div className="max-w-6xl mx-auto px-5">
@@ -289,19 +292,32 @@ export default function ProductDetails() {
               <div>
                 <span className="font-semibold block mb-3">Chọn kích cỡ</span>
                 <div className="grid grid-cols-3 gap-3">
-                  {(isClothing ? CLOTHING_SIZES : SHOE_SIZES).map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => setSelectedSize(size)}
-                      className={`py-3 text-center border-2 font-medium transition-colors ${
-                        selectedSize === size
-                          ? "border-black bg-black text-white"
-                          : "border-gray-300 hover:border-gray-400"
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
+                  {(isClothing ? CLOTHING_SIZES : SHOE_SIZES).map((size) => {
+                    // Tìm variant tương ứng với size (và màu nếu là giày)
+                    const variant = isClothing
+                      ? variants.find((v: any) => v.variant_size === size)
+                      : variants.find(
+                          (v: any) =>
+                            v.variant_size === size &&
+                            v.variant_color?.toLowerCase() ===
+                              SHOE_COLORS[selectedColor].name.toLowerCase()
+                        );
+                    const outOfStock = !variant || variant.variant_stock === 0;
+                    return (
+                      <button
+                        key={size}
+                        onClick={() => !outOfStock && setSelectedSize(size)}
+                        className={`py-3 text-center border-2 font-medium transition-colors ${
+                          selectedSize === size
+                            ? "border-black bg-black text-white"
+                            : "border-gray-300 hover:border-gray-400"
+                        } ${outOfStock ? "opacity-50 cursor-not-allowed" : ""}`}
+                        disabled={outOfStock}
+                      >
+                        {size}
+                      </button>
+                    );
+                  })}
                 </div>
                 {/* Hiển thị tồn kho nếu đã chọn size và có variant */}
                 {isClothing && selectedSize && selectedVariant && (
@@ -350,32 +366,62 @@ export default function ProductDetails() {
                   </span>
                 </div>
                 <div className="flex space-x-3">
-                  {SHOE_COLORS.map((color, index) => (
-                    <button
-                      key={color.name}
-                      onClick={() => setSelectedColor(index)}
-                      className={`w-12 h-12 border-2 transition-colors ${
-                        selectedColor === index
-                          ? "border-black"
-                          : "border-gray-300"
-                      }`}
-                      style={{ backgroundColor: color.hex }}
-                      title={color.name}
-                    />
-                  ))}
+                  {SHOE_COLORS.map((color, index) => {
+                    let variant;
+                    if (isShoe) {
+                      variant = variants.find(
+                        (v: any) =>
+                          v.variant_size === selectedSize &&
+                          v.variant_color?.toLowerCase() ===
+                            color.name.toLowerCase()
+                      );
+                    } else if (isGear) {
+                      variant = variants.find(
+                        (v: any) =>
+                          v.variant_color?.toLowerCase() ===
+                          color.name.toLowerCase()
+                      );
+                    }
+                    const outOfStock = !variant || variant.variant_stock === 0;
+                    return (
+                      <button
+                        key={color.name}
+                        onClick={() => !outOfStock && setSelectedColor(index)}
+                        className={`w-12 h-12 border-2 transition-colors ${
+                          selectedColor === index
+                            ? "border-black"
+                            : "border-gray-300"
+                        } ${outOfStock ? "opacity-50 cursor-not-allowed" : ""}`}
+                        style={{ backgroundColor: color.hex }}
+                        title={color.name}
+                        disabled={outOfStock}
+                      />
+                    );
+                  })}
                 </div>
               </div>
             )}
             {/* Không hiển thị size và màu nếu là phụ kiện hoặc dụng cụ */}
             <div className="flex space-x-4">
-              <button
-                className="flex-1 bg-black text-white py-4 font-semibold hover:bg-gray-900 transition-colors flex items-center justify-center gap-2"
-                style={{ borderRadius: 0 }}
-                onClick={handleAddToCart}
-              >
-                <ShoppingBag className="w-5 h-5" />
-                Thêm vào giỏ hàng
-              </button>
+              {isBallOutOfStock ? (
+                <button
+                  className="flex-1 bg-gray-400 text-white py-4 font-semibold cursor-not-allowed flex items-center justify-center gap-2"
+                  style={{ borderRadius: 0 }}
+                  disabled
+                >
+                  <ShoppingBag className="w-5 h-5" />
+                  Đã hết hàng
+                </button>
+              ) : (
+                <button
+                  className="flex-1 bg-black text-white py-4 font-semibold hover:bg-gray-900 transition-colors flex items-center justify-center gap-2"
+                  style={{ borderRadius: 0 }}
+                  onClick={handleAddToCart}
+                >
+                  <ShoppingBag className="w-5 h-5" />
+                  Thêm vào giỏ hàng
+                </button>
+              )}
               <button
                 className="w-14 h-14 border-2 border-gray-300 flex items-center justify-center hover:border-gray-400 transition-colors"
                 style={{ borderRadius: 0 }}
