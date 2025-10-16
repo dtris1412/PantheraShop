@@ -108,44 +108,70 @@ export default function ProductDetails() {
 
   const isClothing = category.includes("áo") || category.includes("quần áo");
   const isShoe = category.includes("giày");
-  const isAccessory =
-    category.includes("phụ kiện") || category.includes("dụng cụ");
+  const isBall = category.includes("bóng");
+  const isGear = category.includes("phụ kiện") || category.includes("dụng cụ");
 
   // Lấy danh sách variants từ product (nếu có)
   const variants = product?.Variants || product?.variants || [];
 
   console.log("variants", variants);
 
-  // Tìm variant theo kích cỡ đã chọn (cho áo đấu hoặc giày)
-  const selectedVariant = variants.find(
-    (v: any) =>
-      v.variant_size === selectedSize &&
-      (!isShoe || v.variant_color === SHOE_COLORS[selectedColor].name)
-  );
+  // Tìm variant theo lựa chọn
+  const selectedVariant = variants.find((v: any) => {
+    if (isClothing) {
+      return v.variant_size === selectedSize;
+    }
+    if (isShoe) {
+      return (
+        v.variant_size === selectedSize &&
+        v.variant_color?.toLowerCase() ===
+          SHOE_COLORS[selectedColor].name.toLowerCase()
+      );
+    }
+    if (isGear) {
+      return (
+        v.variant_color?.toLowerCase() ===
+        SHOE_COLORS[selectedColor].name.toLowerCase()
+      );
+    }
+    if (isBall) {
+      return true;
+    }
+    return false;
+  });
 
   const handleAddToCart = async () => {
     const token = localStorage.getItem("token");
     const isLoggedIn = !!token;
 
-    // Kiểm tra đã chọn size (và màu nếu là giày)
-    if (!selectedSize || (isShoe && !SHOE_COLORS[selectedColor])) {
-      setError("Vui lòng chọn size và màu (nếu có)!");
-      return;
+    let variantToAdd = selectedVariant;
+
+    // Bóng: luôn lấy variant đầu tiên
+    if (isBall && variants.length > 0) {
+      variantToAdd = variants[0];
     }
 
-    // Tìm đúng variant
-    const selectedVariant = variants.find(
-      (v: any) =>
-        v.variant_size === selectedSize &&
-        (!isShoe || v.variant_color === SHOE_COLORS[selectedColor].name)
-    );
-    if (!selectedVariant) {
+    // KHÔNG gán lại variantToAdd cho phụ kiện!
+
+    // Áo/quần áo hoặc giày: phải chọn size (và màu nếu là giày)
+    if (isClothing && !selectedSize) {
+      setError("Vui lòng chọn kích cỡ!");
+      return;
+    }
+    if (isShoe && (!selectedSize || !SHOE_COLORS[selectedColor])) {
+      setError("Vui lòng chọn kích cỡ và màu!");
+      return;
+    }
+    if (isGear && !SHOE_COLORS[selectedColor]) {
+      setError("Vui lòng chọn màu!");
+      return;
+    }
+    if (!variantToAdd) {
       setError("Không tìm thấy phiên bản sản phẩm phù hợp!");
       return;
     }
 
     if (isLoggedIn) {
-      // Gọi API thêm vào giỏ hàng trên server
       try {
         const res = await fetch("http://localhost:8080/api/cart/add", {
           method: "POST",
@@ -154,7 +180,7 @@ export default function ProductDetails() {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            variant_id: selectedVariant.variant_id,
+            variant_id: variantToAdd.variant_id,
             quantity: 1,
           }),
         });
@@ -166,22 +192,22 @@ export default function ProductDetails() {
         showToast("Thêm vào giỏ hàng thất bại!", "error");
       }
     } else {
-      // Lưu vào localStorage theo variant_id
       const cart = JSON.parse(localStorage.getItem("cart") || "[]");
       const existingIndex = cart.findIndex(
-        (item: any) => item.variant_id === selectedVariant.variant_id
+        (item: any) => item.variant_id === variantToAdd.variant_id
       );
       if (existingIndex !== -1) {
         cart[existingIndex].quantity += 1;
       } else {
         cart.push({
-          variant_id: selectedVariant.variant_id,
+          id: selectedVariant.variant_id, // luôn có id
+          variant_id: selectedVariant.variant_id, // nếu muốn giữ
           quantity: 1,
           name: product.product_name,
-          price: selectedVariant.variant_price || product.product_price,
+          price: variantToAdd.variant_price || product.product_price,
           image: product.product_image,
-          size: selectedVariant.variant_size,
-          color: selectedVariant.variant_color,
+          size: variantToAdd.variant_size,
+          color: variantToAdd.variant_color,
         });
       }
       localStorage.setItem("cart", JSON.stringify(cart));
@@ -284,7 +310,8 @@ export default function ProductDetails() {
                     </span>
                   </div>
                 )}
-                {isShoe &&
+                {/* Giày hoặc phụ kiện: chọn size và màu mới hiển thị số lượng */}
+                {(isShoe || isGear) &&
                   selectedSize &&
                   SHOE_COLORS[selectedColor] &&
                   selectedVariant && (
@@ -295,10 +322,19 @@ export default function ProductDetails() {
                       </span>
                     </div>
                   )}
+                {/* Bóng: luôn hiển thị số lượng của variant đầu tiên */}
+                {isBall && variants.length > 0 && (
+                  <div className="mt-2 text-sm text-gray-600">
+                    Số lượng còn lại:{" "}
+                    <span className="font-semibold">
+                      {variants[0].variant_stock}
+                    </span>
+                  </div>
+                )}
               </div>
             )}
-            {/* Hiển thị chọn màu nếu là giày */}
-            {isShoe && (
+            {/* Hiển thị chọn màu cho giày và phụ kiện */}
+            {(isShoe || isGear) && (
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <span className="font-semibold">Chọn màu</span>

@@ -172,7 +172,7 @@ export default function Cart({ onNavigate }: CartProps) {
       }
     } else {
       setCartItems((items) => {
-        const newItems = items.filter((item) => item.id !== id);
+        const newItems = items.filter((item) => String(item.id) !== String(id));
         localStorage.setItem("cart", JSON.stringify(newItems));
         showToast("Đã xóa sản phẩm thành công!", "success");
         return newItems;
