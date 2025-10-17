@@ -1,8 +1,0 @@
-/node_modules
-/vendor
-/.idea
-.idea/
-.env
-.DS_Store
-/uploads
-/tmp
