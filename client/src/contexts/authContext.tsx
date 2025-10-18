@@ -53,18 +53,78 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const isAuthenticated = !!token;
 
-  // load token & user từ localStorage
+  const tokenExpiryTimeout = React.useRef<number | null>(null);
+
+  const clearTokenExpiryTimeout = () => {
+    if (tokenExpiryTimeout.current) {
+      window.clearTimeout(tokenExpiryTimeout.current);
+      tokenExpiryTimeout.current = null;
+    }
+  };
+
+  const scheduleTokenExpiryLogout = (jwt: string | null) => {
+    clearTokenExpiryTimeout();
+    if (!jwt) return;
+    try {
+      const payload = JSON.parse(atob(jwt.split(".")[1]));
+      const exp = payload.exp; // exp in seconds
+      if (!exp) return;
+      const expiresAt = exp * 1000;
+      const delay = expiresAt - Date.now();
+      if (delay <= 0) {
+        // already expired
+        logout();
+        return;
+      }
+      // schedule logout slightly after expiry
+      tokenExpiryTimeout.current = window.setTimeout(() => {
+        logout();
+      }, delay + 500);
+    } catch {
+      // invalid token: ensure logged out
+      logout();
+    }
+  };
+
+  // call schedule on load
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
     if (storedToken && storedUser) {
       setToken(storedToken);
       setUser(JSON.parse(storedUser));
+      scheduleTokenExpiryLogout(storedToken);
     }
     setLoading(false);
+    return () => clearTokenExpiryTimeout();
   }, []);
 
-  // login
+  // update schedule when token changes
+  useEffect(() => {
+    scheduleTokenExpiryLogout(token);
+    return () => clearTokenExpiryTimeout();
+  }, [token]);
+
+  // logout (ensure clearing schedule + localStorage)
+  const logout = () => {
+    setToken(null);
+    setUser(null);
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    clearTokenExpiryTimeout();
+  };
+
+  // helper to handle 401 responses
+  const handleAuthResponse = async (res: Response) => {
+    if (res.status === 401) {
+      // token invalid/expired on server -> force logout
+      logout();
+      throw new Error("Unauthorized");
+    }
+    return res;
+  };
+
+  // login (schedule logout)
   const login = async (email: string, password: string) => {
     const res = await fetch("http://localhost:8080/api/login", {
       method: "POST",
@@ -80,6 +140,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(data.user);
     localStorage.setItem("token", data.token);
     localStorage.setItem("user", JSON.stringify(data.user));
+    scheduleTokenExpiryLogout(data.token);
   };
 
   // register
@@ -108,14 +169,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.setItem("user", JSON.stringify(data.user));
   };
 
-  // logout
-  const logout = () => {
-    setToken(null);
-    setUser(null);
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-  };
-
   // fetch profile từ backend
   const fetchProfile = async (): Promise<User | null> => {
     if (!token) return null;
@@ -128,6 +181,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       },
     });
 
+    await handleAuthResponse(res);
     if (!res.ok) throw new Error("Failed to fetch profile");
 
     const data = await res.json();
@@ -136,6 +190,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return data;
   };
 
+  // updateProfile/updatePassword/updateAvatar: wrap calls similarly
   const updateProfile = async (data: {
     user_name: string;
     user_email: string;
@@ -151,9 +206,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       },
       body: JSON.stringify(data),
     });
+    await handleAuthResponse(res);
     if (!res.ok) throw new Error("Update failed");
     const updated = await res.json();
-    setUser(updated.user); // hoặc setUser(updated) tùy backend trả về
+    setUser(updated.user);
     localStorage.setItem("user", JSON.stringify(updated.user));
   };
 
@@ -168,11 +224,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({
-        current_password, // Đảm bảo tên trường đúng với backend
-        new_password,
-      }),
+      body: JSON.stringify({ current_password, new_password }),
     });
+    await handleAuthResponse(res);
     if (!res.ok) throw new Error("Update failed");
     const result = await res.json();
     return result;
@@ -190,11 +244,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       },
       body: formData,
     });
+    await handleAuthResponse(res);
     if (!res.ok) throw new Error("Upload failed");
     const data = await res.json();
-    setUser(data.user.user); // cập nhật user mới với avatar mới
+    setUser(data.user.user);
     localStorage.setItem("user", JSON.stringify(data.user.user));
-    return data.user.user.avatar; // trả về url mới
+    return data.user.user.avatar;
   };
 
   return (

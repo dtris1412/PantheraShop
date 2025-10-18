@@ -4,6 +4,7 @@ import {
   getFilteredProducts as getFilteredProductsService,
   getProductBySport as getProductBySportService,
   getProductById as getProductByIdService,
+  searchProducts as searchProductsService,
 } from "../services/productService.js";
 
 const getAllProducts = async (req, res) => {
@@ -74,10 +75,23 @@ const getProductById = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+const searchProducts = async (req, res) => {
+  try {
+    const { query } = req.query;
+    const products = await searchProductsService(query);
+    res.status(200).json(products);
+  } catch (err) {
+    console.error("Error in searchProducts: ", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 export {
   getAllProducts,
   getTopRatedProducts,
   getFilteredProducts,
   getProductBySport,
   getProductById,
+  searchProducts,
 };

@@ -44,6 +44,7 @@ interface ProductContextType {
   fetchTopProducts: () => Promise<void>;
   fetchSports: () => Promise<void>;
   fetchFilteredProducts: (filters: any) => Promise<void>;
+  searchProducts: (keyword: string) => Promise<Product[]>;
 }
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined);
@@ -108,6 +109,20 @@ export const ProductProvider = ({
       setProducts([]);
     }
   };
+  const searchProducts = async (keyword: string): Promise<Product[]> => {
+    if (!keyword) return [];
+    try {
+      const res = await fetch(
+        `http://localhost:8080/api/products/search?query=${encodeURIComponent(
+          keyword
+        )}`
+      );
+      const data = await res.json();
+      return Array.isArray(data) ? mapProductPrice(data) : [];
+    } catch {
+      return [];
+    }
+  };
 
   useEffect(() => {
     fetchProducts();
@@ -125,6 +140,7 @@ export const ProductProvider = ({
         fetchTopProducts,
         fetchSports,
         fetchFilteredProducts,
+        searchProducts,
       }}
     >
       {children}

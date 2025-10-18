@@ -191,10 +191,31 @@ const getProductBySport = async (sport_id) => {
   return { success: true, attributes: products.map((p) => p.sport_id) };
 };
 
+const searchProducts = async (keyword) => {
+  if (!keyword || typeof keyword !== "string") return [];
+  const Op = db.Sequelize.Op;
+  const products = await db.Product.findAll({
+    where: {
+      product_name: {
+        [Op.substring]: keyword,
+      },
+    },
+    limit: 20, // giới hạn kết quả trả về
+    attributes: [
+      "product_id",
+      "product_name",
+      "product_image",
+      "product_price",
+    ],
+  });
+  return products;
+};
+
 export {
   getAllProducts,
   getProductById,
   getTopRatedProducts,
   getFilteredProducts,
   getProductBySport,
+  searchProducts,
 };

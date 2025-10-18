@@ -18,6 +18,7 @@ import {
   getFilteredProducts,
   getProductBySport,
   getProductById,
+  searchProducts,
 } from "../controllers/productController.js";
 import { getAllSports } from "../controllers/sportController.js";
 
@@ -60,6 +61,8 @@ const initWebRoutes = (app) => {
   router.get("/api/products/:product_id", getProductById);
 
   router.get("/api/products/sport/:sport_id", getProductBySport);
+
+  router.get("/api/products/search", searchProducts);
 
   //sport APIs
 
