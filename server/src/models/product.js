@@ -7,6 +7,7 @@ export default (sequelize, DataTypes) => {
       Product.belongsTo(models.Team, { foreignKey: "team_id" });
       Product.belongsTo(models.Category, { foreignKey: "category_id" });
       Product.hasMany(models.Variant, { foreignKey: "product_id" });
+      Product.hasMany(models.Product_Image, { foreignKey: "product_id" });
     }
   }
   Product.init(

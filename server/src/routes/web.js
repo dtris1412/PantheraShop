@@ -31,6 +31,11 @@ import {
   changeVariantInCart,
 } from "../controllers/cartController.js";
 
+// Product_Images
+import {
+  getAllProductImages,
+  getProductImageById,
+} from "../controllers/product_imageController.js";
 const router = express.Router();
 const upload = multer({ dest: "uploads/" });
 
@@ -79,6 +84,10 @@ const initWebRoutes = (app) => {
     verifyToken,
     removeItemFromCart
   );
+
+  // Product_Images APIs
+  router.get("/api/product-images", getAllProductImages);
+  router.get("/api/product-images/:product_id", getProductImageById);
 
   return app.use("/", router);
 };

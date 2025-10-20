@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ShoppingBag, Heart, Truck, RotateCcw, Shield } from "lucide-react";
 import { showToast } from "../components/Toast";
+import ProductGallery from "../components/ProductGallery";
 
 const formatVND = (value: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
@@ -222,39 +223,24 @@ export default function ProductDetails() {
   const isBallOutOfStock =
     isBall && variants.length > 0 && variants[0].variant_stock === 0;
 
+  // Chuẩn bị mảng ảnh gallery
+  const galleryImages =
+    product.Product_Images?.map((img: any) => img.image_url) || [];
+
   return (
     <div className="min-h-screen pt-24 pb-12">
       <div className="max-w-6xl mx-auto px-5">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           <div className="space-y-4">
-            <div className="bg-gray-100 aspect-square overflow-hidden">
-              <img
-                src={product.product_image || product.images?.[selectedImage]}
-                alt={product.product_name || product.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            {product.images && (
-              <div className="grid grid-cols-4 gap-4">
-                {product.images.map((image: string, index: number) => (
-                  <button
-                    key={index}
-                    onClick={() => setSelectedImage(index)}
-                    className={`bg-gray-100 aspect-square overflow-hidden border-2 transition-colors ${
-                      selectedImage === index
-                        ? "border-black"
-                        : "border-transparent"
-                    }`}
-                  >
-                    <img
-                      src={image}
-                      alt={`Xem ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
+            {/* <ProductGallery
+              images={product.images || []}
+              mainImage={product.product_image}
+            /> */}
+
+            <ProductGallery
+              images={galleryImages}
+              mainImage={product.product_image}
+            />
           </div>
           <div className="space-y-6">
             <div>

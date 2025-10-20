@@ -8,6 +8,10 @@ const getAllProducts = async () => {
         attributes: ["category_id", "category_name"],
       },
       {
+        model: db.Product_Image,
+        attributes: ["product_image_id", "image_url", "order"],
+      },
+      {
         model: db.Team,
         include: [
           {
@@ -37,6 +41,10 @@ const getProductById = async (product_id) => {
       {
         model: db.Category,
         attributes: ["category_id", "category_name"],
+      },
+      {
+        model: db.Product_Image,
+        attributes: ["product_image_id", "image_url", "order"],
       },
       {
         model: db.Team,
