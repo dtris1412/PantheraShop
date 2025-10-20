@@ -36,6 +36,8 @@ import {
   getAllProductImages,
   getProductImageById,
 } from "../controllers/product_imageController.js";
+
+import { getAllBanners } from "../controllers/bannerController.js";
 const router = express.Router();
 const upload = multer({ dest: "uploads/" });
 
@@ -89,6 +91,8 @@ const initWebRoutes = (app) => {
   router.get("/api/product-images", getAllProductImages);
   router.get("/api/product-images/:product_id", getProductImageById);
 
+  // Banner APIs
+  router.get("/api/banners", getAllBanners);
   return app.use("/", router);
 };
 
