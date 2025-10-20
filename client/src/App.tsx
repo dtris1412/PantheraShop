@@ -6,6 +6,7 @@ import {
 } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/authContext";
 import { ProductProvider } from "./contexts/productContext";
+import { OrderProvider } from "./contexts/OrderContext";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
@@ -13,6 +14,7 @@ import Products from "./pages/Products";
 import ProductDetails from "./pages/ProductDetails";
 import Cart from "./pages/Cart";
 import Orders from "./pages/Orders";
+import OrderInfo from "./pages/OrderInfo";
 import Blog from "./pages/Blog";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile.tsx";
@@ -72,6 +74,7 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
+          <Route path="/order-info" element={<OrderInfo />} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
@@ -86,7 +89,9 @@ export default function App() {
     <AuthProvider>
       <Router>
         <ProductProvider>
-          <AppContent />
+          <OrderProvider>
+            <AppContent />
+          </OrderProvider>
         </ProductProvider>
       </Router>
     </AuthProvider>

@@ -10,6 +10,8 @@ interface User {
   user_id: number;
   user_name: string;
   user_email: string;
+  user_phone?: string;
+  user_address?: string;
   role_id: number;
   avatar?: string | null;
 }
@@ -190,7 +192,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return data;
   };
 
-  // updateProfile/updatePassword/updateAvatar: wrap calls similarly
   const updateProfile = async (data: {
     user_name: string;
     user_email: string;
@@ -210,7 +211,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!res.ok) throw new Error("Update failed");
     const updated = await res.json();
     setUser(updated.user);
-    localStorage.setItem("user", JSON.stringify(updated.user));
+    localStorage.setItem("user", JSON.stringify(updated.user)); // updated.user phải có user_phone, user_address
   };
 
   const updatePassword = async (
@@ -278,3 +279,8 @@ export const useAuth = () => {
   if (!context) throw new Error("useAuth must be used within AuthProvider");
   return context;
 };
+
+export function isLoggedIn(): boolean {
+  const token = localStorage.getItem("token");
+  return !!token;
+}

@@ -29,6 +29,7 @@ import {
   removeItemFromCart,
   updateItemQuantity,
   changeVariantInCart,
+  getCartProductsByCartId,
 } from "../controllers/cartController.js";
 
 // Product_Images
@@ -57,7 +58,7 @@ const initWebRoutes = (app) => {
   router.post(
     "/api/user/avatar",
     verifyToken,
-    upload.single("avatar"), // phải có dòng này!
+    upload.single("avatar"),
     uploadAvatar
   );
 
@@ -78,6 +79,11 @@ const initWebRoutes = (app) => {
   //cart APIs
   router.get("/api/cart/:user_id", verifyToken, getCartByUserId);
   router.get("/api/cart/items/:cart_id", verifyToken, getCartItems);
+  router.get(
+    "/api/cart/products/:cart_id",
+    verifyToken,
+    getCartProductsByCartId
+  );
   router.post("/api/cart/add", verifyToken, addItemToCart);
   router.put("/api/cart/update", verifyToken, updateItemQuantity);
   router.put("/api/cart/change-variant", verifyToken, changeVariantInCart);

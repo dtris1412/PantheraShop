@@ -232,11 +232,6 @@ export default function ProductDetails() {
       <div className="max-w-6xl mx-auto px-5">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           <div className="space-y-4">
-            {/* <ProductGallery
-              images={product.images || []}
-              mainImage={product.product_image}
-            /> */}
-
             <ProductGallery
               images={galleryImages}
               mainImage={product.product_image}

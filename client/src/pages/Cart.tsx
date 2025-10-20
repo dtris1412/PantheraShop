@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Minus, Plus, Trash2, ArrowRight } from "lucide-react";
 import { showToast } from "../components/Toast";
 import VariantSelectModal from "../components/VariantSelectModal"; // Import component ở đây
+import { useNavigate } from "react-router-dom";
+import { useOrder } from "../contexts/OrderContext";
 
 interface CartProps {
   onNavigate: (page: string) => void;
@@ -29,6 +31,8 @@ export default function Cart({ onNavigate }: CartProps) {
   const [cartId, setCartId] = useState<string | null>(null);
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null); // <--- Thêm state này
   const [editingItem, setEditingItem] = useState<CartItem | null>(null);
+  const navigate = useNavigate();
+  const { setOrderItems } = useOrder();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -186,6 +190,7 @@ export default function Cart({ onNavigate }: CartProps) {
     } else {
       setCartItems((items) => {
         const newItems = items.filter((item) => String(item.id) !== String(id));
+        // Cập nhật localStorage sau khi đã lọc xong
         localStorage.setItem("cart", JSON.stringify(newItems));
         showToast("Đã xóa sản phẩm thành công!", "success");
         return newItems;
@@ -332,6 +337,29 @@ export default function Cart({ onNavigate }: CartProps) {
   const shipping = subtotal > 1500000 ? 0 : 15000;
   const total = subtotal + shipping;
 
+  const handleProceedOrder = async () => {
+    if (isLoggedIn) {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `http://localhost:8080/api/cart/items/${cartId}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      const data = await res.json();
+      setOrderItems(data);
+      navigate("/order-info");
+    } else {
+      // Guest: chỉ cần chuyển trang, dữ liệu đã nằm trong localStorage
+      const guestCart = JSON.parse(localStorage.getItem("cart") || "[]");
+      if (guestCart.length === 0) return;
+      navigate("/order-info");
+    }
+  };
+
   return (
     <div className="min-h-screen pt-24 pb-12">
       <div className="max-w-7xl mx-auto px-6">
@@ -437,20 +465,21 @@ export default function Cart({ onNavigate }: CartProps) {
                   <span>{formatVND(total)}</span>
                 </div>
 
-                <button
-                  onClick={() => onNavigate("checkout")}
-                  className="w-full bg-black text-white py-4 font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center space-x-2 mb-3"
-                >
-                  <span>Tiến hành thanh toán</span>
-                  <ArrowRight className="w-5 h-5" />
-                </button>
-
-                <button
-                  onClick={() => onNavigate("products")}
-                  className="w-full border-2 border-black text-black py-4 font-semibold hover:bg-gray-100 transition-colors"
-                >
-                  Tiếp tục mua sắm
-                </button>
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={handleProceedOrder}
+                    className="w-full py-3 bg-black text-white font-semibold hover:bg-gray-900 transition"
+                    style={{ borderRadius: 0 }}
+                  >
+                    Tiến hành đặt hàng
+                  </button>
+                  <button
+                    onClick={() => onNavigate("products")}
+                    className="w-full border-2 border-black text-black py-4 font-semibold hover:bg-gray-100 transition-colors"
+                  >
+                    Tiếp tục mua sắm
+                  </button>
+                </div>
               </div>
             </div>
           </div>

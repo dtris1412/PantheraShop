@@ -101,10 +101,20 @@ const changeVariantInCart = async (
   return { message: "Thay đổi biến thể thành công", item };
 };
 
+const getCartProductsByCartId = async (cart_id) => {
+  if (!cart_id) throw new Error("Cart ID is required");
+  const items = await db.CartProduct.findAll({ where: { cart_id } });
+  if (!items) {
+    throw new Error("No items found in cart");
+  }
+
+  return items;
+};
 export {
   createCart,
   getCartByUserId,
   getCartItems,
+  getCartProductsByCartId,
   addItemToCart,
   removeItemFromCart,
   updateItemQuantity,
