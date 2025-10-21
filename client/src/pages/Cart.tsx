@@ -3,7 +3,7 @@ import { Minus, Plus, Trash2, ArrowRight } from "lucide-react";
 import { showToast } from "../components/Toast";
 import VariantSelectModal from "../components/VariantSelectModal"; // Import component ở đây
 import { useNavigate } from "react-router-dom";
-import { useOrder } from "../contexts/OrderContext";
+import { useOrder } from "../contexts/orderContext";
 
 interface CartProps {
   onNavigate: (page: string) => void;
@@ -31,6 +31,9 @@ export default function Cart({ onNavigate }: CartProps) {
   const [cartId, setCartId] = useState<string | null>(null);
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null); // <--- Thêm state này
   const [editingItem, setEditingItem] = useState<CartItem | null>(null);
+  const [voucherCode, setVoucherCode] = useState("");
+  const [voucherDiscount, setVoucherDiscount] = useState(0);
+  const [voucherError, setVoucherError] = useState("");
   const navigate = useNavigate();
   const { setOrderItems } = useOrder();
 
@@ -360,6 +363,23 @@ export default function Cart({ onNavigate }: CartProps) {
     }
   };
 
+  const handleApplyVoucher = () => {
+    // Demo: mã "SALE50" giảm 50k, "SALE10P" giảm 10%
+    if (voucherCode === "SALE50") {
+      setVoucherDiscount(50000);
+      setVoucherError("");
+    } else if (voucherCode === "SALE10P") {
+      setVoucherDiscount(Math.floor(subtotal * 0.1));
+      setVoucherError("");
+    } else if (voucherCode.trim() === "") {
+      setVoucherDiscount(0);
+      setVoucherError("");
+    } else {
+      setVoucherDiscount(0);
+      setVoucherError("Mã voucher không hợp lệ!");
+    }
+  };
+
   return (
     <div className="min-h-screen pt-24 pb-12">
       <div className="max-w-7xl mx-auto px-6">
@@ -451,7 +471,37 @@ export default function Cart({ onNavigate }: CartProps) {
                       {shipping === 0 ? "Miễn phí" : formatVND(shipping)}
                     </span>
                   </div>
-
+                  {/* Input voucher chuyển xuống sau phí vận chuyển */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Mã giảm giá (voucher)
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Nhập mã voucher"
+                        className="flex-1 border border-gray-300 rounded px-3 py-2"
+                        value={voucherCode}
+                        onChange={(e) => setVoucherCode(e.target.value)}
+                      />
+                      <button
+                        onClick={handleApplyVoucher}
+                        className="px-4 py-2 bg-black text-white font-semibold rounded hover:bg-gray-900 transition"
+                      >
+                        Áp dụng
+                      </button>
+                    </div>
+                    {voucherError && (
+                      <div className="text-red-500 text-sm mt-2">
+                        {voucherError}
+                      </div>
+                    )}
+                    {voucherDiscount > 0 && (
+                      <div className="text-green-600 text-sm mt-2">
+                        Đã áp dụng mã giảm giá: -{formatVND(voucherDiscount)}
+                      </div>
+                    )}
+                  </div>
                   {subtotal < 1500000 && (
                     <div className="text-xs text-gray-600 pt-2 border-t border-gray-300">
                       Mua thêm {formatVND(1500000 - subtotal)} để được miễn phí
@@ -462,7 +512,7 @@ export default function Cart({ onNavigate }: CartProps) {
 
                 <div className="flex justify-between text-lg font-bold mb-6 pt-4 border-t border-gray-300">
                   <span>Tổng cộng</span>
-                  <span>{formatVND(total)}</span>
+                  <span>{formatVND(total - voucherDiscount)}</span>
                 </div>
 
                 <div className="flex flex-col gap-3">

@@ -6,7 +6,7 @@ import {
 } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/authContext";
 import { ProductProvider } from "./contexts/productContext";
-import { OrderProvider } from "./contexts/OrderContext";
+import { OrderProvider } from "./contexts/orderContext";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
@@ -18,7 +18,7 @@ import OrderInfo from "./pages/OrderInfo";
 import Blog from "./pages/Blog";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile.tsx";
-import Loading from "./components/Loading"; // Đảm bảo đã có component này
+import Loading from "./components/Loading";
 import OrderHistory from "./pages/OrderHistory";
 import { ToastContainer } from "./components/Toast";
 import { useNavigate } from "react-router-dom";

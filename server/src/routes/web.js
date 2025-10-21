@@ -38,7 +38,13 @@ import {
   getProductImageById,
 } from "../controllers/product_imageController.js";
 
+//Payment APIs
+import { createMomoPayment } from "../controllers/paymentController.js";
+
 import { getAllBanners } from "../controllers/bannerController.js";
+
+import { getAllVouchers } from "../controllers/voucherController.js";
+
 const router = express.Router();
 const upload = multer({ dest: "uploads/" });
 
@@ -99,6 +105,13 @@ const initWebRoutes = (app) => {
 
   // Banner APIs
   router.get("/api/banners", getAllBanners);
+
+  //Voucher APIs
+  router.get("/api/vouchers", getAllVouchers);
+
+  //Payment APIs
+  router.post("/api/payment/momo", createMomoPayment);
+
   return app.use("/", router);
 };
 
