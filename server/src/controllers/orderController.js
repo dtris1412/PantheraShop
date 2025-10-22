@@ -6,6 +6,9 @@ import {
 
 import { decreaseVariantStock as decreaseVariantStockService } from "../services/variantService.js";
 
+import { sendOrderMail } from "../utils/mailer.js";
+import { renderOrderReceipt } from "../templates/orderReceipt.js";
+
 const createOrder = async (req, res) => {
   try {
     console.log("==> [createOrder] req.body:", req.body); // Log đầu vào
@@ -61,6 +64,16 @@ const createOrder = async (req, res) => {
         return res.status(400).json(orderProductResult);
       }
     }
+
+    // Sau khi tạo đơn hàng thành công:
+    const orderData = {
+      ...orderResult.data.dataValues, // hoặc orderResult.data nếu đã là object
+      products: req.body.products, // lấy từ req.body hoặc từ DB nếu cần
+    };
+
+    const html = renderOrderReceipt(orderData);
+    await sendOrderMail(req.body.recipient_email, "Biên lai đơn hàng", html);
+
     res.status(201).json({ success: true, data: orderResult.data });
   } catch (err) {
     console.error("==> [createOrder] Error:", err);

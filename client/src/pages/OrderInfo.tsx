@@ -32,6 +32,19 @@ interface RecipientInfo {
 
 type PaymentMethod = "cod" | "momo" | "VnPay";
 
+interface Voucher {
+  voucher_id: string;
+  voucher_code: string;
+  voucher_status: string;
+  discount_value: number;
+  min_order_value: number;
+  usage_limit?: number;
+  used_count?: number;
+  start_date?: string;
+  end_date?: string;
+  // Thêm các trường khác nếu cần
+}
+
 const formatVND = (value: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
     value
@@ -51,6 +64,8 @@ export default function OrderInfo() {
   const [recipientError, setRecipientError] = useState("");
   const [showPayment, setShowPayment] = useState(false);
   const [orderId, setOrderId] = useState(() => uuidv4());
+  const [vouchers, setVouchers] = useState<Voucher[]>([]);
+  const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
   const { orderItems } = useOrder();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -90,6 +105,12 @@ export default function OrderInfo() {
       setCartItems(cart);
     }
   }, [isLoggedIn, orderItems]);
+
+  useEffect(() => {
+    fetch("http://localhost:8080/api/vouchers")
+      .then((res) => res.json())
+      .then((data) => setVouchers(data));
+  }, []);
 
   const handleCancel = () => {
     setRecipient({ name: "", phone: "", email: "", address: "", note: "" });
@@ -197,6 +218,24 @@ export default function OrderInfo() {
     return true;
   };
 
+  const now = new Date();
+  const validVouchers = vouchers.filter(
+    (voucher) =>
+      voucher.voucher_status === "active" &&
+      subtotal >= Number(voucher.min_order_value) &&
+      (!voucher.usage_limit ||
+        (voucher.used_count ?? 0) < voucher.usage_limit) &&
+      (!voucher.start_date || new Date(voucher.start_date) <= now) &&
+      (!voucher.end_date || new Date(voucher.end_date) >= now)
+  );
+
+  const canApplyVoucher = (voucher: Voucher) =>
+    voucher.voucher_status === "active" &&
+    subtotal >= Number(voucher.min_order_value) &&
+    (!voucher.usage_limit || (voucher.used_count ?? 0) < voucher.usage_limit) &&
+    (!voucher.start_date || new Date(voucher.start_date) <= now) &&
+    (!voucher.end_date || new Date(voucher.end_date) >= now);
+
   return (
     <div className="min-h-screen pt-24 pb-12 bg-gray-50">
       <div className="max-w-5xl mx-auto px-6">
@@ -262,6 +301,49 @@ export default function OrderInfo() {
                     if (validateRecipient()) setShowPayment(true);
                   }}
                 />
+                <div className="mb-6">
+                  <label className="font-bold mb-2 block">
+                    Chọn voucher áp dụng
+                  </label>
+                  <select
+                    className="w-full px-4 py-2 rounded border font-semibold"
+                    value={selectedVoucher?.voucher_id ?? ""}
+                    onChange={(e) => {
+                      const v = vouchers.find(
+                        (v) => v.voucher_id === e.target.value
+                      );
+                      if (v && canApplyVoucher(v)) setSelectedVoucher(v);
+                    }}
+                  >
+                    <option value="">-- Chọn voucher --</option>
+                    {vouchers.map((voucher) => {
+                      const canApply =
+                        voucher.voucher_status === "active" &&
+                        subtotal >= Number(voucher.min_order_value) &&
+                        (!voucher.usage_limit ||
+                          (voucher.used_count ?? 0) < voucher.usage_limit) &&
+                        (!voucher.start_date ||
+                          new Date(voucher.start_date) <= now) &&
+                        (!voucher.end_date ||
+                          new Date(voucher.end_date) >= now);
+
+                      return (
+                        <option
+                          key={voucher.voucher_id}
+                          value={voucher.voucher_id}
+                          disabled={!canApply}
+                          style={{
+                            color: canApply ? "#2563eb" : "#aaa",
+                            background: canApply ? "#e0e7ff" : "#f3f4f6",
+                          }}
+                        >
+                          {voucher.voucher_code} - Giảm {voucher.discount_value}
+                          {canApply ? "" : " (Không đủ điều kiện)"}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
               </div>
             </div>
           </>
