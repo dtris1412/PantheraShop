@@ -138,7 +138,7 @@ export default function OrderInfo() {
           recipient_address: recipient.address,
           notes: recipient.note,
           products: cartItems.map((item) => ({
-            variant_id: item.product_id,
+            variant_id: item.id,
             quantity: item.quantity,
             price_at_time: item.price * item.quantity,
           })),

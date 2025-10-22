@@ -4,6 +4,8 @@ import {
   getStatusOrder as getStatusOrderService,
 } from "../services/orderService.js";
 
+import { decreaseVariantStock as decreaseVariantStockService } from "../services/variantService.js";
+
 const createOrder = async (req, res) => {
   try {
     console.log("==> [createOrder] req.body:", req.body); // Log đầu vào
@@ -50,7 +52,7 @@ const createOrder = async (req, res) => {
         price_at_time
       );
       console.log("==> [createOrder] orderProductResult:", orderProductResult); // Log từng sản phẩm
-
+      await decreaseVariantStockService(variant_id, quantity);
       if (!orderProductResult.success) {
         console.error(
           "==> [createOrder] orderProductResult error:",
