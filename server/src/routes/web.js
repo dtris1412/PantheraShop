@@ -42,7 +42,9 @@ import {
 import {
   createMomoPayment,
   createPayment,
+  momoIpnHandler,
 } from "../controllers/paymentController.js";
+import { createVnpayPaymentController } from "../controllers/paymentController.js";
 
 import { getAllBanners } from "../controllers/bannerController.js";
 
@@ -118,6 +120,10 @@ const initWebRoutes = (app) => {
   //Payment APIs
   router.post("/api/payment/momo", createMomoPayment);
   router.post("/api/payment", createPayment);
+
+  router.post("/api/payment/momo/ipn", momoIpnHandler);
+  router.post("/api/payment/vnpay", createVnpayPaymentController);
+
   //Order APIs
   router.post("/api/order", createOrder);
   router.get("/api/order/:order_id", getStatusOrder);

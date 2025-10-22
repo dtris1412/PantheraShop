@@ -6,6 +6,8 @@ import {
 
 const createOrder = async (req, res) => {
   try {
+    console.log("==> [createOrder] req.body:", req.body); // Log đầu vào
+
     const {
       order_id,
       order_date,
@@ -14,54 +16,72 @@ const createOrder = async (req, res) => {
       user_id,
       voucher_id,
       products,
+      recipient_name,
+      recipient_phone,
+      recipient_address,
+      notes,
     } = req.body;
 
-    // Create the main order
     const orderResult = await createOrderService(
       order_id,
       order_date,
       order_status || "paid",
       total_amount,
       user_id,
-      voucher_id
+      voucher_id,
+      recipient_name,
+      recipient_phone,
+      recipient_address,
+      notes
     );
+    console.log("==> [createOrder] orderResult:", orderResult); // Log kết quả tạo order
+
     if (!orderResult.success) {
+      console.error("==> [createOrder] orderResult error:", orderResult);
       return res.status(400).json(orderResult);
     }
-    // Create order products
+
     for (const product of products) {
       const { variant_id, quantity, price_at_time } = product;
       const orderProductResult = await createOrderProductService(
-        orderResult.data.id,
-        user_id,
+        orderResult.data.order_id,
         variant_id,
         quantity,
-        price_at_time,
-        voucher_id
+        price_at_time
       );
+      console.log("==> [createOrder] orderProductResult:", orderProductResult); // Log từng sản phẩm
+
       if (!orderProductResult.success) {
+        console.error(
+          "==> [createOrder] orderProductResult error:",
+          orderProductResult
+        );
         return res.status(400).json(orderProductResult);
       }
     }
     res.status(201).json({ success: true, data: orderResult.data });
   } catch (err) {
-    console.error("Error creating order: ", err);
+    console.error("==> [createOrder] Error:", err);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
 const getStatusOrder = async (req, res) => {
   try {
-    const { order_id } = req.params;
-    const statusResult = await getStatusOrderService(order_id);
+    console.log("==> [getStatusOrder] order_id:", req.params.order_id); // Log đầu vào
+    const statusResult = await getStatusOrderService(req.params.order_id);
+    console.log("==> [getStatusOrder] statusResult:", statusResult); // Log kết quả
+
     if (!statusResult.success) {
+      console.error("==> [getStatusOrder] statusResult error:", statusResult);
       return res.status(400).json(statusResult);
     }
 
     res.status(200).json(statusResult);
   } catch (err) {
-    console.error("Error getting order status: ", err);
+    console.error("==> [getStatusOrder] Error:", err);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
+
 export { createOrder, getStatusOrder };

@@ -67,7 +67,9 @@ export default function PaymentComponent({
             orderInfo: `Thanh toán đơn hàng #${orderId}`,
           }),
         });
+
         const data = await res.json();
+        console.log("MoMo payment response:", data);
         setMomo(data);
       } catch (err) {
         setMomo({ message: "Không thể tạo giao dịch MOMO." });
@@ -76,6 +78,23 @@ export default function PaymentComponent({
     }
     fetchMomo();
   }, [total, orderId]);
+
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const res = await fetch(`/api/order/?orderId=${orderId}`);
+      const data = await res.json();
+      if (data.status === "paid") {
+        clearInterval(interval);
+        window.location.href = "/payment/success";
+      }
+      if (data.status === "failed") {
+        clearInterval(interval);
+        window.location.href = "/payment/fail";
+      }
+      // Nếu "pending" hoặc "not_found" thì tiếp tục polling
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [orderId]);
 
   return (
     <div className="min-h-screen  flex items-start">

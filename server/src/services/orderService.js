@@ -6,9 +6,21 @@ const createOrder = async (
   order_status,
   total_amount,
   user_id,
-  voucher_id
+  voucher_id,
+  recipient_name,
+  recipient_phone,
+  recipient_address,
+  notes
 ) => {
-  if (!order_id || !order_date || !order_status || !total_amount || !user_id) {
+  if (
+    !order_id ||
+    !order_date ||
+    !order_status ||
+    !total_amount ||
+    !recipient_name ||
+    !recipient_phone ||
+    !recipient_address
+  ) {
     return { success: false, message: "Missing required fields" };
   }
   const newOrder = await db.Order.create({
@@ -18,28 +30,28 @@ const createOrder = async (
     total_amount,
     user_id,
     voucher_id,
+    recipient_name,
+    recipient_phone,
+    recipient_address,
+    notes,
   });
   return { success: true, data: newOrder };
 };
 
 const createOrderProduct = async (
   order_id,
-  user_id,
   variant_id,
   quantity,
-  price_at_time,
-  voucher_id
+  price_at_time
 ) => {
-  if (!order_id || !user_id || !variant_id || !quantity || !price_at_time) {
+  if (!order_id || !variant_id || !quantity || !price_at_time) {
     return { success: false, message: "Missing required fields" };
   }
   const newOrderProduct = await db.OrderProduct.create({
     order_id,
-    user_id,
     variant_id,
     quantity,
     price_at_time,
-    voucher_id,
   });
   return { success: true, data: newOrderProduct };
 };

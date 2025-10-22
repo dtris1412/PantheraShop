@@ -1,6 +1,8 @@
 import {
   createMomoPayment,
   createPayment as createPaymentService,
+  handleMomoIpn,
+  createVnpayPayment,
 } from "../services/paymentSerivce.js";
 
 const createMomoPaymentController = async (req, res) => {
@@ -57,4 +59,47 @@ const createPayment = async (req, res) => {
   }
 };
 
-export { createMomoPaymentController as createMomoPayment, createPayment };
+const momoIpnHandler = async (req, res) => {
+  try {
+    const ipnData = req.body;
+    console.log("MoMo IPN received at controller:", ipnData); // Log dữ liệu IPN
+
+    // Lấy tempOrderData từ cache/extraData hoặc nơi bạn lưu tạm
+    const tempOrderData = await getTempOrderData(ipnData.orderId); // bạn tự cài hàm này
+
+    const status = await handleMomoIpn(ipnData, tempOrderData);
+    console.log("MoMo IPN handled, status:", status); // Log kết quả xử lý
+
+    res.status(200).json({ message: "IPN received", status });
+  } catch (err) {
+    console.error("MoMo IPN error at controller:", err);
+    res.status(500).json({ message: "IPN error", error: err.message });
+  }
+};
+
+const createVnpayPaymentController = async (req, res) => {
+  try {
+    const { amount, orderId, orderInfo } = req.body;
+    if (!amount || !orderId || !orderInfo) {
+      return res.status(400).json({ message: "Thiếu dữ liệu thanh toán!" });
+    }
+    const payUrl = await createVnpayPayment({ amount, orderId, orderInfo });
+    res.json({ payUrl });
+  } catch (err) {
+    console.error(
+      "VNPAY API error:",
+      err?.response?.data || err.message || err
+    );
+    res.status(500).json({
+      message: "Lỗi khi tạo thanh toán VNPAY.",
+      error: err?.response?.data || err.message,
+    });
+  }
+};
+
+export {
+  createMomoPaymentController as createMomoPayment,
+  createPayment,
+  momoIpnHandler,
+  createVnpayPaymentController,
+};

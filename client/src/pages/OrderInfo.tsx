@@ -4,6 +4,9 @@ import OrderProductList from "../components/order_info/OrderProductList";
 import OrderRecipientForm from "../components/order_info/OrderRecipientForm";
 import OrderPaymentMethod from "../components/order_info/OrderPaymentMethod";
 import PaymentComponent from "../components/order_info/PaymentComponent";
+import VnpayPaymentComponent from "../components/order_info/VnpayPaymentComponent";
+import CashPaymentComponent from "../components/order_info/CashPaymentComponent";
+import { v4 as uuidv4 } from "uuid";
 import { useOrder } from "../contexts/orderContext";
 import { useAuth } from "../contexts/authContext";
 import { useNavigate } from "react-router-dom";
@@ -44,16 +47,17 @@ export default function OrderInfo() {
     note: "",
   });
   const [payment, setPayment] = useState<PaymentMethod>("cod");
-  const [showResult, setShowResult] = useState<null | "success" | "fail">(null);
+  const [showResult, setShowResult] = useState<"success" | "fail" | null>(null);
   const [recipientError, setRecipientError] = useState("");
   const [showPayment, setShowPayment] = useState(false);
+  const [orderId, setOrderId] = useState(() => uuidv4());
   const { orderItems } = useOrder();
   const { user } = useAuth();
   const navigate = useNavigate();
 
   const token = localStorage.getItem("token");
   const isLoggedIn = !!token;
-  const userId = user?.user_id ? user.user_id.toString() : "guest";
+  const userId = user?.user_id ? user.user_id : null;
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -114,6 +118,60 @@ export default function OrderInfo() {
     }, 2000);
   };
 
+  const handleCreateOrderCOD = async () => {
+    if (!validateRecipient()) return;
+    try {
+      // 1. Tạo đơn hàng
+      const orderRes = await fetch("http://localhost:8080/api/order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          order_id: orderId,
+          order_date: new Date().toISOString(),
+          order_status: "pending",
+          total_amount: total,
+          user_id: user?.user_id ?? userId,
+          voucher_id: null,
+          recipient_name: recipient.name,
+          recipient_phone: recipient.phone,
+          recipient_email: recipient.email,
+          recipient_address: recipient.address,
+          notes: recipient.note,
+          products: cartItems.map((item) => ({
+            variant_id: item.product_id,
+            quantity: item.quantity,
+            price_at_time: item.price * item.quantity,
+          })),
+        }),
+      });
+      const orderData = await orderRes.json();
+      if (!orderData.success) throw new Error(orderData.message);
+
+      // 2. Tạo thanh toán
+      const paymentRes = await fetch("http://localhost:8080/api/payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          payment_method: "cod",
+          payment_status: "pending",
+          payment_info: "Thanh toán khi nhận hàng",
+          paid_at: null,
+          order_id: orderId,
+          user_id: user?.user_id ?? userId,
+          voucher_id: null,
+        }),
+      });
+      const paymentData = await paymentRes.json();
+      if (paymentData.success === false) throw new Error(paymentData.message);
+
+      setShowResult("success");
+      // Xử lý chuyển trang hoặc thông báo thành công ở đây
+    } catch (err) {
+      setShowResult("fail");
+      // Hiển thị thông báo lỗi nếu cần
+    }
+  };
+
   const subtotal = cartItems.reduce(
     (sum, item) => sum + Number(item.price) * item.quantity,
     0
@@ -125,16 +183,48 @@ export default function OrderInfo() {
     console.log("showPayment:", showPayment);
   }, [showPayment]);
 
+  const validateRecipient = () => {
+    if (
+      !recipient.name ||
+      !recipient.phone ||
+      !recipient.email ||
+      !recipient.address
+    ) {
+      setRecipientError("Vui lòng nhập đầy đủ các trường bắt buộc.");
+      return false;
+    }
+    setRecipientError("");
+    return true;
+  };
+
   return (
     <div className="min-h-screen pt-24 pb-12 bg-gray-50">
       <div className="max-w-5xl mx-auto px-6">
         {showPayment ? (
-          <PaymentComponent
-            cartItems={cartItems}
-            recipient={recipient}
-            amount={total}
-            onBack={() => setShowPayment(false)}
-          />
+          payment === "momo" ? (
+            <PaymentComponent
+              cartItems={cartItems}
+              recipient={recipient}
+              amount={total}
+              onBack={() => setShowPayment(false)}
+            />
+          ) : payment === "VnPay" ? (
+            <VnpayPaymentComponent
+              cartItems={cartItems}
+              recipient={recipient}
+              amount={total}
+              onBack={() => setShowPayment(false)}
+            />
+          ) : (
+            <CashPaymentComponent
+              cartItems={cartItems}
+              recipient={recipient}
+              amount={total}
+              orderId={orderId}
+              onBack={() => setShowPayment(false)}
+              onConfirm={handleCreateOrderCOD}
+            />
+          )
         ) : (
           <>
             {/* Nút quay về, tiêu đề, grid layout... */}
@@ -168,7 +258,9 @@ export default function OrderInfo() {
                     console.log("Chọn phương thức:", v);
                   }}
                   items={cartItems}
-                  onConfirmPayment={() => setShowPayment(true)}
+                  onConfirmPayment={() => {
+                    if (validateRecipient()) setShowPayment(true);
+                  }}
                 />
               </div>
             </div>

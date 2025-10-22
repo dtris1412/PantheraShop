@@ -17,6 +17,10 @@ export default (sequelize, DataTypes) => {
       order_date: DataTypes.DATE,
       order_status: DataTypes.STRING,
       total_amount: DataTypes.DOUBLE,
+      recipient_name: DataTypes.STRING,
+      recipient_address: DataTypes.STRING,
+      recipient_phone: DataTypes.STRING,
+      notes: DataTypes.STRING,
       user_id: {
         type: DataTypes.INTEGER,
         foreignKey: true,
@@ -37,7 +41,7 @@ export default (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: "Order",
-      tableName: "Order",
+      tableName: "Orders",
       freezeTableName: true,
       timestamps: false,
     }

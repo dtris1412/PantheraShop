@@ -14,15 +14,6 @@ export default (sequelize, DataTypes) => {
         primaryKey: true,
         autoIncrement: true,
       },
-
-      user_id: {
-        type: DataTypes.INTEGER,
-        foreignKey: true,
-        references: {
-          model: "User",
-          key: "user_id",
-        },
-      },
       variant_id: {
         type: DataTypes.INTEGER,
         foreignKey: true,
@@ -33,19 +24,11 @@ export default (sequelize, DataTypes) => {
       },
       quantity: DataTypes.INTEGER,
       price_at_time: DataTypes.DOUBLE,
-      voucher_id: {
-        type: DataTypes.INTEGER,
-        foreignKey: true,
-        references: {
-          model: "Voucher",
-          key: "voucher_id",
-        },
-      },
     },
     {
       sequelize,
       modelName: "OrderProduct",
-      tableName: "OrderProducts",
+      tableName: "order_products",
       freezeTableName: true,
       timestamps: false,
     }
