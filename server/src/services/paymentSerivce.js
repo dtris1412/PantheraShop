@@ -37,4 +37,36 @@ const createMomoPayment = async ({ amount, orderId, orderInfo }) => {
   return momoRes.data;
 };
 
-export { createMomoPayment };
+const createPayment = async ({
+  payment_method,
+  payment_status,
+  payment_info,
+  paid_at,
+  order_id,
+  user_id,
+  voucher_id,
+}) => {
+  if (
+    !payment_method ||
+    !payment_status ||
+    !payment_info ||
+    !paid_at ||
+    !order_id ||
+    !user_id ||
+    !voucher_id
+  ) {
+    return { success: false, message: "Missing required fields" };
+  }
+  const payment = await createMomoPayment({
+    payment_method,
+    payment_status,
+    payment_info,
+    paid_at,
+    order_id,
+    user_id,
+    voucher_id,
+  });
+
+  return { success: true, data: payment };
+};
+export { createMomoPayment, createPayment };

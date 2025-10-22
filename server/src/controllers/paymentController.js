@@ -1,4 +1,7 @@
-import { createMomoPayment } from "../services/paymentSerivce.js";
+import {
+  createMomoPayment,
+  createPayment as createPaymentService,
+} from "../services/paymentSerivce.js";
 
 const createMomoPaymentController = async (req, res) => {
   try {
@@ -21,4 +24,37 @@ const createMomoPaymentController = async (req, res) => {
   }
 };
 
-export { createMomoPaymentController as createMomoPayment };
+const createPayment = async (req, res) => {
+  try {
+    const {
+      payment_method,
+      payment_status,
+      payment_info,
+      paid_at,
+      order_id,
+      user_id,
+      voucher_id,
+    } = req.body;
+
+    const paymentResult = await createPaymentService({
+      payment_method,
+      payment_status,
+      payment_info,
+      paid_at,
+      order_id,
+      user_id,
+      voucher_id,
+    });
+
+    if (paymentResult.success) {
+      res.json(paymentResult.data);
+    } else {
+      res.status(400).json({ success: false, message: paymentResult.message });
+    }
+  } catch (err) {
+    console.error("Error creating payment: ", err);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+export { createMomoPaymentController as createMomoPayment, createPayment };
