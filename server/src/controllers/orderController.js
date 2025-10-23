@@ -4,6 +4,8 @@ import {
   getStatusOrder as getStatusOrderService,
 } from "../services/orderService.js";
 
+import { decreaseVoucherStock as decreaseVoucherStockService } from "../services/voucherService.js";
+
 import { decreaseVariantStock as decreaseVariantStockService } from "../services/variantService.js";
 
 import { sendOrderMail } from "../utils/mailer.js";
@@ -45,6 +47,7 @@ const createOrder = async (req, res) => {
       console.error("==> [createOrder] orderResult error:", orderResult);
       return res.status(400).json(orderResult);
     }
+    await decreaseVoucherStockService(voucher_id);
 
     for (const product of products) {
       const { variant_id, quantity, price_at_time } = product;

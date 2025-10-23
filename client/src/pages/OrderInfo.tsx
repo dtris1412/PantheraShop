@@ -66,6 +66,11 @@ export default function OrderInfo() {
   const [orderId, setOrderId] = useState(() => uuidv4());
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
+  const [selectedOrderVoucher, setSelectedOrderVoucher] =
+    useState<Voucher | null>(null);
+  const [selectedShippingVoucher, setSelectedShippingVoucher] =
+    useState<Voucher | null>(null);
+  const [finalTotal, setFinalTotal] = useState(0); // thêm state này
   const { orderItems } = useOrder();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -152,7 +157,8 @@ export default function OrderInfo() {
           order_status: "pending",
           total_amount: total,
           user_id: user?.user_id ?? userId,
-          voucher_id: null,
+          voucher_id: selectedOrderVoucher?.voucher_id ?? null,
+          shipping_voucher_id: selectedShippingVoucher?.voucher_id ?? null,
           recipient_name: recipient.name,
           recipient_phone: recipient.phone,
           recipient_email: recipient.email,
@@ -244,21 +250,21 @@ export default function OrderInfo() {
             <PaymentComponent
               cartItems={cartItems}
               recipient={recipient}
-              amount={total}
+              amount={finalTotal} // <-- giá cuối cùng đã trừ voucher
               onBack={() => setShowPayment(false)}
             />
           ) : payment === "VnPay" ? (
             <VnpayPaymentComponent
               cartItems={cartItems}
               recipient={recipient}
-              amount={total}
+              amount={finalTotal}
               onBack={() => setShowPayment(false)}
             />
           ) : (
             <CashPaymentComponent
               cartItems={cartItems}
               recipient={recipient}
-              amount={total}
+              amount={finalTotal}
               orderId={orderId}
               onBack={() => setShowPayment(false)}
               onConfirm={handleCreateOrderCOD}
@@ -300,50 +306,10 @@ export default function OrderInfo() {
                   onConfirmPayment={() => {
                     if (validateRecipient()) setShowPayment(true);
                   }}
+                  onTotalChange={setFinalTotal} // truyền hàm này
+                  onOrderVoucherChange={setSelectedOrderVoucher}
+                  onShippingVoucherChange={setSelectedShippingVoucher}
                 />
-                <div className="mb-6">
-                  <label className="font-bold mb-2 block">
-                    Chọn voucher áp dụng
-                  </label>
-                  <select
-                    className="w-full px-4 py-2 rounded border font-semibold"
-                    value={selectedVoucher?.voucher_id ?? ""}
-                    onChange={(e) => {
-                      const v = vouchers.find(
-                        (v) => v.voucher_id === e.target.value
-                      );
-                      if (v && canApplyVoucher(v)) setSelectedVoucher(v);
-                    }}
-                  >
-                    <option value="">-- Chọn voucher --</option>
-                    {vouchers.map((voucher) => {
-                      const canApply =
-                        voucher.voucher_status === "active" &&
-                        subtotal >= Number(voucher.min_order_value) &&
-                        (!voucher.usage_limit ||
-                          (voucher.used_count ?? 0) < voucher.usage_limit) &&
-                        (!voucher.start_date ||
-                          new Date(voucher.start_date) <= now) &&
-                        (!voucher.end_date ||
-                          new Date(voucher.end_date) >= now);
-
-                      return (
-                        <option
-                          key={voucher.voucher_id}
-                          value={voucher.voucher_id}
-                          disabled={!canApply}
-                          style={{
-                            color: canApply ? "#2563eb" : "#aaa",
-                            background: canApply ? "#e0e7ff" : "#f3f4f6",
-                          }}
-                        >
-                          {voucher.voucher_code} - Giảm {voucher.discount_value}
-                          {canApply ? "" : " (Không đủ điều kiện)"}
-                        </option>
-                      );
-                    })}
-                  </select>
-                </div>
               </div>
             </div>
           </>

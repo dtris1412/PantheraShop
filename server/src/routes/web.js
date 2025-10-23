@@ -48,7 +48,10 @@ import { createVnpayPaymentController } from "../controllers/paymentController.j
 
 import { getAllBanners } from "../controllers/bannerController.js";
 
-import { getAllVouchers } from "../controllers/voucherController.js";
+import {
+  getAllVouchers,
+  decreaseVoucherStock,
+} from "../controllers/voucherController.js";
 
 //Order APIs
 import { createOrder, getStatusOrder } from "../controllers/orderController.js";
@@ -116,6 +119,7 @@ const initWebRoutes = (app) => {
 
   //Voucher APIs
   router.get("/api/vouchers", getAllVouchers);
+  router.post("/api/vouchers/decrease-stock", decreaseVoucherStock);
 
   //Payment APIs
   router.post("/api/payment/momo", createMomoPayment);
