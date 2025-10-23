@@ -7,6 +7,7 @@ import {
   updateItemQuantity as updateItemQuantityService,
   changeVariantInCart as changeVariantInCartService,
   getCartProductsByCartId as getCartProductsByCartIdService,
+  clearCart as clearCartService,
 } from "../services/cartService.js";
 
 const getCartByUserId = async (req, res) => {
@@ -152,6 +153,20 @@ const getCartProductsByCartId = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+const clearCart = async (req, res) => {
+  try {
+    const { cart_id } = req.params;
+    if (!cart_id) {
+      return res.status(400).json({ message: "Cart ID is required" });
+    }
+    const result = await clearCartService(cart_id);
+    res.status(200).json(result);
+  } catch (err) {
+    console.error("Error clearing cart: ", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 export {
   getCartByUserId,
   getCartItems,
@@ -160,4 +175,5 @@ export {
   changeVariantInCart,
   updateItemQuantity,
   getCartProductsByCartId,
+  clearCart,
 };

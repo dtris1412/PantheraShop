@@ -110,6 +110,14 @@ const getCartProductsByCartId = async (cart_id) => {
 
   return items;
 };
+
+const clearCart = async (cart_id) => {
+  if (!cart_id) throw new Error("Cart ID is required");
+  await db.CartProduct.destroy({
+    where: { cart_id },
+  });
+  return { message: "Đã xóa tất cả sản phẩm trong giỏ hàng" };
+};
 export {
   createCart,
   getCartByUserId,
@@ -119,4 +127,5 @@ export {
   removeItemFromCart,
   updateItemQuantity,
   changeVariantInCart,
+  clearCart,
 };

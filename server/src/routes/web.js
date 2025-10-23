@@ -30,6 +30,7 @@ import {
   updateItemQuantity,
   changeVariantInCart,
   getCartProductsByCartId,
+  clearCart,
 } from "../controllers/cartController.js";
 
 // Product_Images
@@ -109,6 +110,7 @@ const initWebRoutes = (app) => {
     verifyToken,
     removeItemFromCart
   );
+  router.delete("/api/cart/clear/:cart_id", verifyToken, clearCart);
 
   // Product_Images APIs
   router.get("/api/product-images", getAllProductImages);

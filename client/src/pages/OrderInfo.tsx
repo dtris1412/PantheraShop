@@ -78,6 +78,7 @@ export default function OrderInfo() {
   const token = localStorage.getItem("token");
   const isLoggedIn = !!token;
   const userId = user?.user_id ? user.user_id : null;
+  const cartId = localStorage.getItem("cartId");
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -195,6 +196,35 @@ export default function OrderInfo() {
       if (paymentData.success === false) throw new Error(paymentData.message);
 
       setShowResult("success");
+
+      // === XÓA GIỎ HÀNG SAU KHI ĐẶT HÀNG THÀNH CÔNG ===
+      if (isLoggedIn && userId) {
+        const token = localStorage.getItem("token");
+        // Lấy cartId từ API
+        const cartRes = await fetch(
+          `http://localhost:8080/api/cart/${userId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        const cartData = await cartRes.json();
+        console.log("cartData:", cartData);
+        const cartId = cartData?.cart_id;
+        console.log("cartId lấy được ở FE:", cartId);
+        if (cartId) {
+          await fetch(`http://localhost:8080/api/cart/clear/${cartId}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          setCartItems([]);
+        }
+      } else {
+        localStorage.removeItem("cart");
+        setCartItems([]);
+      }
+      // === KẾT THÚC XÓA GIỎ HÀNG ===
+
       // Xử lý chuyển trang hoặc thông báo thành công ở đây
     } catch (err) {
       setShowResult("fail");
