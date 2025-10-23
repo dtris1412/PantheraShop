@@ -155,7 +155,10 @@ export default function OrderInfo() {
           order_id: orderId,
           order_date: new Date().toISOString(),
           order_status: "pending",
-          total_amount: total,
+          total_amount: total, // tổng tiền cuối cùng đã trừ voucher
+          order_discount: orderDiscount, // số tiền giảm giá đơn hàng
+          shipping_fee: shipping, // phí vận chuyển thực tế
+          // shipping_discount: 0,       // nếu có giảm phí vận chuyển thì truyền thêm
           user_id: user?.user_id ?? userId,
           voucher_id: selectedOrderVoucher?.voucher_id ?? null,
           shipping_voucher_id: selectedShippingVoucher?.voucher_id ?? null,
@@ -203,8 +206,15 @@ export default function OrderInfo() {
     (sum, item) => sum + Number(item.price) * item.quantity,
     0
   );
-  const shipping = subtotal >= 1500000 ? 0 : 15000;
-  const total = subtotal + shipping;
+  // Base shipping fee before any shipping voucher
+  const baseShippingFee = subtotal >= 1500000 ? 0 : 15000;
+  // Voucher discounts (assume discount_value is a numeric absolute amount)
+  const orderDiscount = Number(selectedOrderVoucher?.discount_value ?? 0);
+  const shippingDiscount = Number(selectedShippingVoucher?.discount_value ?? 0);
+  // Apply shipping discount but never below 0
+  const shipping = Math.max(0, baseShippingFee - shippingDiscount);
+  // Final total after applying order and shipping discounts (never negative)
+  const total = Math.max(0, subtotal + shipping - orderDiscount);
 
   useEffect(() => {
     console.log("showPayment:", showPayment);

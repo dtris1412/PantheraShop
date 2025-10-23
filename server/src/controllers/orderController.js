@@ -27,6 +27,8 @@ const createOrder = async (req, res) => {
       recipient_phone,
       recipient_address,
       notes,
+      shipping_fee,
+      order_discount,
     } = req.body;
 
     const orderResult = await createOrderService(
@@ -72,8 +74,11 @@ const createOrder = async (req, res) => {
     const orderData = {
       ...orderResult.data.dataValues,
       products: req.body.products,
+      shipping_fee: req.body.shipping_fee ?? 0,
+      order_discount: req.body.order_discount ?? 0,
+      total_amount:
+        req.body.total_amount ?? orderResult.data.dataValues.total_amount,
     };
-
     const html = renderOrderReceipt(orderData);
     await sendOrderMail(req.body.recipient_email, "Biên lai đơn hàng", html);
 

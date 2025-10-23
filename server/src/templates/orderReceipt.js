@@ -1,4 +1,6 @@
 export function renderOrderReceipt(order) {
+  // Giả sử order có thêm shipping_fee, shipping_discount, order_discount
+  // và mỗi item có thể có discount riêng (nếu cần)
   return `
     <div style="font-family: Arial, sans-serif; font-size: 15px; background: #fff; color: #111; padding: 32px;">
       <h2 style="color:#000; text-align:center; font-size: 22px; margin-bottom: 24px; letter-spacing:1px;">
@@ -26,6 +28,7 @@ export function renderOrderReceipt(order) {
             <th style="padding:10px; border:1px solid #222;">Sản phẩm</th>
             <th style="padding:10px; border:1px solid #222;">Số lượng</th>
             <th style="padding:10px; border:1px solid #222;">Đơn giá</th>
+            <th style="padding:10px; border:1px solid #222;">Chiết khấu</th>
             <th style="padding:10px; border:1px solid #222;">Thành tiền</th>
           </tr>
         </thead>
@@ -36,30 +39,74 @@ export function renderOrderReceipt(order) {
                   .map(
                     (item) => `
                 <tr style="text-align:center;">
-                  <td style="padding:8px 6px; border:1px solid #222;">${
-                    item.name || "Sản phẩm #" + item.variant_id
-                  }</td>
-                  <td style="padding:8px 6px; border:1px solid #222;">${
-                    item.quantity
-                  }</td>
-                  <td style="padding:8px 6px; border:1px solid #222;">${Number(
-                    item.price_at_time
-                  ).toLocaleString()}đ</td>
-                  <td style="padding:8px 6px; border:1px solid #222;"><b>${(
-                    item.quantity * item.price_at_time
-                  ).toLocaleString()}đ</b></td>
+                  <td style="padding:8px 6px; border:1px solid #222;">
+                    ${item.name || "Sản phẩm #" + item.variant_id}
+                  </td>
+                  <td style="padding:8px 6px; border:1px solid #222;">
+                    ${item.quantity}
+                  </td>
+                  <td style="padding:8px 6px; border:1px solid #222;">
+                    ${Number(
+                      item.price_at_time / item.quantity
+                    ).toLocaleString()}đ
+                  </td>
+                  <td style="padding:8px 6px; border:1px solid #222; color:#0a7;">
+                    ${
+                      item.discount
+                        ? "-" + Number(item.discount).toLocaleString() + "đ"
+                        : "0đ"
+                    }
+                  </td>
+                  <td style="padding:8px 6px; border:1px solid #222;">
+                    <b>${item.price_at_time.toLocaleString()}đ</b>
+                  </td>
                 </tr>
               `
                   )
                   .join("")
-              : `<tr><td colspan="4" style="text-align:center;">Không có sản phẩm</td></tr>`
+              : `<tr><td colspan="5" style="text-align:center;">Không có sản phẩm</td></tr>`
           }
         </tbody>
       </table>
-      <div style="text-align:right; margin-top:18px;">
-        <span style="font-size:17px; color:#000; font-weight:bold; border-bottom:2px solid #000; padding-bottom:2px;">
-          Tổng cộng: ${order.total_amount.toLocaleString()}đ
-        </span>
+      <div style="margin-top:18px;">
+        <table style="width:100%; font-size:15px;">
+          <tr>
+            <td style="text-align:right; padding:4px 0;">Phí vận chuyển:</td>
+            <td style="text-align:right; padding:4px 0;">
+              ${
+                order.shipping_fee
+                  ? Number(order.shipping_fee).toLocaleString() + "đ"
+                  : "0đ"
+              }
+            </td>
+          </tr>
+          <tr>
+            <td style="text-align:right; padding:4px 0;">Chiết khấu phí vận chuyển:</td>
+            <td style="text-align:right; padding:4px 0; color:#0a7;">
+              ${
+                order.shipping_discount
+                  ? "-" + Number(order.shipping_discount).toLocaleString() + "đ"
+                  : "0đ"
+              }
+            </td>
+          </tr>
+          <tr>
+            <td style="text-align:right; padding:4px 0;">Chiết khấu đơn hàng:</td>
+            <td style="text-align:right; padding:4px 0; color:#0a7;">
+              ${
+                order.order_discount
+                  ? "-" + Number(order.order_discount).toLocaleString() + "đ"
+                  : "0đ"
+              }
+            </td>
+          </tr>
+          <tr>
+            <td style="text-align:right; padding:8px 0; font-weight:bold; border-top:2px solid #000;">Tổng cộng:</td>
+            <td style="text-align:right; padding:8px 0; font-weight:bold; border-top:2px solid #000;">
+              ${order.total_amount.toLocaleString()}đ
+            </td>
+          </tr>
+        </table>
       </div>
       <hr style="margin:24px 0; border: none; border-top: 1px solid #222;">
       <div style="text-align:center; color:#000;">
