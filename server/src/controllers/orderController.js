@@ -70,8 +70,8 @@ const createOrder = async (req, res) => {
 
     // Sau khi tạo đơn hàng thành công:
     const orderData = {
-      ...orderResult.data.dataValues, // hoặc orderResult.data nếu đã là object
-      products: req.body.products, // lấy từ req.body hoặc từ DB nếu cần
+      ...orderResult.data.dataValues,
+      products: req.body.products,
     };
 
     const html = renderOrderReceipt(orderData);

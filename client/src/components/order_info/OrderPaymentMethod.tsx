@@ -37,8 +37,6 @@ export default function OrderPaymentMethod({ ...props }) {
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [selectedOrderVoucher, setSelectedOrderVoucher] =
     useState<Voucher | null>(null);
-  const [selectedShippingVoucher, setSelectedShippingVoucher] =
-    useState<Voucher | null>(null);
 
   useEffect(() => {
     fetch("http://localhost:8080/api/vouchers")
@@ -54,11 +52,7 @@ export default function OrderPaymentMethod({ ...props }) {
   const orderDiscount = selectedOrderVoucher
     ? Number(selectedOrderVoucher.discount_value)
     : 0;
-  const shippingDiscount = selectedShippingVoucher
-    ? Number(selectedShippingVoucher.discount_value)
-    : 0;
-  const shippingAfterVoucher = Math.max(0, shipping - shippingDiscount);
-  const total = subtotal - orderDiscount + shippingAfterVoucher;
+  const total = subtotal - orderDiscount + shipping;
 
   useEffect(() => {
     if (props.onTotalChange) {
@@ -70,10 +64,6 @@ export default function OrderPaymentMethod({ ...props }) {
     if (props.onOrderVoucherChange)
       props.onOrderVoucherChange(selectedOrderVoucher);
   }, [selectedOrderVoucher]);
-  useEffect(() => {
-    if (props.onShippingVoucherChange)
-      props.onShippingVoucherChange(selectedShippingVoucher);
-  }, [selectedShippingVoucher]);
 
   const canApplyVoucher = (voucher: Voucher) => {
     if (!voucher) return false;
@@ -135,54 +125,7 @@ export default function OrderPaymentMethod({ ...props }) {
                 const enabled = canApplyVoucher(voucher);
                 const remain =
                   typeof voucher.usage_limit === "number"
-                    ? voucher.usage_limit - (voucher.used_count ?? 0)
-                    : "";
-                return (
-                  <option
-                    key={voucher.voucher_id}
-                    value={voucher.voucher_id}
-                    disabled={!enabled}
-                    style={{
-                      color: enabled ? "#222" : "#bbb",
-                      fontSize: "13px",
-                      padding: "6px 0",
-                    }}
-                  >
-                    {voucher.voucher_code}
-                    {Number(voucher.discount_value || 0) > 0
-                      ? ` - ${formatVND(Number(voucher.discount_value || 0))}`
-                      : ""}
-                    {remain !== "" ? ` | SL: ${remain}` : ""}
-                    {!enabled ? " (Không đủ điều kiện)" : ""}
-                  </option>
-                );
-              })}
-          </select>
-        </div>
-        <div className="mb-2 w-full">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Chọn voucher giảm phí vận chuyển
-          </label>
-          <select
-            className="w-full px-4 py-2 border rounded bg-white text-sm"
-            value={selectedShippingVoucher?.voucher_id ?? ""}
-            onChange={(e) => {
-              const v = vouchers.find(
-                (v) =>
-                  String(v.voucher_id) === e.target.value &&
-                  v.discount_type === "shipping"
-              );
-              setSelectedShippingVoucher(v ?? null);
-            }}
-          >
-            <option value="">-- Không chọn voucher --</option>
-            {vouchers
-              .filter((v) => v.discount_type === "shipping")
-              .map((voucher) => {
-                const enabled = canApplyVoucher(voucher);
-                const remain =
-                  typeof voucher.usage_limit === "number"
-                    ? voucher.usage_limit - (voucher.used_count ?? 0)
+                    ? voucher.usage_limit
                     : "";
                 return (
                   <option
@@ -213,13 +156,6 @@ export default function OrderPaymentMethod({ ...props }) {
             <span>-{formatVND(orderDiscount)}</span>
           </div>
         )}
-        {shippingDiscount > 0 && (
-          <div className="flex justify-between text-sm text-green-600 font-semibold mb-1">
-            <span>Giảm phí vận chuyển</span>
-            <span>-{formatVND(shippingDiscount)}</span>
-          </div>
-        )}
-        {/* --- KẾT THÚC PHẦN DI CHUYỂN --- */}
 
         <div className="flex justify-between text-lg font-bold pt-4 border-t border-gray-300 mb-6 w-full">
           <span>Tổng cộng</span>
