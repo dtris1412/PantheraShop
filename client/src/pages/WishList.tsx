@@ -11,6 +11,7 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
 import { showToast } from "../components/Toast";
+import VariantSelectModal from "../components/VariantSelectModal";
 
 interface Variant {
   wishlist_variant_id: number;
@@ -35,6 +36,8 @@ export default function WishList() {
   const [colorFilter, setColorFilter] = useState("");
   const [search, setSearch] = useState("");
   const [wishlistId, setWishlistId] = useState<number | null>(null);
+  const [showVariantModal, setShowVariantModal] = useState(false);
+  const [changingItem, setChangingItem] = useState<Variant | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -159,6 +162,51 @@ export default function WishList() {
       .catch(() => {
         showToast("Xóa thất bại!", "error");
       });
+  }
+
+  async function handleChangeVariant(newVariant: {
+    variant_id: number;
+    variant_size?: string | null;
+    variant_color?: string | null;
+  }) {
+    if (!wishlistId || !changingItem) return;
+    const token = localStorage.getItem("token");
+    try {
+      const res = await fetch(
+        `http://localhost:8080/api/wishlist/change-variant/${wishlistId}/${changingItem.variant_id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ new_variant_id: newVariant.variant_id }),
+        }
+      );
+      const data = await res.json();
+      if (data.success) {
+        showToast("Đã đổi phân loại thành công!", "success");
+        setVariants((prev) =>
+          prev.map((v) =>
+            v.wishlist_variant_id === changingItem.wishlist_variant_id
+              ? {
+                  ...v,
+                  variant_id: newVariant.variant_id,
+                  variant_size: newVariant.variant_size ?? v.variant_size,
+                  variant_color: newVariant.variant_color ?? v.variant_color,
+                  // Nếu API trả về thông tin mới của product, cập nhật thêm ở đây
+                }
+              : v
+          )
+        );
+      } else {
+        showToast(data.message || "Đổi phân loại thất bại!", "error");
+      }
+    } catch {
+      showToast("Đổi phân loại thất bại!", "error");
+    }
+    setShowVariantModal(false);
+    setChangingItem(null);
   }
 
   return (
@@ -315,10 +363,8 @@ export default function WishList() {
                           className="px-4 py-1 border border-black text-black text-base rounded hover:bg-gray-100 font-medium"
                           onClick={(e) => {
                             e.stopPropagation();
-                            showToast(
-                              "Chức năng đổi phân loại chưa được triển khai!",
-                              "info"
-                            );
+                            setChangingItem(item);
+                            setShowVariantModal(true);
                           }}
                         >
                           Đổi size/màu
@@ -345,6 +391,18 @@ export default function WishList() {
           </main>
         </div>
       </div>
+      {showVariantModal && changingItem && (
+        <VariantSelectModal
+          productId={changingItem.product_id}
+          currentSize={changingItem.variant_size}
+          currentColor={changingItem.variant_color}
+          onClose={() => {
+            setShowVariantModal(false);
+            setChangingItem(null);
+          }}
+          onUpdate={(variant) => handleChangeVariant(variant)}
+        />
+      )}
     </div>
   );
 }

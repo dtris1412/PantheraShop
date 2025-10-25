@@ -62,10 +62,29 @@ const removeItemFromWishlist = async (wishlist_id, variant_id) => {
   return { success: true, message: "Item removed from wishlist" };
 };
 
+const changeVariantInWishlist = async (
+  wishlist_id,
+  old_variant_id,
+  new_variant_id
+) => {
+  if (!wishlist_id || !old_variant_id || !new_variant_id)
+    throw new Error("All IDs are required");
+  const item = await db.WishlistVariant.findOne({
+    where: { wishlist_id, variant_id: old_variant_id },
+  });
+  if (!item) {
+    return { success: false, message: "Item not found in wishlist" };
+  }
+  item.variant_id = new_variant_id;
+  await item.save();
+  return { success: true, item };
+};
+
 export {
   createWishlist,
   addItemToWishList,
   getAllItemsInWishlist,
   getWishListByUserId,
   removeItemFromWishlist,
+  changeVariantInWishlist,
 };
