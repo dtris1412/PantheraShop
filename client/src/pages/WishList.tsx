@@ -13,6 +13,7 @@ import ProductCard from "../components/ProductCard";
 import { showToast } from "../components/Toast";
 import VariantSelectModal from "../components/VariantSelectModal";
 import { useWishlist } from "../contexts/wishlistContext";
+import ProductFilterBar from "../components/ProductFilterBar";
 
 interface Variant {
   wishlist_variant_id: number;
@@ -112,6 +113,16 @@ export default function WishList() {
               Bộ lọc
             </div>
             <div className="mb-4">
+              <label className="block font-semibold mb-2">Tìm kiếm</label>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full border px-2 py-1 rounded"
+                placeholder="Tên sản phẩm..."
+              />
+            </div>
+            <div className="mb-4">
               <label className="block font-semibold mb-2">Kích cỡ</label>
               <select
                 value={sizeFilter}
@@ -141,16 +152,7 @@ export default function WishList() {
                 ))}
               </select>
             </div>
-            <div className="mb-4">
-              <label className="block font-semibold mb-2">Tìm kiếm</label>
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full border px-2 py-1 rounded"
-                placeholder="Tên sản phẩm..."
-              />
-            </div>
+
             <div className="mb-4">
               <label className="block font-semibold mb-2">Sắp xếp</label>
               <div className="flex gap-2">
