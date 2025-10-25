@@ -62,6 +62,13 @@ import { getAllBlogs } from "../controllers/blogController.js";
 const router = express.Router();
 const upload = multer({ dest: "uploads/" });
 
+import {
+  addItemToWishList,
+  getAllItemsInWishlist,
+  getWishListByUserId,
+  removeItemFromWishlist,
+} from "../controllers/wishlistController.js";
+
 const initWebRoutes = (app) => {
   // user APIs
   router.get("/api/users", getAllUsers);
@@ -138,6 +145,21 @@ const initWebRoutes = (app) => {
 
   //Blog APIs
   router.get("/api/blogs", getAllBlogs);
+
+  //Wishlist APIs
+  router.get("/api/wishlist/add", verifyToken, addItemToWishList);
+  router.post("/api/wishlist/add/:wishlist_id", verifyToken, addItemToWishList);
+  router.get("/api/wishlist/:user_id", verifyToken, getWishListByUserId);
+  router.get(
+    "/api/wishlist/wishlist-items/:wishlist_id",
+    verifyToken,
+    getAllItemsInWishlist
+  );
+  router.delete(
+    "/api/wishlist/remove/:wishlist_id/:variant_id",
+    verifyToken,
+    removeItemFromWishlist
+  );
 
   return app.use("/", router);
 };

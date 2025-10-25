@@ -54,6 +54,8 @@ export default function ProductCard({
           </span>
         )}
 
+        {/* XÓA PHẦN NÚT YÊU THÍCH */}
+        {/* 
         <button
           className="absolute top-3 right-3 w-9 h-9 bg-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110 transform duration-200"
           onClick={(e) => {
@@ -62,6 +64,7 @@ export default function ProductCard({
         >
           <Heart className="w-4 h-4" />
         </button>
+        */}
       </div>
 
       <div className="space-y-1">

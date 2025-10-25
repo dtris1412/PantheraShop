@@ -2,6 +2,7 @@ import {
   register as registerService,
   login as loginService,
 } from "../services/authService.js";
+import { createWishlist as createWishlistService } from "../services/wishlistService.js";
 import { createCart as createCartService } from "../services/cartService.js";
 
 const register = async (req, res) => {
@@ -14,6 +15,7 @@ const register = async (req, res) => {
     if (result.success && result.user) {
       console.log("✅ New user created:", result.user.user_id);
       await createCartService(result.user.user_id);
+      await createWishlistService(result.user.user_id);
     }
 
     res.status(200).json(result);

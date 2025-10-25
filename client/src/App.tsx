@@ -24,6 +24,7 @@ import OrderHistory from "./pages/OrderHistory";
 import { ToastContainer } from "./components/Toast";
 import { useNavigate } from "react-router-dom";
 import BlogDetail from "./pages/BlogDetail";
+import WishList from "./pages/WishList";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { isAuthenticated, loading } = useAuth();
@@ -48,9 +49,7 @@ function AppContent() {
           <Route path="/product/:id" element={<ProductDetails />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:blog_id" element={<BlogDetail />} />{" "}
-          {/* <-- Thêm dòng này */}
           <Route path="/login" element={<Login />} />
-          {/* Bọc profile vào ProtectedRoute */}
           <Route
             path="/profile"
             element={
@@ -78,6 +77,7 @@ function AppContent() {
           />
           <Route path="/order-info" element={<OrderInfo />} />
           <Route path="/blog/:id" element={<BlogDetail />} />
+          <Route path="/wishlist" element={<WishList />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

@@ -77,6 +77,7 @@ export default function ProductDetails() {
   const [selectedColor, setSelectedColor] = useState(0);
   const [selectedImage, setSelectedImage] = useState(0);
   const [error, setError] = useState(""); // Thêm state cho lỗi
+  const [wishlistVariantIds, setWishlistVariantIds] = useState<number[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -90,6 +91,25 @@ export default function ProductDetails() {
       }
     }
     fetchProduct();
+  }, [id]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      const user_id = payload.user_id;
+      fetch(`http://localhost:8080/api/wishlist/wishlist-items/${user_id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          const ids = Array.isArray(data.items)
+            ? data.items.map((item: any) => item.variant_id)
+            : [];
+          setWishlistVariantIds(ids);
+        });
+    } catch {}
   }, [id]);
 
   if (!product) {
@@ -142,6 +162,10 @@ export default function ProductDetails() {
     }
     return undefined;
   })();
+
+  // Kiểm tra variant đã có trong wishlist chưa
+  const isInWishlist =
+    selectedVariant && wishlistVariantIds.includes(selectedVariant.variant_id);
 
   const handleAddToCart = async () => {
     const token = localStorage.getItem("token");
@@ -217,6 +241,55 @@ export default function ProductDetails() {
       localStorage.setItem("cart", JSON.stringify(cart));
       showToast("Thêm sản phẩm vào giỏ hàng thành công!", "success");
       navigate("/cart");
+    }
+  };
+
+  const handleAddToWishlist = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      showToast("Bạn cần đăng nhập để thêm vào yêu thích!", "error");
+      navigate("/login", { state: { from: `/product/${id}` } });
+      return;
+    }
+    if (!selectedVariant) {
+      showToast("Vui lòng chọn phân loại!", "error");
+      return;
+    }
+    try {
+      // Lấy wishlist_id của user
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      const user_id = payload.user_id;
+      const res = await fetch(`http://localhost:8080/api/wishlist/${user_id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      const wishlist_id = data.wishlist_id;
+      // Gọi API thêm vào wishlist
+      const addRes = await fetch(
+        `http://localhost:8080/api/wishlist/add/${wishlist_id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            variant_id: selectedVariant.variant_id,
+            added_at: new Date().toISOString(),
+          }),
+        }
+      );
+      const addData = await addRes.json();
+      if (addData.success) {
+        showToast("Đã thêm vào danh sách yêu thích!", "success");
+      } else {
+        showToast(
+          addData.message || "Đã có trong danh sách yêu thích!",
+          "info"
+        );
+      }
+    } catch {
+      showToast("Thêm vào danh sách yêu thích thất bại!", "error");
     }
   };
 
@@ -405,10 +478,23 @@ export default function ProductDetails() {
                 </button>
               )}
               <button
-                className="w-14 h-14 border-2 border-gray-300 flex items-center justify-center hover:border-gray-400 transition-colors"
+                className={`w-14 h-14 border-2 ${
+                  isInWishlist ? "border-black" : "border-gray-300"
+                } flex items-center justify-center hover:border-gray-400 transition-colors`}
                 style={{ borderRadius: 0 }}
+                onClick={handleAddToWishlist}
+                disabled={isInWishlist}
+                title={
+                  isInWishlist
+                    ? "Đã có trong danh sách yêu thích"
+                    : "Thêm vào danh sách yêu thích"
+                }
               >
-                <Heart className="w-5 h-5" />
+                <Heart
+                  className="w-5 h-5"
+                  color={isInWishlist ? "black" : "gray"}
+                  fill={isInWishlist ? "black" : "none"}
+                />
               </button>
             </div>
             {error && <div className="text-red-600 text-sm mt-2">{error}</div>}
