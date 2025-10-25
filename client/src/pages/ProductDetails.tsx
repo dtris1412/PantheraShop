@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ShoppingBag, Heart, Truck, RotateCcw, Shield } from "lucide-react";
 import { showToast } from "../components/Toast";
 import ProductGallery from "../components/ProductGallery";
+import { useWishlist } from "../contexts/wishlistContext";
 
 const formatVND = (value: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
@@ -79,6 +80,7 @@ export default function ProductDetails() {
   const [error, setError] = useState(""); // Thêm state cho lỗi
   const [wishlistVariantIds, setWishlistVariantIds] = useState<number[]>([]);
   const navigate = useNavigate();
+  const { refresh } = useWishlist();
 
   useEffect(() => {
     async function fetchProduct() {
@@ -282,6 +284,18 @@ export default function ProductDetails() {
       const addData = await addRes.json();
       if (addData.success) {
         showToast("Đã thêm vào danh sách yêu thích!", "success");
+        refresh(); // cập nhật context
+        // Cập nhật lại danh sách variant_id đã có trong wishlist
+        fetch(`http://localhost:8080/api/wishlist/wishlist-items/${user_id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            const ids = Array.isArray(data.items)
+              ? data.items.map((item: any) => item.variant_id)
+              : [];
+            setWishlistVariantIds(ids);
+          });
       } else {
         showToast(
           addData.message || "Đã có trong danh sách yêu thích!",

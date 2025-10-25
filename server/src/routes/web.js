@@ -68,6 +68,7 @@ import {
   getWishListByUserId,
   removeItemFromWishlist,
   changeVariantInWishlist,
+  getWishlistCount,
 } from "../controllers/wishlistController.js";
 
 const initWebRoutes = (app) => {
@@ -167,6 +168,8 @@ const initWebRoutes = (app) => {
     verifyToken,
     changeVariantInWishlist
   );
+
+  router.get("/api/wishlist/count/:wishlist_id", verifyToken, getWishlistCount);
   return app.use("/", router);
 };
 

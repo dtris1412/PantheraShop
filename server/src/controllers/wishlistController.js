@@ -4,6 +4,7 @@ import {
   getWishListByUserId as getWishListByUserIdService,
   removeItemFromWishlist as removeItemFromWishlistService,
   changeVariantInWishlist as changeVariantInWishlistService,
+  getWishlistCount as getWishlistCountService,
 } from "../services/wishlistService.js";
 
 const addItemToWishList = async (req, res) => {
@@ -87,10 +88,25 @@ const changeVariantInWishlist = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+const getWishlistCount = async (req, res) => {
+  try {
+    const wishlist_id = req.params.wishlist_id;
+    const result = await getWishlistCountService(wishlist_id);
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+    res.status(200).json(result);
+  } catch (err) {
+    console.error("Error in getting wishlist count: ", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 export {
   addItemToWishList,
   getAllItemsInWishlist,
   getWishListByUserId,
   removeItemFromWishlist,
   changeVariantInWishlist,
+  getWishlistCount,
 };

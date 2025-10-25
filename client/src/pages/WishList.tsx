@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   ArrowRight,
   Trash2,
@@ -12,90 +12,33 @@ import { useLocation, useNavigate } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
 import { showToast } from "../components/Toast";
 import VariantSelectModal from "../components/VariantSelectModal";
+import { useWishlist } from "../contexts/wishlistContext";
 
 interface Variant {
   wishlist_variant_id: number;
   variant_id: number;
   product_id: number;
+  variant_size?: string | null;
+  variant_color?: string | null;
   product_name: string;
-  product_image: string;
-  product_price?: number;
-  product_rating?: number;
-  product_description?: string;
-  sport?: string;
-  variant_size: string;
-  variant_color: string;
+  product_image?: string | null;
+  product_price?: number | null;
+  product_rating?: number | null;
+  sport?: string | null;
   added_at: string;
 }
 
 export default function WishList() {
-  const [variants, setVariants] = useState<Variant[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { variants, loading, remove, changeVariant, refresh } = useWishlist();
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [sizeFilter, setSizeFilter] = useState("");
   const [colorFilter, setColorFilter] = useState("");
   const [search, setSearch] = useState("");
-  const [wishlistId, setWishlistId] = useState<number | null>(null);
   const [showVariantModal, setShowVariantModal] = useState(false);
   const [changingItem, setChangingItem] = useState<Variant | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      showToast("Bạn cần phải đăng nhập để truy cập trang này", "error");
-      navigate("/login", { state: { from: "/wishlist" } });
-      return;
-    }
-    let user_id = "";
-    try {
-      const payload = JSON.parse(atob(token.split(".")[1]));
-      user_id = payload.user_id;
-    } catch {}
-    if (!user_id) return;
-
-    // Lấy wishlist_id cho user
-    fetch(`http://localhost:8080/api/wishlist/${user_id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        const wishlist_id = data?.wishlist_id;
-        if (!wishlist_id) return setLoading(false);
-        setWishlistId(wishlist_id);
-        // Lấy các variant trong wishlist
-        fetch(
-          `http://localhost:8080/api/wishlist/wishlist-items/${wishlist_id}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        )
-          .then((res) => res.json())
-          .then((itemsRes) => {
-            const arr = Array.isArray(itemsRes.items) ? itemsRes.items : [];
-            const normalized = arr.map((item: any) => ({
-              wishlist_variant_id: item.wishlist_variant_id,
-              variant_id: item.variant_id,
-              product_id: item.Variant?.Product?.product_id,
-              product_name: item.Variant?.Product?.product_name || "",
-              product_image: item.Variant?.Product?.product_image || "",
-              product_price: item.Variant?.Product?.product_price || 0,
-              product_rating: item.Variant?.Product?.product_rating || 0,
-              product_description:
-                item.Variant?.Product?.product_description || "",
-              sport: item.Variant?.Product?.sport_name || "",
-              variant_size: item.Variant?.variant_size || "",
-              variant_color: item.Variant?.variant_color || "",
-              added_at: item.added_at,
-            }));
-            setVariants(normalized);
-            setLoading(false);
-          });
-      });
-  }, []);
-
-  // Lọc và sắp xếp
   const filtered = variants
     .filter(
       (v) =>
@@ -130,81 +73,29 @@ export default function WishList() {
       currency: "VND",
     }).format(value);
 
+  // Sử dụng remove và changeVariant từ context
   function handleRemoveWishlist(
     wishlist_variant_id: number,
     variant_id: number
   ) {
-    const token = localStorage.getItem("token");
-    if (!wishlistId) {
-      showToast("Không tìm thấy wishlist!", "error");
-      return;
-    }
-    fetch(
-      `http://localhost:8080/api/wishlist/remove/${wishlistId}/${variant_id}`,
-      {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          showToast("Đã xóa khỏi danh sách yêu thích!", "success");
-          setVariants((prev) =>
-            prev.filter((v) => v.wishlist_variant_id !== wishlist_variant_id)
-          );
-        } else {
-          showToast("Xóa thất bại!", "error");
-        }
-      })
-      .catch(() => {
-        showToast("Xóa thất bại!", "error");
-      });
+    remove(wishlist_variant_id, variant_id);
   }
 
-  async function handleChangeVariant(newVariant: {
-    variant_id: number;
-    variant_size?: string | null;
-    variant_color?: string | null;
-  }) {
-    if (!wishlistId || !changingItem) return;
-    const token = localStorage.getItem("token");
-    try {
-      const res = await fetch(
-        `http://localhost:8080/api/wishlist/change-variant/${wishlistId}/${changingItem.variant_id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ new_variant_id: newVariant.variant_id }),
-        }
-      );
-      const data = await res.json();
-      if (data.success) {
-        showToast("Đã đổi phân loại thành công!", "success");
-        setVariants((prev) =>
-          prev.map((v) =>
-            v.wishlist_variant_id === changingItem.wishlist_variant_id
-              ? {
-                  ...v,
-                  variant_id: newVariant.variant_id,
-                  variant_size: newVariant.variant_size ?? v.variant_size,
-                  variant_color: newVariant.variant_color ?? v.variant_color,
-                  // Nếu API trả về thông tin mới của product, cập nhật thêm ở đây
-                }
-              : v
-          )
-        );
-      } else {
-        showToast(data.message || "Đổi phân loại thất bại!", "error");
-      }
-    } catch {
-      showToast("Đổi phân loại thất bại!", "error");
+  async function handleChangeVariant(
+    wishlist_variant_id: number,
+    old_variant_id: number,
+    newVariant: {
+      variant_id: number;
+      variant_size?: string | null;
+      variant_color?: string | null;
     }
+  ) {
+    const payload = {
+      variant_id: newVariant.variant_id,
+      variant_size: newVariant.variant_size ?? undefined,
+      variant_color: newVariant.variant_color ?? undefined,
+    };
+    await changeVariant(wishlist_variant_id, old_variant_id, payload);
     setShowVariantModal(false);
     setChangingItem(null);
   }
@@ -394,13 +285,19 @@ export default function WishList() {
       {showVariantModal && changingItem && (
         <VariantSelectModal
           productId={changingItem.product_id}
-          currentSize={changingItem.variant_size}
-          currentColor={changingItem.variant_color}
+          currentSize={changingItem.variant_size ?? undefined}
+          currentColor={changingItem.variant_color ?? undefined}
           onClose={() => {
             setShowVariantModal(false);
             setChangingItem(null);
           }}
-          onUpdate={(variant) => handleChangeVariant(variant)}
+          onUpdate={(variant) =>
+            handleChangeVariant(
+              changingItem.wishlist_variant_id,
+              changingItem.variant_id,
+              variant
+            )
+          }
         />
       )}
     </div>

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Search, ShoppingBag, User, Heart, Menu, X } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/authContext.tsx";
+import { useWishlist } from "../contexts/wishlistContext";
 import HeaderSearchPopup from "./HeaderSearchPopup";
 
 interface HeaderProps {
@@ -22,9 +23,11 @@ export default function Header({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const { logout, isAuthenticated } = useAuth();
+  const { count } = useWishlist();
+
   const navigate = useNavigate();
   const location = useLocation();
-  const { logout, isAuthenticated } = useAuth();
 
   const navLinks = [
     { name: "Home", path: "/", key: "home" },
@@ -167,6 +170,12 @@ export default function Header({
         ${selectedKey === "wish" ? "text-white" : "text-gray-600"}
       `}
                 />
+
+                {count > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-black text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                    {count}
+                  </span>
+                )}
               </span>
             </button>
 

@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "./contexts/authContext";
 import { ProductProvider } from "./contexts/productContext";
 import { OrderProvider } from "./contexts/orderContext";
 import { BlogProvider } from "./contexts/blogContext";
+import { WishlistProvider } from "./contexts/wishlistContext";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
@@ -94,7 +95,9 @@ export default function App() {
           <ProductProvider>
             <OrderProvider>
               <BlogProvider>
-                <AppContent />
+                <WishlistProvider>
+                  <AppContent />
+                </WishlistProvider>
               </BlogProvider>
             </OrderProvider>
           </ProductProvider>

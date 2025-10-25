@@ -80,6 +80,14 @@ const changeVariantInWishlist = async (
   return { success: true, item };
 };
 
+const getWishlistCount = async (wishlist_id) => {
+  if (!wishlist_id) throw new Error("Wishlist ID is required");
+  const count = await db.WishlistVariant.count({
+    where: { wishlist_id },
+  });
+  return { success: true, count };
+};
+
 export {
   createWishlist,
   addItemToWishList,
@@ -87,4 +95,5 @@ export {
   getWishListByUserId,
   removeItemFromWishlist,
   changeVariantInWishlist,
+  getWishlistCount,
 };
