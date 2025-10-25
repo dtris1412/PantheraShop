@@ -1,7 +1,7 @@
 import { Calendar, User, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useBlogContext } from "../contexts/blogContext";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function Blog() {
   const navigate = useNavigate();
@@ -11,6 +11,19 @@ export default function Blog() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
+  const [sport, setSport] = useState("");
+  const [tournament, setTournament] = useState("");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+
+  const sportList = Array.from(
+    new Set(blogs.map((b) => (b as any).Sport?.sport_name).filter(Boolean))
+  );
+  const tournamentList = Array.from(
+    new Set(
+      blogs.map((b) => (b as any).Tournament?.tournament_name).filter(Boolean)
+    )
+  );
+
   if (loading) return <div className="text-center py-20">Đang tải...</div>;
   if (error)
     return <div className="text-center py-20 text-red-600">{error}</div>;
@@ -19,6 +32,19 @@ export default function Blog() {
 
   const featuredPost = blogs[0];
   const regularPosts = blogs.slice(1);
+
+  const filteredPosts = regularPosts
+    .filter(
+      (post) =>
+        (!sport || (post as any).Sport?.sport_name === sport) &&
+        (!tournament ||
+          (post as any).Tournament?.tournament_name === tournament)
+    )
+    .sort((a, b) => {
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
+      return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+    });
 
   return (
     <div className="pt-24 pb-12">
@@ -92,13 +118,58 @@ export default function Blog() {
           </div>
         </div>
 
+        {/* BỘ LỌC TÌM KIẾM */}
+        <div className="mb-8 flex flex-wrap gap-4 items-center">
+          <div>
+            <label className="font-semibold mr-2">Bộ môn:</label>
+            <select
+              value={sport}
+              onChange={(e) => setSport(e.target.value)}
+              className="border px-2 py-1 rounded"
+            >
+              <option value="">Tất cả</option>
+              {sportList.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="font-semibold mr-2">Giải đấu:</label>
+            <select
+              value={tournament}
+              onChange={(e) => setTournament(e.target.value)}
+              className="border px-2 py-1 rounded"
+            >
+              <option value="">Tất cả</option>
+              {tournamentList.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="font-semibold mr-2">Sắp xếp:</label>
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
+              className="border px-2 py-1 rounded"
+            >
+              <option value="desc">Mới nhất</option>
+              <option value="asc">Cũ nhất</option>
+            </select>
+          </div>
+        </div>
+
         {/* REGULAR POSTS */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold">Bài viết mới nhất</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {regularPosts.map((post) => (
+          {filteredPosts.map((post) => (
             <article
               key={post.blog_id}
               className="group cursor-pointer"

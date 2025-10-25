@@ -95,7 +95,13 @@ export default function NewCollectionSection() {
                   {blog.blog_content?.slice(0, 80) + "..."}
                 </p>
                 <div className="text-xs text-gray-500 mb-2">
-                  {new Date(blog.created_at).toLocaleDateString("vi-VN")}
+                  {(() => {
+                    const date = new Date(blog.created_at);
+                    const day = date.getUTCDate();
+                    const month = date.getUTCMonth() + 1;
+                    const year = date.getUTCFullYear();
+                    return `${day}/${month}/${year}`;
+                  })()}
                 </div>
                 <button
                   className="bg-black text-white px-4 py-2 font-semibold hover:bg-gray-800 transition-colors inline-flex items-center space-x-2"
