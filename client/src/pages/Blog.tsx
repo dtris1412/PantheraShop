@@ -26,10 +26,10 @@ export default function Blog() {
         {/* HEADER */}
         <div className="mb-12">
           <h1 className="text-4xl md:text-5xl font-bold mb-2">
-            Training & Performance Blog
+            Blog Huấn Luyện & Hiệu Suất
           </h1>
           <p className="text-gray-600 text-lg">
-            Expert insights to elevate your game
+            Góc nhìn chuyên gia giúp bạn nâng cao thành tích thể thao
           </p>
         </div>
 
@@ -38,7 +38,7 @@ export default function Blog() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
             <div className="order-2 lg:order-1">
               <span className="inline-block bg-black text-white text-xs font-semibold px-3 py-1 mb-4">
-                FEATURED
+                NỔI BẬT
               </span>
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
                 {featuredPost.blog_title}
@@ -50,19 +50,22 @@ export default function Blog() {
               <div className="flex items-center space-x-6 mb-6 text-sm text-gray-600">
                 <div className="flex items-center space-x-2">
                   <User className="w-4 h-4" />
-                  <span>{(featuredPost as any).author || "Admin"}</span>
+                  <span>
+                    {(featuredPost as any).User?.user_name ||
+                      (featuredPost as any).author ||
+                      "Admin"}
+                  </span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Calendar className="w-4 h-4" />
                   <span>
-                    {new Date(featuredPost.created_at).toLocaleDateString(
-                      "vi-VN",
-                      {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      }
-                    )}
+                    {(() => {
+                      const date = new Date(featuredPost.created_at);
+                      const day = date.getUTCDate();
+                      const month = date.getUTCMonth() + 1;
+                      const year = date.getUTCFullYear();
+                      return `${day}/${month}/${year}`;
+                    })()}
                   </span>
                 </div>
               </div>
@@ -91,7 +94,7 @@ export default function Blog() {
 
         {/* REGULAR POSTS */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold">Latest Articles</h2>
+          <h2 className="text-2xl font-bold">Bài viết mới nhất</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -114,7 +117,7 @@ export default function Blog() {
 
               <div className="space-y-3">
                 <span className="text-xs font-semibold uppercase tracking-wider text-gray-600">
-                  {(post as any).category || "Blog"}
+                  {(post as any).Sport?.sport_name || "Blog"}
                 </span>
 
                 <h3 className="text-xl font-bold group-hover:underline leading-snug">
@@ -128,15 +131,22 @@ export default function Blog() {
                 <div className="flex items-center space-x-4 text-xs text-gray-600 pt-2">
                   <div className="flex items-center space-x-1">
                     <User className="w-3 h-3" />
-                    <span>{(post as any).author || "Admin"}</span>
+                    <span>
+                      {(post as any).User?.user_name ||
+                        (post as any).author ||
+                        "Admin"}
+                    </span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <Calendar className="w-3 h-3" />
                     <span>
-                      {new Date(post.created_at).toLocaleDateString("vi-VN", {
-                        month: "short",
-                        day: "numeric",
-                      })}
+                      {(() => {
+                        const date = new Date(post.created_at);
+                        const day = date.getUTCDate();
+                        const month = date.getUTCMonth() + 1;
+                        const year = date.getUTCFullYear();
+                        return `${day}/${month}/${year}`;
+                      })()}
                     </span>
                   </div>
                 </div>
