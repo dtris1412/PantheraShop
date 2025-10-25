@@ -57,6 +57,8 @@ import {
 //Order APIs
 import { createOrder, getStatusOrder } from "../controllers/orderController.js";
 
+//Blog APIs
+import { getAllBlogs } from "../controllers/blogController.js";
 const router = express.Router();
 const upload = multer({ dest: "uploads/" });
 
@@ -133,6 +135,9 @@ const initWebRoutes = (app) => {
   //Order APIs
   router.post("/api/order", createOrder);
   router.get("/api/order/:order_id", getStatusOrder);
+
+  //Blog APIs
+  router.get("/api/blogs", getAllBlogs);
 
   return app.use("/", router);
 };

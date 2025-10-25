@@ -7,6 +7,7 @@ import {
 import { AuthProvider, useAuth } from "./contexts/authContext";
 import { ProductProvider } from "./contexts/productContext";
 import { OrderProvider } from "./contexts/orderContext";
+import { BlogProvider } from "./contexts/blogContext";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
@@ -86,14 +87,18 @@ function AppContent() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <ProductProvider>
-          <OrderProvider>
-            <AppContent />
-          </OrderProvider>
-        </ProductProvider>
-      </Router>
-    </AuthProvider>
+    <div className="flex flex-col min-h-screen">
+      <AuthProvider>
+        <Router>
+          <ProductProvider>
+            <OrderProvider>
+              <BlogProvider>
+                <AppContent />
+              </BlogProvider>
+            </OrderProvider>
+          </ProductProvider>
+        </Router>
+      </AuthProvider>
+    </div>
   );
 }
