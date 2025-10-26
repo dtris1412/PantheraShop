@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { showToast } from "../components/Toast";
+import { useAuth } from "./authContext";
 
 interface Variant {
   wishlist_variant_id: number;
@@ -44,8 +45,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [count, setCount] = useState(0);
 
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const { token, isAuthenticated } = useAuth();
 
   // Hàm load lại wishlist
   const refresh = () => {
@@ -105,8 +105,15 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    refresh();
-  }, [token]);
+    if (isAuthenticated && token) {
+      refresh();
+    } else {
+      setVariants([]);
+      setWishlistId(null);
+      setCount(0);
+      setLoading(false);
+    }
+  }, [isAuthenticated, token]);
 
   // Xóa item khỏi wishlist
   async function remove(wishlist_variant_id: number, variant_id: number) {

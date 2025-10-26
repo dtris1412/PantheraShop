@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ArrowRight,
   Trash2,
@@ -14,6 +14,7 @@ import { showToast } from "../components/Toast";
 import VariantSelectModal from "../components/VariantSelectModal";
 import { useWishlist } from "../contexts/wishlistContext";
 import ProductFilterBar from "../components/ProductFilterBar";
+import { useAuth } from "../contexts/authContext";
 
 interface Variant {
   wishlist_variant_id: number;
@@ -31,6 +32,7 @@ interface Variant {
 
 export default function WishList() {
   const { variants, loading, remove, changeVariant, refresh } = useWishlist();
+  const { isAuthenticated } = useAuth();
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [sizeFilter, setSizeFilter] = useState("");
   const [colorFilter, setColorFilter] = useState("");
@@ -39,6 +41,14 @@ export default function WishList() {
   const [changingItem, setChangingItem] = useState<Variant | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      showToast("Bạn cần phải đăng nhập để truy cập trang này", "error");
+      navigate("/login");
+    }
+  }, [navigate, isAuthenticated]);
 
   const filtered = variants
     .filter(
