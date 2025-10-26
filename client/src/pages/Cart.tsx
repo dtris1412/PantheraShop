@@ -4,6 +4,7 @@ import { showToast } from "../components/Toast";
 import VariantSelectModal from "../components/VariantSelectModal"; // Import component ở đây
 import { useNavigate } from "react-router-dom";
 import { useOrder } from "../contexts/orderContext";
+import { useCart } from "../contexts/cartContext";
 
 interface CartProps {
   onNavigate: (page: string) => void;
@@ -34,6 +35,7 @@ export default function Cart({ onNavigate }: CartProps) {
 
   const navigate = useNavigate();
   const { setOrderItems } = useOrder();
+  const { refresh } = useCart();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -78,6 +80,7 @@ export default function Cart({ onNavigate }: CartProps) {
                     }))
                   : [];
                 setCartItems(normalized);
+                refresh();
               })
               .catch(() => setCartItems([]));
           })
@@ -136,6 +139,7 @@ export default function Cart({ onNavigate }: CartProps) {
             }))
           : [];
         setCartItems(normalized);
+        refresh();
       } catch (err) {
         showToast("Cập nhật số lượng thất bại!", "error");
       }
@@ -145,6 +149,7 @@ export default function Cart({ onNavigate }: CartProps) {
           item.id === id ? { ...item, quantity: newQuantity } : item
         );
         localStorage.setItem("cart", JSON.stringify(newItems));
+        refresh();
         return newItems;
       });
     }
@@ -185,15 +190,16 @@ export default function Cart({ onNavigate }: CartProps) {
           : [];
         setCartItems(normalized);
         showToast("Đã xóa sản phẩm thành công!", "success");
+        refresh();
       } catch (err) {
         showToast("Xóa sản phẩm thất bại!", "error");
       }
     } else {
       setCartItems((items) => {
         const newItems = items.filter((item) => String(item.id) !== String(id));
-        // Cập nhật localStorage sau khi đã lọc xong
         localStorage.setItem("cart", JSON.stringify(newItems));
         showToast("Đã xóa sản phẩm thành công!", "success");
+        refresh(); // <-- Thêm dòng này cho guest
         return newItems;
       });
     }
@@ -242,6 +248,7 @@ export default function Cart({ onNavigate }: CartProps) {
             }))
           : [];
         setCartItems(normalized);
+        refresh();
         showToast("Đã cập nhật sản phẩm thành công!", "success");
       } catch (err) {
         showToast("Cập nhật sản phẩm thất bại!", "error");
@@ -307,6 +314,7 @@ export default function Cart({ onNavigate }: CartProps) {
           : [];
         setCartItems(normalized);
         showToast("Đã cập nhật sản phẩm thành công!", "success");
+        refresh();
       } catch (err) {
         showToast("Cập nhật sản phẩm thất bại!", "error");
       }
@@ -324,6 +332,7 @@ export default function Cart({ onNavigate }: CartProps) {
             : item
         );
         localStorage.setItem("cart", JSON.stringify(newItems));
+        refresh();
         return newItems;
       });
       showToast("Đã cập nhật sản phẩm thành công!", "success");

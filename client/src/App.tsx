@@ -9,6 +9,7 @@ import { ProductProvider } from "./contexts/productContext";
 import { OrderProvider } from "./contexts/orderContext";
 import { BlogProvider } from "./contexts/blogContext";
 import { WishlistProvider } from "./contexts/wishlistContext";
+import { CartProvider } from "./contexts/cartContext";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
@@ -96,7 +97,9 @@ export default function App() {
             <OrderProvider>
               <BlogProvider>
                 <WishlistProvider>
-                  <AppContent />
+                  <CartProvider>
+                    <AppContent />
+                  </CartProvider>
                 </WishlistProvider>
               </BlogProvider>
             </OrderProvider>

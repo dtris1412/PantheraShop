@@ -31,6 +31,7 @@ import {
   changeVariantInCart,
   getCartProductsByCartId,
   clearCart,
+  getCartCount,
 } from "../controllers/cartController.js";
 
 // Product_Images
@@ -113,6 +114,7 @@ const initWebRoutes = (app) => {
     verifyToken,
     getCartProductsByCartId
   );
+  router.get("/api/cart/count/:cart_id", verifyToken, getCartCount);
   router.post("/api/cart/add", verifyToken, addItemToCart);
   router.put("/api/cart/update", verifyToken, updateItemQuantity);
   router.put("/api/cart/change-variant", verifyToken, changeVariantInCart);

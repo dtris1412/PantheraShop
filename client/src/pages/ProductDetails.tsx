@@ -4,6 +4,7 @@ import { ShoppingBag, Heart, Truck, RotateCcw, Shield } from "lucide-react";
 import { showToast } from "../components/Toast";
 import ProductGallery from "../components/ProductGallery";
 import { useWishlist } from "../contexts/wishlistContext";
+import { useCart } from "../contexts/cartContext";
 
 const formatVND = (value: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
@@ -81,6 +82,7 @@ export default function ProductDetails() {
   const [wishlistVariantIds, setWishlistVariantIds] = useState<number[]>([]);
   const navigate = useNavigate();
   const { refresh } = useWishlist();
+  const { refresh: refreshCart } = useCart();
 
   useEffect(() => {
     async function fetchProduct() {
@@ -241,6 +243,7 @@ export default function ProductDetails() {
         });
       }
       localStorage.setItem("cart", JSON.stringify(cart));
+      refreshCart(); // <-- Thêm dòng này để cập nhật số lượng trên header
       showToast("Thêm sản phẩm vào giỏ hàng thành công!", "success");
       navigate("/cart");
     }

@@ -47,7 +47,6 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
 
   const { token, isAuthenticated } = useAuth();
 
-  // Hàm load lại wishlist
   const refresh = () => {
     if (!token) return;
     let user_id = "";

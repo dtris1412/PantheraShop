@@ -3,6 +3,7 @@ import { Search, ShoppingBag, User, Heart, Menu, X } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/authContext.tsx";
 import { useWishlist } from "../contexts/wishlistContext";
+import { useCart } from "../contexts/cartContext";
 import HeaderSearchPopup from "./HeaderSearchPopup";
 
 interface HeaderProps {
@@ -25,6 +26,7 @@ export default function Header({
   const [searchOpen, setSearchOpen] = useState(false);
   const { logout, isAuthenticated } = useAuth();
   const { count } = useWishlist();
+  const { cartItemCount: cartCount } = useCart();
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -199,13 +201,12 @@ export default function Header({
         ${selectedKey === "cart" ? "text-white" : "text-gray-600"}
       `}
                 />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-black text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                    {cartCount}
+                  </span>
+                )}
               </span>
-
-              {cartItemCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-black text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
-                  {cartItemCount}
-                </span>
-              )}
             </button>
 
             <div className="relative group">
