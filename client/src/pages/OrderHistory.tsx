@@ -11,7 +11,7 @@ type Order = {
   [key: string]: any;
 };
 
-const statusOptions = ["All", "Delivered", "Cancelled"];
+const statusOptions = ["Tất cả", "Đã giao", "Đã hủy", "Đang xử lý"];
 
 function formatVND(value: number | string) {
   return Number(value).toLocaleString("vi-VN", {
@@ -26,13 +26,13 @@ export default function OrderHistory() {
   const { orders, loading } = useOrderHistory();
   const navigate = useNavigate();
 
-  const [statusFilter, setStatusFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState("Tất cả");
   const [priceSort, setPriceSort] = useState<"" | "desc" | "asc">("");
   const [dateSort, setDateSort] = useState<"" | "desc" | "asc">("desc");
 
   // Lọc theo trạng thái
   let filtered = orders;
-  if (statusFilter !== "All") {
+  if (statusFilter !== "Tất cả") {
     filtered = filtered.filter((o: Order) => o.order_status === statusFilter);
   }
 

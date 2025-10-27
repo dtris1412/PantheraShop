@@ -1,5 +1,7 @@
 import { CheckCircle } from "lucide-react";
 import OrderItem from "./OrderItem";
+import { useOrder } from "../../contexts/orderContext";
+import { useNavigate } from "react-router-dom";
 
 interface Order {
   order_id: string;
@@ -19,6 +21,26 @@ function formatVND(value: number | string) {
 }
 
 export default function OrderCard({ order }: { order: Order }) {
+  const { setOrderItems } = useOrder();
+  const navigate = useNavigate();
+
+  // Chuyển đổi dữ liệu orderProducts sang dạng CartItem
+  const handleBuyAgain = () => {
+    if (!order.orderProducts) return;
+    const items = order.orderProducts.map((item) => ({
+      id: String(item.variant_id),
+      product_id: item.Variant?.product_id,
+      name: item.Variant?.Product?.product_name,
+      price: Number(item.price_at_time) / item.quantity,
+      size: item.Variant?.variant_size,
+      color: item.Variant?.variant_color,
+      image: item.Variant?.Product?.product_image,
+      quantity: item.quantity,
+    }));
+    setOrderItems(items);
+    navigate("/order-info");
+  };
+
   return (
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
       <div className="flex flex-wrap items-center justify-between px-6 py-4 bg-gray-50 border-b">
@@ -46,11 +68,14 @@ export default function OrderCard({ order }: { order: Order }) {
         ))}
       </div>
       <div className="flex flex-col sm:flex-row gap-4 px-6 pb-6">
-        <button className="flex-1 border border-black py-3 font-semibold hover:bg-gray-100 transition">
-          Track Order
+        <button
+          className="flex-1 border border-black py-3 font-semibold hover:bg-gray-100 transition"
+          onClick={handleBuyAgain}
+        >
+          Mua lại
         </button>
         <button className="flex-1 border border-gray-300 py-3 font-semibold hover:bg-gray-100 transition">
-          View Details
+          Xem chi tiết
         </button>
       </div>
     </div>
