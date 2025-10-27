@@ -78,10 +78,21 @@ const getProductById = async (product_id) => {
       },
     ],
   });
+
   if (!product) {
     return { success: false, message: "Product not found" };
   }
-  return { success: true, product };
+
+  // Thêm average_rating vào object trả về
+  const average_rating = await getProductRating(product_id);
+
+  return {
+    success: true,
+    product: {
+      ...product.toJSON(),
+      average_rating,
+    },
+  };
 };
 
 const getTopRatedProducts = async () => {

@@ -5,6 +5,8 @@ import { showToast } from "../components/Toast";
 import ProductGallery from "../components/ProductGallery";
 import { useWishlist } from "../contexts/wishlistContext";
 import { useCart } from "../contexts/cartContext";
+import ReviewDropdown from "../components/ProductDetail/ReviewDropdown";
+import PolicyDropdown from "../components/ProductDetail/PolicyDropdown";
 
 const formatVND = (value: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
@@ -80,6 +82,8 @@ export default function ProductDetails() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [error, setError] = useState(""); // Thêm state cho lỗi
   const [wishlistVariantIds, setWishlistVariantIds] = useState<number[]>([]);
+  const [reviews, setReviews] = useState([]);
+  const [averageRating, setAverageRating] = useState(0);
   const navigate = useNavigate();
   const { refresh } = useWishlist();
   const { refresh: refreshCart } = useCart();
@@ -115,6 +119,18 @@ export default function ProductDetails() {
         });
     } catch {}
   }, [id]);
+
+  useEffect(() => {
+    async function fetchReviews() {
+      const res = await fetch(
+        `http://localhost:8080/api/review/product/${product.product_id}`
+      );
+      const data = await res.json();
+      setReviews(data.reviews || []);
+      setAverageRating(data.average_rating || 0);
+    }
+    if (product?.product_id) fetchReviews();
+  }, [product?.product_id]);
 
   if (!product) {
     return (
@@ -515,48 +531,12 @@ export default function ProductDetails() {
               </button>
             </div>
             {error && <div className="text-red-600 text-sm mt-2">{error}</div>}
-            <div className="border-t border-gray-200 pt-6 space-y-4">
-              <h3 className="font-semibold text-lg">Tính năng</h3>
-              <ul className="space-y-2">
-                {(product.features || []).map(
-                  (feature: string, index: number) => (
-                    <li key={index} className="flex items-start space-x-2">
-                      <span className="w-1.5 h-1.5 bg-black rounded-full mt-2" />
-                      <span className="text-gray-600">{feature}</span>
-                    </li>
-                  )
-                )}
-              </ul>
-            </div>
-            <div className="border-t border-gray-200 pt-6 space-y-4">
-              <div className="flex items-start space-x-4">
-                <Truck className="w-6 h-6 flex-shrink-0 mt-1" />
-                <div>
-                  <h4 className="font-semibold mb-1">Miễn phí vận chuyển</h4>
-                  <p className="text-sm text-gray-600">
-                    Miễn phí vận chuyển cho đơn hàng trên 2.000.000 đ
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-4">
-                <RotateCcw className="w-6 h-6 flex-shrink-0 mt-1" />
-                <div>
-                  <h4 className="font-semibold mb-1">Đổi trả dễ dàng</h4>
-                  <p className="text-sm text-gray-600">
-                    Đổi trả trong 60 ngày với sản phẩm chưa sử dụng
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-4">
-                <Shield className="w-6 h-6 flex-shrink-0 mt-1" />
-                <div>
-                  <h4 className="font-semibold mb-1">Bảo hành 2 năm</h4>
-                  <p className="text-sm text-gray-600">
-                    Bảo hành chính hãng 2 năm cho mọi sản phẩm
-                  </p>
-                </div>
-              </div>
-            </div>
+
+            <PolicyDropdown />
+            <ReviewDropdown
+              reviews={reviews}
+              averageRating={product.average_rating || 0}
+            />
           </div>
         </div>
         {/* Thêm sản phẩm nổi bật bên dưới */}

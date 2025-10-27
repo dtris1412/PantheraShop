@@ -1,6 +1,7 @@
 import {
   createReview as createReviewService,
   checkReviewExists as checkReviewExistsService,
+  getAllReviewsForProduct as getAllReviewsForProductService,
 } from "../services/reviewService.js";
 
 const checkReviewExists = async (req, res) => {
@@ -39,4 +40,17 @@ const createReview = async (req, res) => {
   }
 };
 
-export { createReview, checkReviewExists };
+const getAllReviewsForProduct = async (req, res) => {
+  try {
+    const { product_id } = req.params;
+    const reviews = await getAllReviewsForProductService(product_id);
+    if (!reviews.success) {
+      return res.status(400).json(reviews);
+    }
+    res.status(200).json(reviews);
+  } catch (err) {
+    console.error("Error in getAllReviewsForProduct: ", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+export { createReview, checkReviewExists, getAllReviewsForProduct };

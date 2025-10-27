@@ -79,6 +79,7 @@ import {
 import {
   createReview,
   checkReviewExists,
+  getAllReviewsForProduct,
 } from "../controllers/reviewController.js";
 
 const initWebRoutes = (app) => {
@@ -186,6 +187,7 @@ const initWebRoutes = (app) => {
   // Review APIs
   router.post("/api/review", verifyToken, createReview);
   router.get("/api/review/check", verifyToken, checkReviewExists);
+  router.get("/api/review/product/:product_id", getAllReviewsForProduct);
   return app.use("/", router);
 };
 

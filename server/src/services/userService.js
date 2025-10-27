@@ -121,6 +121,12 @@ const updateAvatar = async (user_id, avatar_url) => {
   };
 };
 
+const getNameById = async (user_id) => {
+  if (!user_id) return null;
+  const user = await db.User.findOne({ where: { user_id } });
+  if (!user) return;
+  return user.user_name;
+};
 export {
   getAllUsers,
   getUserById,
@@ -128,4 +134,5 @@ export {
   updateProfile,
   updatePassword,
   updateAvatar,
+  getNameById,
 };
