@@ -282,6 +282,60 @@ const getProductRating = async (product_id) => {
   return ratings?.get("average_rating") || 0;
 };
 
+const getRelatedProducts = async (product_id) => {
+  // Lấy sản phẩm và liên kết Team → Tournament → Sport
+  const product = await db.Product.findByPk(product_id, {
+    include: [
+      {
+        model: db.Team,
+        include: [
+          {
+            model: db.Tournament,
+            include: [
+              {
+                model: db.Sport,
+                attributes: ["sport_id"],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  });
+  if (!product) return [];
+
+  // Lấy sport_id từ liên kết
+  const sport_id = product.Team?.Tournament?.Sport?.sport_id;
+
+  if (!sport_id) return [];
+
+  // Lấy các sản phẩm liên quan cùng sport_id (qua liên kết)
+  const related = await db.Product.findAll({
+    include: [
+      {
+        model: db.Team,
+        include: [
+          {
+            model: db.Tournament,
+            include: [
+              {
+                model: db.Sport,
+                where: { sport_id },
+              },
+            ],
+          },
+        ],
+      },
+    ],
+    where: {
+      product_id: { [db.Sequelize.Op.ne]: product_id },
+    },
+    limit: 15,
+  });
+
+  return { success: true, products: related };
+};
+
 export {
   getAllProducts,
   getProductById,
@@ -290,4 +344,5 @@ export {
   getProductBySport,
   searchProducts,
   getProductRating,
+  getRelatedProducts,
 };

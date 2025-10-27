@@ -7,6 +7,7 @@ import { useWishlist } from "../contexts/wishlistContext";
 import { useCart } from "../contexts/cartContext";
 import ReviewDropdown from "../components/ProductDetail/ReviewDropdown";
 import PolicyDropdown from "../components/ProductDetail/PolicyDropdown";
+import RelatedProduct from "../components/ProductDetail/RelatedProduct";
 
 const formatVND = (value: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
@@ -541,6 +542,7 @@ export default function ProductDetails() {
         </div>
         {/* Thêm sản phẩm nổi bật bên dưới */}
         <FeaturedProduct />
+        <RelatedProduct productId={product.product_id} />
       </div>
     </div>
   );

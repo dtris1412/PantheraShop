@@ -5,6 +5,7 @@ import {
   getProductBySport as getProductBySportService,
   getProductById as getProductByIdService,
   searchProducts as searchProductsService,
+  getRelatedProducts as getRelatedProductsService,
 } from "../services/productService.js";
 
 const getAllProducts = async (req, res) => {
@@ -87,6 +88,19 @@ const searchProducts = async (req, res) => {
   }
 };
 
+const getRelatedProducts = async (req, res) => {
+  try {
+    const { product_id } = req.params;
+    const result = await getRelatedProductsService(product_id);
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+    res.status(200).json(result.products);
+  } catch (err) {
+    console.error("Error in getRelatedProducts: ", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 export {
   getAllProducts,
   getTopRatedProducts,
@@ -94,4 +108,5 @@ export {
   getProductBySport,
   getProductById,
   searchProducts,
+  getRelatedProducts,
 };

@@ -19,6 +19,7 @@ import {
   getProductBySport,
   getProductById,
   searchProducts,
+  getRelatedProducts,
 } from "../controllers/productController.js";
 import { getAllSports } from "../controllers/sportController.js";
 
@@ -107,7 +108,7 @@ const initWebRoutes = (app) => {
   router.get("/api/products/top-rated", getTopRatedProducts);
   router.post("/api/products/filter", getFilteredProducts);
   router.get("/api/products/:product_id", getProductById);
-
+  router.get("/api/products/related/:product_id", getRelatedProducts);
   router.get("/api/products/sport/:sport_id", getProductBySport);
 
   router.get("/api/products/search", searchProducts);
