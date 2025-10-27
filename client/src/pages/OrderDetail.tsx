@@ -90,7 +90,7 @@ export default function OrderDetail() {
         </div>
 
         {/* Danh sách sản phẩm */}
-        {order.orderProducts?.map((item, idx) => (
+        {order.orderProducts?.map((item: any, idx: number) => (
           <div
             key={idx}
             className="flex flex-col md:flex-row border-b border-gray-200 py-8"
