@@ -2,6 +2,7 @@ import {
   createOrder as createOrderService,
   createOrderProduct as createOrderProductService,
   getStatusOrder as getStatusOrderService,
+  getOrderHistoryByUserId as getOrderHistoryByUserIdService,
 } from "../services/orderService.js";
 
 import {
@@ -112,4 +113,21 @@ const getStatusOrder = async (req, res) => {
   }
 };
 
-export { createOrder, getStatusOrder };
+const getOrderHistoryByUserId = async (req, res) => {
+  try {
+    const user_id = req.params.user_id;
+    const historyResult = await getOrderHistoryByUserIdService(user_id);
+    if (!historyResult.success) {
+      console.error(
+        "==> [getOrderHistoryByUserId] historyResult error:",
+        historyResult
+      );
+      return res.status(400).json(historyResult);
+    }
+    res.status(200).json(historyResult);
+  } catch (err) {
+    console.error("Error in getOrderHistoryByUserId: ", err);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+export { createOrder, getStatusOrder, getOrderHistoryByUserId };

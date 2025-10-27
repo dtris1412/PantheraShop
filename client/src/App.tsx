@@ -27,7 +27,7 @@ import { ToastContainer } from "./components/Toast";
 import { useNavigate } from "react-router-dom";
 import BlogDetail from "./pages/BlogDetail";
 import WishList from "./pages/WishList";
-
+import { OrderHistoryProvider } from "./contexts/OrderHistoryContext";
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { isAuthenticated, loading } = useAuth();
   if (loading) return <Loading />;
@@ -98,7 +98,9 @@ export default function App() {
               <BlogProvider>
                 <WishlistProvider>
                   <CartProvider>
-                    <AppContent />
+                    <OrderHistoryProvider>
+                      <AppContent />
+                    </OrderHistoryProvider>
                   </CartProvider>
                 </WishlistProvider>
               </BlogProvider>

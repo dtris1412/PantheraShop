@@ -56,7 +56,11 @@ import {
 } from "../controllers/voucherController.js";
 
 //Order APIs
-import { createOrder, getStatusOrder } from "../controllers/orderController.js";
+import {
+  createOrder,
+  getStatusOrder,
+  getOrderHistoryByUserId,
+} from "../controllers/orderController.js";
 
 //Blog APIs
 import { getAllBlogs } from "../controllers/blogController.js";
@@ -146,6 +150,7 @@ const initWebRoutes = (app) => {
   //Order APIs
   router.post("/api/order", createOrder);
   router.get("/api/order/:order_id", getStatusOrder);
+  router.get("/api/orders/user/:user_id", verifyToken, getOrderHistoryByUserId);
 
   //Blog APIs
   router.get("/api/blogs", getAllBlogs);
