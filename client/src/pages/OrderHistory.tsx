@@ -11,7 +11,14 @@ type Order = {
   [key: string]: any;
 };
 
-const statusOptions = ["Tất cả", "Đã giao", "Đã hủy", "Đang xử lý"];
+const statusOptions = [
+  "Tất cả",
+  "Chờ xác nhận",
+  "Đang vận chuyển",
+  "Đã giao",
+  "Đã hủy",
+  "Đang xử lý",
+];
 
 function formatVND(value: number | string) {
   return Number(value).toLocaleString("vi-VN", {

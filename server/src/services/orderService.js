@@ -76,7 +76,13 @@ const getOrderHistoryByUserId = async (user_id) => {
   const orders = await db.Order.findAll({
     where: {
       user_id: user_id,
-      order_status: ["Đã giao", "Đã hủy", "Đang xử lý"],
+      order_status: [
+        "Chờ xác nhận",
+        "Đang vận chuyển",
+        "Đã giao",
+        "Đã hủy",
+        "Đang xử lý",
+      ],
     },
   });
   const orderDetails = await Promise.all(

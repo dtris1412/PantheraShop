@@ -155,7 +155,7 @@ export default function OrderInfo() {
         body: JSON.stringify({
           order_id: orderId,
           order_date: new Date().toISOString(),
-          order_status: "pending",
+          order_status: "Chờ xác nhận",
           total_amount: total, // tổng tiền cuối cùng đã trừ voucher
           order_discount: orderDiscount, // số tiền giảm giá đơn hàng
           shipping_fee: shipping, // phí vận chuyển thực tế
@@ -184,7 +184,7 @@ export default function OrderInfo() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           payment_method: "cod",
-          payment_status: "pending",
+          payment_status: "Đã thanh toán",
           payment_info: "Thanh toán khi nhận hàng",
           paid_at: null,
           order_id: orderId,

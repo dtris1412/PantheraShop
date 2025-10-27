@@ -16,7 +16,7 @@ import Home from "./pages/Home";
 import Products from "./pages/Products";
 import ProductDetails from "./pages/ProductDetails";
 import Cart from "./pages/Cart";
-import Orders from "./pages/Orders";
+// import Orders from "./pages/Orders.tsx";
 import OrderInfo from "./pages/OrderInfo";
 import Blog from "./pages/Blog";
 import Login from "./pages/Login";
@@ -28,6 +28,7 @@ import { useNavigate } from "react-router-dom";
 import BlogDetail from "./pages/BlogDetail";
 import WishList from "./pages/WishList";
 import { OrderHistoryProvider } from "./contexts/OrderHistoryContext";
+import OrderDetail from "./pages/OrderDetail";
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { isAuthenticated, loading } = useAuth();
   if (loading) return <Loading />;
@@ -61,14 +62,14 @@ function AppContent() {
             }
           />
           <Route path="/cart" element={<Cart onNavigate={navigate} />} />
-          <Route
+          {/* <Route
             path="/orders"
             element={
               <ProtectedRoute>
                 <Orders />
               </ProtectedRoute>
             }
-          />
+          /> */}
           <Route
             path="/order-history"
             element={
@@ -80,6 +81,7 @@ function AppContent() {
           <Route path="/order-info" element={<OrderInfo />} />
           <Route path="/blog/:id" element={<BlogDetail />} />
           <Route path="/wishlist" element={<WishList />} />
+          <Route path="/order-detail/:orderId" element={<OrderDetail />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

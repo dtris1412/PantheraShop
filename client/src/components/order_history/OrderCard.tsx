@@ -42,8 +42,12 @@ export default function OrderCard({ order }: { order: Order }) {
     navigate("/order-info");
   };
 
+  const handleViewDetail = () => {
+    navigate(`/order-detail/${order.order_id}`, { state: { order } });
+  };
+
   return (
-    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+    <div className="bg-white border border-gray-200 overflow-hidden">
       <div className="flex flex-wrap items-center justify-between px-6 py-4 bg-gray-50 border-b">
         <div>
           <span className="font-bold text-xl mr-2">{order.order_id}</span>
@@ -75,7 +79,10 @@ export default function OrderCard({ order }: { order: Order }) {
         >
           Mua lại
         </button>
-        <button className="flex-1 border border-gray-300 py-3 font-semibold hover:bg-gray-100 transition">
+        <button
+          className="flex-1 border border-gray-300 py-3 font-semibold hover:bg-gray-100 transition"
+          onClick={handleViewDetail}
+        >
           Xem chi tiết
         </button>
       </div>
