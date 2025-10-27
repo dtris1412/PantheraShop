@@ -27,7 +27,7 @@ import { ToastContainer } from "./components/Toast";
 import { useNavigate } from "react-router-dom";
 import BlogDetail from "./pages/BlogDetail";
 import WishList from "./pages/WishList";
-import { OrderHistoryProvider } from "./contexts/OrderHistoryContext";
+import { OrderHistoryProvider } from "./contexts/orderHistoryContext.tsx";
 import OrderDetail from "./pages/OrderDetail";
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { isAuthenticated, loading } = useAuth();

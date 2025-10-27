@@ -2,6 +2,9 @@ import { CheckCircle } from "lucide-react";
 import OrderItem from "./OrderItem";
 import { useOrder } from "../../contexts/orderContext";
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useAuth } from "../../contexts/authContext";
+import ReviewPopup from "../Review/ReviewPopup";
 
 interface Order {
   order_id: string;
@@ -23,6 +26,41 @@ function formatVND(value: number | string) {
 export default function OrderCard({ order }: { order: Order }) {
   const { setOrderItems, setOrderSource } = useOrder();
   const navigate = useNavigate();
+  const { user, token } = useAuth();
+  const [showReview, setShowReview] = useState(false);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+  const [allReviewed, setAllReviewed] = useState(false);
+
+  useEffect(() => {
+    async function checkAllReviewed() {
+      if (!order.orderProducts) return;
+      let all = true;
+      const user_id = user?.user_id;
+      for (const item of order.orderProducts) {
+        const res = await fetch(
+          `http://localhost:8080/api/review/check?order_id=${order.order_id}&variant_id=${item.variant_id}&user_id=${user_id}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: token ? `Bearer ${token}` : "",
+            },
+          }
+        );
+        const data = await res.json();
+
+        if (!data.exists) {
+          all = false;
+          break;
+        }
+      }
+      setAllReviewed(all);
+    }
+    if (order.order_status === "Đã giao") {
+      checkAllReviewed();
+    }
+  }, [order, user, token]);
 
   // Chuyển đổi dữ liệu orderProducts sang dạng CartItem
   const handleBuyAgain = () => {
@@ -45,6 +83,8 @@ export default function OrderCard({ order }: { order: Order }) {
   const handleViewDetail = () => {
     navigate(`/order-detail/${order.order_id}`, { state: { order } });
   };
+
+  const handleReview = () => setShowReview(true);
 
   return (
     <div className="bg-white border border-gray-200 overflow-hidden">
@@ -85,7 +125,28 @@ export default function OrderCard({ order }: { order: Order }) {
         >
           Xem chi tiết
         </button>
+        {order.order_status === "Đã giao" &&
+          (allReviewed ? (
+            <button
+              className="flex-1 border border-green-500 py-3 font-semibold text-green-700 bg-green-50 cursor-default"
+              disabled
+            >
+              Đã đánh giá
+            </button>
+          ) : (
+            <button
+              className="flex-1 border border-yellow-500 py-3 font-semibold text-yellow-700 hover:bg-yellow-50 transition"
+              onClick={handleReview}
+            >
+              Đánh giá
+            </button>
+          ))}
       </div>
+
+      {/* Popup đánh giá */}
+      {showReview && (
+        <ReviewPopup order={order} onClose={() => setShowReview(false)} />
+      )}
     </div>
   );
 }

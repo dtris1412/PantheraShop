@@ -76,6 +76,11 @@ import {
   getWishlistCount,
 } from "../controllers/wishlistController.js";
 
+import {
+  createReview,
+  checkReviewExists,
+} from "../controllers/reviewController.js";
+
 const initWebRoutes = (app) => {
   // user APIs
   router.get("/api/users", getAllUsers);
@@ -177,6 +182,10 @@ const initWebRoutes = (app) => {
   );
 
   router.get("/api/wishlist/count/:wishlist_id", verifyToken, getWishlistCount);
+
+  // Review APIs
+  router.post("/api/review", verifyToken, createReview);
+  router.get("/api/review/check", verifyToken, checkReviewExists);
   return app.use("/", router);
 };
 

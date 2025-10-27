@@ -219,6 +219,23 @@ const searchProducts = async (keyword) => {
   return products;
 };
 
+const getProductRating = async (product_id) => {
+  const variants = await db.Variant.findAll({
+    where: { product_id },
+    attributes: ["variant_id"],
+  });
+  const variantIds = variants.map((v) => v.variant_id);
+
+  const ratings = await db.OrderProductReview.findOne({
+    attributes: [
+      [db.Sequelize.fn("AVG", db.Sequelize.col("rating")), "average_rating"],
+      // [db.Sequelize.fn("COUNT", db.Sequelize.col("rating")), "review_count"],
+    ],
+  });
+
+  return ratings?.get("average_rating") || 0;
+};
+
 export {
   getAllProducts,
   getProductById,
@@ -226,4 +243,5 @@ export {
   getFilteredProducts,
   getProductBySport,
   searchProducts,
+  getProductRating,
 };
