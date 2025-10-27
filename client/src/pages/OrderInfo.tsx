@@ -71,7 +71,7 @@ export default function OrderInfo() {
   const [selectedShippingVoucher, setSelectedShippingVoucher] =
     useState<Voucher | null>(null);
   const [finalTotal, setFinalTotal] = useState(0); // thêm state này
-  const { orderItems } = useOrder();
+  const { orderItems, orderSource } = useOrder();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -198,31 +198,35 @@ export default function OrderInfo() {
       setShowResult("success");
 
       // === XÓA GIỎ HÀNG SAU KHI ĐẶT HÀNG THÀNH CÔNG ===
-      if (isLoggedIn && userId) {
-        const token = localStorage.getItem("token");
-        // Lấy cartId từ API
-        const cartRes = await fetch(
-          `http://localhost:8080/api/cart/${userId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+      if (orderSource === "cart") {
+        // Xóa giỏ hàng
+        if (isLoggedIn && userId) {
+          const token = localStorage.getItem("token");
+          // Lấy cartId từ API
+          const cartRes = await fetch(
+            `http://localhost:8080/api/cart/${userId}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
 
-        const cartData = await cartRes.json();
-        console.log("cartData:", cartData);
-        const cartId = cartData?.cart_id;
-        console.log("cartId lấy được ở FE:", cartId);
-        if (cartId) {
-          await fetch(`http://localhost:8080/api/cart/clear/${cartId}`, {
-            method: "DELETE",
-            headers: { Authorization: `Bearer ${token}` },
-          });
+          const cartData = await cartRes.json();
+          console.log("cartData:", cartData);
+          const cartId = cartData?.cart_id;
+          console.log("cartId lấy được ở FE:", cartId);
+          if (cartId) {
+            await fetch(`http://localhost:8080/api/cart/clear/${cartId}`, {
+              method: "DELETE",
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            setCartItems([]);
+          }
+        } else {
+          localStorage.removeItem("cart");
           setCartItems([]);
         }
-      } else {
-        localStorage.removeItem("cart");
-        setCartItems([]);
       }
+      // Nếu là "buyAgain" thì không xóa giỏ hàng
       // === KẾT THÚC XÓA GIỎ HÀNG ===
 
       // Xử lý chuyển trang hoặc thông báo thành công ở đây

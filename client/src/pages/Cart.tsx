@@ -34,7 +34,7 @@ export default function Cart({ onNavigate }: CartProps) {
   const [editingItem, setEditingItem] = useState<CartItem | null>(null);
 
   const navigate = useNavigate();
-  const { setOrderItems } = useOrder();
+  const { setOrderItems, setOrderSource } = useOrder();
   const { refresh } = useCart();
 
   useEffect(() => {
@@ -361,6 +361,7 @@ export default function Cart({ onNavigate }: CartProps) {
       );
       const data = await res.json();
       setOrderItems(data);
+      setOrderSource("cart");
       navigate("/order-info");
     } else {
       // Guest: chỉ cần chuyển trang, dữ liệu đã nằm trong localStorage

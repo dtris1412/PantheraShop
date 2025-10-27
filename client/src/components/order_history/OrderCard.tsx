@@ -21,7 +21,7 @@ function formatVND(value: number | string) {
 }
 
 export default function OrderCard({ order }: { order: Order }) {
-  const { setOrderItems } = useOrder();
+  const { setOrderItems, setOrderSource } = useOrder();
   const navigate = useNavigate();
 
   // Chuyển đổi dữ liệu orderProducts sang dạng CartItem
@@ -38,6 +38,7 @@ export default function OrderCard({ order }: { order: Order }) {
       quantity: item.quantity,
     }));
     setOrderItems(items);
+    setOrderSource("buyAgain");
     navigate("/order-info");
   };
 
