@@ -6,12 +6,9 @@ interface Product {
   price: number;
   discountPrice?: number;
   image: string;
-  rating?: number;
+  average_rating?: number;
   description?: string;
   sport?: string;
-  // category: string;
-  // isNew?: boolean;
-  // colors?: number;
 }
 
 interface ProductCardProps {
@@ -73,8 +70,10 @@ export default function ProductCard({
         {/* Hiển thị tên sản phẩm */}
         <div className="font-medium text-base truncate">{product.name}</div>
         {/* Hiển thị rating nếu có */}
-        {product.rating !== undefined && (
-          <div className="text-yellow-500 text-xs">⭐ {product.rating}</div>
+        {product.average_rating !== undefined && (
+          <div className="text-yellow-500 text-xs">
+            ⭐ {product.average_rating}
+          </div>
         )}
         <div className="flex items-center space-x-2 pt-1">
           {hasDiscount ? (

@@ -27,8 +27,21 @@ const getAllProducts = async () => {
       },
     ],
   });
+
   if (!products) return [];
-  return products;
+
+  // Tính rating cho từng sản phẩm
+  const productsWithRating = await Promise.all(
+    products.map(async (product) => {
+      const average_rating = await getProductRating(product.product_id);
+      return {
+        ...product.toJSON(),
+        average_rating,
+      };
+    })
+  );
+
+  return productsWithRating;
 };
 
 const getProductById = async (product_id) => {
@@ -71,33 +84,51 @@ const getProductById = async (product_id) => {
   return { success: true, product };
 };
 
-const getTopRatedProducts = async (limit) => {
-  try {
-    const products = await db.Product.findAll({
-      order: [["product_rating", "DESC"]],
-      limit,
-      include: [
-        {
-          model: db.Team,
-          include: [
-            {
-              model: db.Tournament,
-              include: [
-                {
-                  model: db.Sport,
-                  attributes: ["sport_id", "sport_name"],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    });
-    return { success: true, products };
-  } catch (error) {
-    console.error("Error in getTopRatedProducts:", error);
-    return { success: false, message: "Error fetching top rated products" };
-  }
+const getTopRatedProducts = async () => {
+  // Lấy tất cả sản phẩm (hoặc giới hạn số lượng nếu cần)
+  const products = await db.Product.findAll({
+    include: [
+      {
+        model: db.Category,
+        attributes: ["category_id", "category_name"],
+      },
+      {
+        model: db.Product_Image,
+        attributes: ["product_image_id", "image_url", "order"],
+      },
+      {
+        model: db.Team,
+        include: [
+          {
+            model: db.Tournament,
+            include: [
+              {
+                model: db.Sport,
+                attributes: ["sport_id", "sport_name"],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  });
+
+  // Gắn rating cho từng sản phẩm
+  const productsWithRating = await Promise.all(
+    products.map(async (product) => {
+      const average_rating = await getProductRating(product.product_id);
+      return {
+        ...product.toJSON(),
+        average_rating: Number(average_rating) || 0,
+      };
+    })
+  );
+
+  // Sắp xếp theo rating giảm dần
+  productsWithRating.sort((a, b) => b.average_rating - a.average_rating);
+
+  // Trả về top 10 sản phẩm
+  return productsWithRating.slice(0, 10);
 };
 
 const getFilteredProducts = async (filters) => {
@@ -226,11 +257,15 @@ const getProductRating = async (product_id) => {
   });
   const variantIds = variants.map((v) => v.variant_id);
 
+  if (variantIds.length === 0) return 0;
+
   const ratings = await db.OrderProductReview.findOne({
     attributes: [
       [db.Sequelize.fn("AVG", db.Sequelize.col("rating")), "average_rating"],
-      // [db.Sequelize.fn("COUNT", db.Sequelize.col("rating")), "review_count"],
     ],
+    where: {
+      variant_id: variantIds, // Lọc theo các variant của sản phẩm
+    },
   });
 
   return ratings?.get("average_rating") || 0;

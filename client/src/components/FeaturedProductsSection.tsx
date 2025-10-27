@@ -54,7 +54,11 @@ export default function FeaturedProductsSection() {
                   name: product.product_name,
                   price: Number(product.product_price),
                   image: product.product_image,
-                  rating: product.product_rating,
+                  average_rating: Number(
+                    (product as any).average_rating ??
+                      (product as any).averageRating ??
+                      0
+                  ), // SỬA ĐÚNG TRƯỜNG NÀY!
                   description: product.product_description,
                   sport: product.Team?.Tournament?.Sport?.sport_name,
                 }}

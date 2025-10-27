@@ -19,7 +19,7 @@ export default (sequelize, DataTypes) => {
       },
       product_name: DataTypes.STRING,
       product_price: DataTypes.DOUBLE,
-      product_rating: DataTypes.FLOAT,
+
       product_description: DataTypes.STRING,
       product_quantity: DataTypes.INTEGER,
       release_date: DataTypes.DATE,

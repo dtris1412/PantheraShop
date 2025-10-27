@@ -25,11 +25,11 @@ export default function ProductGrid({
         <ProductCard
           key={product.product_id}
           product={{
-            id: String(product.product_id),
+            id: product.product_id,
             name: product.product_name,
             price: Number(product.product_price),
             image: product.product_image,
-            rating: product.product_rating,
+            average_rating: product.average_rating,
             description: product.product_description,
             sport: product.Team?.Tournament?.Sport?.sport_name,
           }}
