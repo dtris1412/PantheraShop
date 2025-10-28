@@ -1,5 +1,5 @@
-import { uploadToCloudinary } from "../services/uploadService.js";
-import { updateAvatar } from "../services/userService.js";
+import { uploadToCloudinary } from "../../shared/services/uploadService.js";
+import { updateAvatar } from "../../shared/services/userService.js";
 
 const uploadAvatar = async (req, res) => {
   if (!req.file) {

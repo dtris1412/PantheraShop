@@ -6,7 +6,7 @@ import {
   getProductById as getProductByIdService,
   searchProducts as searchProductsService,
   getRelatedProducts as getRelatedProductsService,
-} from "../services/productService.js";
+} from "../../shared/services/productService.js";
 
 const getAllProducts = async (req, res) => {
   try {

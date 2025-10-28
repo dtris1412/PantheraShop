@@ -1,9 +1,9 @@
 import {
   register as registerService,
   login as loginService,
-} from "../services/authService.js";
-import { createWishlist as createWishlistService } from "../services/wishlistService.js";
-import { createCart as createCartService } from "../services/cartService.js";
+} from "../../shared/services/authService.js";
+import { createWishlist as createWishlistService } from "../../shared/services/wishlistService.js";
+import { createCart as createCartService } from "../../shared/services/cartService.js";
 
 const register = async (req, res) => {
   try {

@@ -2,7 +2,7 @@ import {
   createReview as createReviewService,
   checkReviewExists as checkReviewExistsService,
   getAllReviewsForProduct as getAllReviewsForProductService,
-} from "../services/reviewService.js";
+} from "../../shared/services/reviewService.js";
 
 const checkReviewExists = async (req, res) => {
   try {

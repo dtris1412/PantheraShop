@@ -1,4 +1,4 @@
-import { getAllSports as getAllSportService } from "../services/sportService.js";
+import { getAllSports as getAllSportService } from "../../shared/services/sportService.js";
 
 const getAllSports = async (req, res) => {
   try {

@@ -3,7 +3,7 @@ import {
   createPayment as createPaymentService,
   handleMomoIpn,
   createVnpayPayment,
-} from "../services/paymentSerivce.js";
+} from "../../shared/services/paymentService.js";
 
 const createMomoPaymentController = async (req, res) => {
   try {

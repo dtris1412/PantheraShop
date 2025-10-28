@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 // import viewEngine from "./config/viewEngine.js";
 import initWebRoutes from "./user/routes/web.js";
+import initAdminRoutes from "./admin/routes/webAdmin.js";
 import connectDB from "./shared/config/connectDB.js";
 
 import cors from "cors";
@@ -26,7 +27,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Init web routes
-initWebRoutes(app);
+initWebRoutes(app); // User routes - prefix: /api
+initAdminRoutes(app); // Admin routes - prefix: /api/admin
 
 // Connect to DB
 connectDB();

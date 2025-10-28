@@ -1,7 +1,7 @@
 import {
   getAllProductImages as getAllProductImagesService,
   getProductImageById as getProductImageByIdService,
-} from "../services/product_imageService.js";
+} from "../../shared/services/product_imageService.js";
 
 const getAllProductImages = async (req, res) => {
   try {

@@ -3,16 +3,16 @@ import {
   createOrderProduct as createOrderProductService,
   getStatusOrder as getStatusOrderService,
   getOrderHistoryByUserId as getOrderHistoryByUserIdService,
-} from "../services/orderService.js";
+} from "../../shared/services/orderService.js";
 
 import {
   removeItemFromCart as removeItemFromCartService,
   getCartByUserId as getCartByUserIdService,
-} from "../services/cartService.js";
+} from "../../shared/services/cartService.js";
 
-import { decreaseVoucherStock as decreaseVoucherStockService } from "../services/voucherService.js";
+import { decreaseVoucherStock as decreaseVoucherStockService } from "../../shared/services/voucherService.js";
 
-import { decreaseVariantStock as decreaseVariantStockService } from "../services/variantService.js";
+import { decreaseVariantStock as decreaseVariantStockService } from "../../shared/services/variantService.js";
 
 import { sendOrderMail } from "../../shared/utils/mailer.js";
 import { renderOrderReceipt } from "../../shared/templates/orderReceipt.js";

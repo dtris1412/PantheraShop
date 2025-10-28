@@ -1,4 +1,4 @@
-import { getAllBlogs as getAllBlogsService } from "../services/blogService.js";
+import { getAllBlogs as getAllBlogsService } from "../../shared/services/blogService.js";
 
 const getAllBlogs = async (req, res) => {
   try {

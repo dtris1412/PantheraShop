@@ -5,7 +5,7 @@ import {
   updateProfile as updateProfileService,
   updatePassword as updatePasswordService,
   updateAvatar as updateAvatarService,
-} from "../services/userService.js";
+} from "../../shared/services/userService.js";
 
 const getAllUsers = async (req, res) => {
   try {

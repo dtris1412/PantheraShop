@@ -1,7 +1,7 @@
 import {
   getAllVouchers as getAllVouchersService,
   decreaseVoucherStock as decreaseVoucherStockService,
-} from "../services/voucherService.js";
+} from "../../shared/services/voucherService.js";
 
 const getAllVouchers = async (req, res) => {
   try {

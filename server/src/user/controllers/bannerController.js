@@ -1,4 +1,4 @@
-import { getAllBanners as getAllBannersService } from "../services/bannerService.js";
+import { getAllBanners as getAllBannersService } from "../../shared/services/bannerService.js";
 
 const getAllBanners = async (req, res) => {
   try {

@@ -5,7 +5,7 @@ import {
   removeItemFromWishlist as removeItemFromWishlistService,
   changeVariantInWishlist as changeVariantInWishlistService,
   getWishlistCount as getWishlistCountService,
-} from "../services/wishlistService.js";
+} from "../../shared/services/wishlistService.js";
 
 const addItemToWishList = async (req, res) => {
   try {

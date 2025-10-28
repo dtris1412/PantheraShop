@@ -9,7 +9,7 @@ import {
   getCartProductsByCartId as getCartProductsByCartIdService,
   clearCart as clearCartService,
   getCartCount as getCartCountService,
-} from "../services/cartService.js";
+} from "../../shared/services/cartService.js";
 
 const getCartByUserId = async (req, res) => {
   try {
