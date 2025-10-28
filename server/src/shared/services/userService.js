@@ -7,7 +7,9 @@ const passwordRegex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).{6,}$/; // ít nhất 6 k
 const phoneRegex = /^(0|\+84)[0-9]{9,10}$/; // cho phép 0xxxx hoặc +84xxxx
 
 const getAllUsers = async () => {
-  return await db.User.findAll();
+  const users = await db.User.findAll();
+  if (!users) return { success: false, message: "No users found" };
+  return { success: true, data: users };
 };
 
 const getUserById = async (user_id) => {

@@ -37,6 +37,7 @@ import UserList from "./admin/pages/UserList";
 import ProductList from "./admin/pages/ProductList";
 import OrderList from "./admin/pages/OrderList";
 import InventoryList from "./admin/pages/InventoryList";
+import { AdminProvider } from "./admin/contexts/adminContext";
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { isAuthenticated, loading } = useAuth();
   if (loading) return <Loading />;
@@ -156,15 +157,17 @@ function AdminRoutes() {
   const { logout, user } = useAuth();
 
   return (
-    <AdminLayout onLogout={logout} adminName={user?.user_name}>
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/users" element={<UserList />} />
-        <Route path="/products" element={<ProductList />} />
-        <Route path="/orders" element={<OrderList />} />
-        <Route path="/inventory" element={<InventoryList />} />
-        <Route path="*" element={<Navigate to="/admin" replace />} />
-      </Routes>
-    </AdminLayout>
+    <AdminProvider>
+      <AdminLayout onLogout={logout} adminName={user?.user_name}>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/users" element={<UserList />} />
+          <Route path="/products" element={<ProductList />} />
+          <Route path="/orders" element={<OrderList />} />
+          <Route path="/inventory" element={<InventoryList />} />
+          <Route path="*" element={<Navigate to="/admin" replace />} />
+        </Routes>
+      </AdminLayout>
+    </AdminProvider>
   );
 }
