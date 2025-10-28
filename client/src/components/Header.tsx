@@ -32,9 +32,9 @@ export default function Header({
   const location = useLocation();
 
   const navLinks = [
-    { name: "Home", path: "/", key: "home" },
-    { name: "Products", path: "/products", key: "products" },
-    { name: "Blog", path: "/blog", key: "blog" },
+    { name: "Trang chủ", path: "/", key: "home" },
+    { name: "Sản phẩm", path: "/products", key: "products" },
+    { name: "Tin tức", path: "/blog", key: "blog" },
   ];
 
   const getKeyFromPath = (pathname: string): string | null => {
@@ -145,7 +145,7 @@ export default function Header({
               <Search className="w-4 h-4 text-gray-500 mr-2" />
               <input
                 type="text"
-                placeholder="Search"
+                placeholder="Tìm kiếm"
                 value={searchQuery}
                 readOnly // prevent typing here, use popup
                 className="bg-transparent outline-none text-sm w-32 placeholder-gray-500 cursor-pointer"
@@ -242,7 +242,7 @@ export default function Header({
                     onClick={logout}
                     className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-gray-100"
                   >
-                    Logout
+                    Đăng xuất
                   </button>
                 </div>
               )}

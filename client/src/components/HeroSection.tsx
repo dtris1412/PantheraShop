@@ -97,7 +97,7 @@ export default function HeroSection() {
               onClick={() => navigate("/products")}
               className="bg-white/90 text-black px-6 py-3 font-semibold hover:bg-gray-200 transition-all duration-300 inline-flex items-center space-x-2 group shadow-lg rounded-xl pointer-events-auto text-base md:text-lg"
             >
-              <span>Shop Now</span>
+              <span>Mua ngay</span>
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
           </div>

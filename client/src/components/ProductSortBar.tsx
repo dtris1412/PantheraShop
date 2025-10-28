@@ -7,16 +7,16 @@ export default function ProductSortBar({
 }) {
   return (
     <div className="flex items-center space-x-2 mb-8">
-      <span className="text-sm text-gray-600">Sort by:</span>
+      <span className="text-sm text-gray-600">Lọc theo:</span>
       <select
         value={selectedSort}
         onChange={(e) => setSelectedSort(e.target.value)}
         className="border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:border-black"
       >
-        <option value="featured">Featured</option>
-        <option value="price-low">Price: Low to High</option>
-        <option value="price-high">Price: High to Low</option>
-        <option value="newest">Newest</option>
+        <option value="featured">Mặc định</option>
+        <option value="price-low">Giá: Thấp đến Cao</option>
+        <option value="price-high">Giá: Cao đến Thấp</option>
+        <option value="newest">Mới Nhất</option>
       </select>
     </div>
   );

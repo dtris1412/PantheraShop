@@ -33,7 +33,7 @@ export default function Products() {
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("Tất cả");
-  const [selectedSort, setSelectedSort] = useState("featured");
+  const [selectedSort, setSelectedSort] = useState("mặc định");
   const [selectedSport, setSelectedSport] = useState("");
   const [selectedTournament, setSelectedTournament] = useState("");
   const [selectedTeam, setSelectedTeam] = useState("");
@@ -65,7 +65,7 @@ export default function Products() {
     }
 
     // Sắp xếp
-    if (selectedSort === "price-low") {
+    if (selectedSort === "price-low ") {
       filtered = [...filtered].sort(
         (a, b) => a.product_price - b.product_price
       );
@@ -136,10 +136,12 @@ export default function Products() {
       <div ref={topRef} />
       <div className="max-w-7xl mx-auto px-6">
         <div className="mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold mb-2">All Products</h1>
+          <h1 className="text-4xl md:text-5xl font-bold mb-2">
+            Tất cả sản phẩm
+          </h1>
           <p className="text-gray-600">
-            Showing {filteredProducts.length}{" "}
-            {filteredProducts.length === 1 ? "product" : "products"}
+            Đang có {filteredProducts.length}{" "}
+            {filteredProducts.length === 1 ? "sản phẩm" : "sản phẩm"}
           </p>
         </div>
         <div className="flex gap-8">

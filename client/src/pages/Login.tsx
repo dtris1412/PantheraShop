@@ -50,16 +50,16 @@ export default function Login() {
     <div className="min-h-screen pt-24 pb-12">
       <div className="max-w-md mx-auto px-6">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 mx-auto flex items-center justify-center mb-4">
+          <div className="w-24 h-24 mx-auto flex items-center justify-center mb-1">
             <img src="/assets/img/logo/logo_PantheraShop.png" alt="Logo" />
           </div>
           <h1 className="text-3xl font-bold mb-2">
-            {isLogin ? "Welcome Back" : "Create Account"}
+            {isLogin ? "Chào mừng trở lại" : "Tạo tài khoản"}
           </h1>
           <p className="text-gray-600">
             {isLogin
-              ? "Sign in to access your account"
-              : "Join us to start your athletic journey"}
+              ? "Đăng nhập để truy cập tài khoản của bạn"
+              : "Tham gia cùng chúng tôi để bắt đầu hành trình thể thao"}
           </p>
         </div>
 
@@ -70,7 +70,9 @@ export default function Login() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isLogin && (
             <div>
-              <label className="block text-sm font-medium mb-2">Username</label>
+              <label className="block text-sm font-medium mb-2">
+                Tên đăng nhập
+              </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
@@ -98,14 +100,14 @@ export default function Login() {
                   setFormData({ ...formData, email: e.target.value })
                 }
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 focus:outline-none focus:border-black"
-                placeholder="email@example.com"
+                placeholder="email@.com"
                 required
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Password</label>
+            <label className="block text-sm font-medium mb-2">Mật khẩu</label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
@@ -135,7 +137,7 @@ export default function Login() {
           {!isLogin && (
             <div>
               <label className="block text-sm font-medium mb-2">
-                Confirm Password
+                Xác nhận mật khẩu
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -172,18 +174,22 @@ export default function Login() {
             disabled={loading}
             className="w-full bg-black text-white py-3 font-semibold hover:bg-gray-800 transition-colors disabled:opacity-50"
           >
-            {loading ? "Processing..." : isLogin ? "Sign In" : "Create Account"}
+            {loading
+              ? "Đang xử lý..."
+              : isLogin
+              ? "Đăng nhập"
+              : "Tạo tài khoản"}
           </button>
         </form>
 
         <div className="mt-6 text-center">
           <p className="text-gray-600">
-            {isLogin ? "Don't have an account? " : "Already have an account? "}
+            {isLogin ? "Chưa có tài khoản? " : "Đã có tài khoản? "}
             <button
               onClick={() => setIsLogin(!isLogin)}
               className="text-black font-semibold hover:underline"
             >
-              {isLogin ? "Sign Up" : "Sign In"}
+              {isLogin ? "Đăng ký" : "Đăng nhập"}
             </button>
           </p>
         </div>

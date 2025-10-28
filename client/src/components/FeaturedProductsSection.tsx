@@ -18,16 +18,16 @@ export default function FeaturedProductsSection() {
           <div className="flex items-center space-x-2 mb-2">
             <TrendingUp className="w-5 h-5" />
             <span className="text-sm font-semibold uppercase tracking-wider">
-              Top Rated
+              Được đánh giá cao
             </span>
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold">Featured Products</h2>
+          <h2 className="text-3xl md:text-4xl font-bold">Sản phẩm nổi bật</h2>
         </div>
         <button
           onClick={() => navigate("/products")}
           className="hidden md:flex items-center space-x-2 hover:underline font-medium"
         >
-          <span>View All</span>
+          <span>Xem tất cả</span>
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>

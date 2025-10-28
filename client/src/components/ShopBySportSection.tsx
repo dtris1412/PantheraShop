@@ -8,7 +8,7 @@ export default function ShopBySportSection() {
 
   return (
     <section className="max-w-7xl mx-auto px-6 py-16">
-      <h2 className="text-3xl md:text-4xl font-bold mb-12">Shop by Sport</h2>
+      <h2 className="text-3xl md:text-4xl font-bold mb-12">Môn thể thao</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {sports.map((sport) => (
           <div
@@ -26,7 +26,7 @@ export default function ShopBySportSection() {
                 {sport.sport_name}
               </h3>
               <div className="inline-flex items-center space-x-2 text-white font-medium group-hover:underline">
-                <span>Explore</span>
+                <span>Xem thêm</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
             </div>
