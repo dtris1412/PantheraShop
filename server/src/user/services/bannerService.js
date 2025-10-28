@@ -1,4 +1,4 @@
-import db from "../models/index.js";
+import db from "../../shared/models/index.js";
 
 const getAllBanners = async () => {
   const banners = await db.Banner.findAll();

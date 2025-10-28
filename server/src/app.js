@@ -1,8 +1,8 @@
 import express from "express";
 import dotenv from "dotenv";
 // import viewEngine from "./config/viewEngine.js";
-import initWebRoutes from "./routes/web.js";
-import connectDB from "./config/connectDB.js";
+import initWebRoutes from "./user/routes/web.js";
+import connectDB from "./shared/config/connectDB.js";
 
 import cors from "cors";
 

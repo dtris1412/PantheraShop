@@ -1,4 +1,4 @@
-import db from "../models/index.js";
+import db from "../../shared/models/index.js";
 
 const getAllProductImages = async () => {
   const productImages = await db.Product_Image.findAll();

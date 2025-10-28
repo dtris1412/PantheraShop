@@ -1,4 +1,4 @@
-import db from "../models/index.js";
+import db from "../../shared/models/index.js";
 import { getNameById } from "./userService.js";
 const checkReviewExists = async (order_id, variant_id, user_id) => {
   const existingReview = await db.OrderProductReview.findOne({

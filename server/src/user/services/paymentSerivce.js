@@ -1,10 +1,10 @@
 import axios from "axios";
 import crypto from "crypto";
-import { momoConfig } from "../config/momoConfig.js";
-import { vnpayConfig } from "../config/vnpayConfig.js";
+import { momoConfig } from "../../shared/config/momoConfig.js";
+import { vnpayConfig } from "../../shared/config/vnpayConfig.js";
 import qs from "qs";
 import dateFormat from "dateformat";
-import db from "../models/index.js";
+import db from "../../shared/models/index.js";
 import { createOrder, createOrderProduct } from "./orderService.js";
 
 const createMomoPayment = async ({ amount, orderId, orderInfo }) => {

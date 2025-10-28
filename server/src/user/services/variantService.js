@@ -1,4 +1,4 @@
-import db from "../models/index.js";
+import db from "../../shared/models/index.js";
 
 const decreaseVariantStock = async (variant_id, quantity) => {
   if (!variant_id || !quantity) {

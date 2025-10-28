@@ -1,4 +1,4 @@
-import cart from "../models/cart.js";
+import cart from "../../shared/models/cart.js";
 import {
   getCartByUserId as getCartByUserIdService,
   getCartItems as getCartItemsService,

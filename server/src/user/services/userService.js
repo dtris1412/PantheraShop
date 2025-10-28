@@ -1,4 +1,4 @@
-import db from "../models/index.js";
+import db from "../../shared/models/index.js";
 import bcrypt from "bcrypt";
 
 const SALT_ROUNDS = 10;

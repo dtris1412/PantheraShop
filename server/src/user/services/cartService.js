@@ -1,4 +1,4 @@
-import db from "../models/index.js";
+import db from "../../shared/models/index.js";
 
 const createCart = async (user_id) => {
   console.log("Creating cart for user_id:", user_id);

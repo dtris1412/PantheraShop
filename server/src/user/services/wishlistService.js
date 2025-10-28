@@ -1,5 +1,5 @@
-import db from "../models/index.js";
-import wishlist from "../models/wishlist.js";
+import db from "../../shared/models/index.js";
+import wishlist from "../../shared/models/wishlist.js";
 
 const createWishlist = async (user_id) => {
   if (!user_id) throw new Error("User ID is required");

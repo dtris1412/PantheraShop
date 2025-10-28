@@ -14,8 +14,8 @@ import { decreaseVoucherStock as decreaseVoucherStockService } from "../services
 
 import { decreaseVariantStock as decreaseVariantStockService } from "../services/variantService.js";
 
-import { sendOrderMail } from "../utils/mailer.js";
-import { renderOrderReceipt } from "../templates/orderReceipt.js";
+import { sendOrderMail } from "../../shared/utils/mailer.js";
+import { renderOrderReceipt } from "../../shared/templates/orderReceipt.js";
 
 const createOrder = async (req, res) => {
   try {

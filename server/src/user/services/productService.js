@@ -1,4 +1,4 @@
-import db from "../models/index.js";
+import db from "../../shared/models/index.js";
 
 const getAllProducts = async () => {
   const products = await db.Product.findAll({

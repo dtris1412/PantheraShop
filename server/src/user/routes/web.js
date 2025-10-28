@@ -10,7 +10,7 @@ import { register, login } from "../controllers/authController.js";
 import multer from "multer";
 import { uploadAvatar } from "../controllers/uploadController.js";
 // import verifyToken nếu bạn đã có
-import { verifyToken } from "../middlewares/authMiddleware.js";
+import { verifyToken } from "../../shared/middlewares/authMiddleware.js";
 //product
 import {
   getAllProducts,

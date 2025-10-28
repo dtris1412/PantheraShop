@@ -1,4 +1,4 @@
-import cloudinary from "../config/cloudinary.js";
+import cloudinary from "../../shared/config/cloudinary.js";
 
 /**
  * Upload file lên Cloudinary
