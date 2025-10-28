@@ -10,6 +10,7 @@ import { v4 as uuidv4 } from "uuid";
 import { useOrder } from "../contexts/orderContext";
 import { useAuth } from "../contexts/authContext";
 import { useNavigate } from "react-router-dom";
+import ProgressLoading from "../components/Loading/ProgressLoading";
 
 interface CartItem {
   id: string;
@@ -71,6 +72,7 @@ export default function OrderInfo() {
   const [selectedShippingVoucher, setSelectedShippingVoucher] =
     useState<Voucher | null>(null);
   const [finalTotal, setFinalTotal] = useState(0); // thêm state này
+  const [isProcessing, setIsProcessing] = useState(false);
   const { orderItems, orderSource } = useOrder();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -147,6 +149,7 @@ export default function OrderInfo() {
 
   const handleCreateOrderCOD = async () => {
     if (!validateRecipient()) return;
+    setIsProcessing(true);
     try {
       // 1. Tạo đơn hàng
       const orderRes = await fetch("http://localhost:8080/api/order", {
@@ -232,7 +235,8 @@ export default function OrderInfo() {
       // Xử lý chuyển trang hoặc thông báo thành công ở đây
     } catch (err) {
       setShowResult("fail");
-      // Hiển thị thông báo lỗi nếu cần
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -285,6 +289,16 @@ export default function OrderInfo() {
     (!voucher.usage_limit || (voucher.used_count ?? 0) < voucher.usage_limit) &&
     (!voucher.start_date || new Date(voucher.start_date) <= now) &&
     (!voucher.end_date || new Date(voucher.end_date) >= now);
+
+  useEffect(() => {
+    if (showResult) {
+      const timer = setTimeout(() => {
+        setShowResult(null);
+        navigate("/cart");
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [showResult, navigate]);
 
   return (
     <div className="min-h-screen pt-24 pb-12 bg-gray-50">
@@ -359,23 +373,35 @@ export default function OrderInfo() {
           </>
         )}
       </div>
+      {isProcessing && <ProgressLoading />}
       {showResult && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
-          <div className="bg-white rounded-lg shadow p-8 flex flex-col items-center animate-fade-in">
+        <div
+          className="fixed inset-0 flex items-center justify-center z-50"
+          style={{ pointerEvents: "none" }}
+        >
+          <div
+            className="flex flex-col items-center px-8 py-8"
+            style={{
+              background: "rgba(0,0,0,0.7)",
+              borderRadius: 0,
+              boxShadow: "none",
+              minWidth: 320,
+              animation: "fadeInUp 0.7s cubic-bezier(.4,0,.2,1)",
+              pointerEvents: "auto",
+            }}
+            onClick={() => setShowResult(null)}
+          >
             {showResult === "success" ? (
               <>
-                <CheckCircle2
-                  className="text-green-600 animate-bounce"
-                  size={80}
-                />
-                <div className="mt-4 text-green-700 font-bold text-xl">
+                <CheckCircle2 className="text-white" size={80} />
+                <div className="mt-4 text-white font-bold text-xl">
                   Thanh toán thành công!
                 </div>
               </>
             ) : (
               <>
-                <XCircle className="text-red-600 animate-bounce" size={80} />
-                <div className="mt-4 text-red-700 font-bold text-xl">
+                <XCircle className="text-white" size={80} />
+                <div className="mt-4 text-white font-bold text-xl">
                   Thanh toán thất bại!
                 </div>
               </>
@@ -383,10 +409,11 @@ export default function OrderInfo() {
           </div>
           <style>
             {`
-              .animate-fade-in { animation: fadeIn 0.8s; }
-              @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-              .animate-bounce { animation: bounce 1s infinite; }
-              @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+              @keyframes fadeInUp {
+                from { opacity: 0; transform: translateY(40px);}
+                to { opacity: 1; transform: translateY(0);}
+              }
+              .animate-fade-in { animation: fadeInUp 0.7s cubic-bezier(.4,0,.2,1);}
             `}
           </style>
         </div>
