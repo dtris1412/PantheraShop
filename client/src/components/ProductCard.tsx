@@ -72,7 +72,7 @@ export default function ProductCard({
         {/* Hiển thị rating nếu có */}
         {product.average_rating !== undefined && (
           <div className="text-yellow-500 text-xs">
-            ⭐ {product.average_rating}
+            ⭐ {Number(product.average_rating).toFixed(1)}
           </div>
         )}
         <div className="flex items-center space-x-2 pt-1">

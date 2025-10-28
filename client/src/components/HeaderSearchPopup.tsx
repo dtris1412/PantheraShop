@@ -69,19 +69,26 @@ export default function HeaderSearchPopup({
 
   return (
     <div
-      className={`fixed left-0 right-0 top-0 z-[60] transition-all duration-300 ${
+      className={`fixed inset-0 z-[60] transition-all duration-300 ${
         open
           ? "opacity-100 pointer-events-auto"
           : "opacity-0 pointer-events-none"
       }`}
-      style={{ height: "160px" }}
+      style={{ top: 0, left: 0, right: 0, bottom: 0 }}
     >
+      {/* Overlay: click để tắt popup */}
       <div
-        className={`w-full h-full bg-white shadow-lg border-b border-gray-200
+        className="absolute inset-0 bg-transparent"
+        onClick={onClose}
+        style={{ zIndex: 1 }}
+      />
+      <div
+        className={`absolute left-0 right-0 top-0 w-full h-[160px] bg-white shadow-lg border-b border-gray-200
           transition-transform duration-300 ease-in-out
           ${open ? "translate-y-0" : "-translate-y-8"}
         `}
         onClick={(e) => e.stopPropagation()}
+        style={{ zIndex: 2 }}
       >
         <div className="flex items-center px-8 pt-4 pb-2">
           {/* Logo bên trái */}
@@ -110,7 +117,7 @@ export default function HeaderSearchPopup({
             className="ml-6 text-base font-semibold text-black hover:text-gray-600 transition-colors"
             onClick={onClose}
           >
-            Đóng
+            X
           </button>
         </div>
         {/* Popular Search Terms */}
@@ -138,7 +145,7 @@ export default function HeaderSearchPopup({
                 </div>
               )}
               {!loading && results.length === 0 && (
-                <div className="p-4 text-gray-500 text-sm">
+                <div className="p-4 text-gray-500 text-sm ">
                   Không tìm thấy sản phẩm phù hợp.
                 </div>
               )}
