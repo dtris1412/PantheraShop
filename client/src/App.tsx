@@ -29,9 +29,26 @@ import BlogDetail from "../src/user/pages/BlogDetail";
 import WishList from "../src/user/pages/WishList";
 import { OrderHistoryProvider } from "../src/user/contexts/orderHistoryContext.tsx";
 import OrderDetail from "../src/user/pages/OrderDetail";
+
+// Admin imports
+import AdminLayout from "./admin/components/AdminLayout";
+import Dashboard from "./admin/pages/Dashboard";
+import UserList from "./admin/pages/UserList";
+import ProductList from "./admin/pages/ProductList";
+import OrderList from "./admin/pages/OrderList";
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { isAuthenticated, loading } = useAuth();
   if (loading) return <Loading />;
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
+}
+
+// Admin Protected Route - check if user is admin
+function AdminProtectedRoute({ children }: { children: JSX.Element }) {
+  const { isAuthenticated, user, loading } = useAuth();
+  if (loading) return <Loading />;
+
+  // TODO: Thêm logic kiểm tra user.role === "admin"
+  // Hiện tại tạm thời cho phép tất cả authenticated users
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 }
 
@@ -101,7 +118,19 @@ export default function App() {
                 <WishlistProvider>
                   <CartProvider>
                     <OrderHistoryProvider>
-                      <AppContent />
+                      <Routes>
+                        {/* Admin Routes */}
+                        <Route
+                          path="/admin/*"
+                          element={
+                            <AdminProtectedRoute>
+                              <AdminRoutes />
+                            </AdminProtectedRoute>
+                          }
+                        />
+                        {/* User Routes */}
+                        <Route path="/*" element={<AppContent />} />
+                      </Routes>
                     </OrderHistoryProvider>
                   </CartProvider>
                 </WishlistProvider>
@@ -111,5 +140,22 @@ export default function App() {
         </Router>
       </AuthProvider>
     </div>
+  );
+}
+
+// Admin Routes Component
+function AdminRoutes() {
+  const { logout, user } = useAuth();
+
+  return (
+    <AdminLayout onLogout={logout} adminName={user?.user_name}>
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/users" element={<UserList />} />
+        <Route path="/products" element={<ProductList />} />
+        <Route path="/orders" element={<OrderList />} />
+        <Route path="*" element={<Navigate to="/admin" replace />} />
+      </Routes>
+    </AdminLayout>
   );
 }
