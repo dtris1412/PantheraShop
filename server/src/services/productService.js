@@ -283,17 +283,19 @@ const getProductRating = async (product_id) => {
 };
 
 const getRelatedProducts = async (product_id) => {
-  // Lấy sản phẩm và liên kết Team → Tournament → Sport
   const product = await db.Product.findByPk(product_id, {
     include: [
       {
         model: db.Team,
+        required: true,
         include: [
           {
             model: db.Tournament,
+            required: true,
             include: [
               {
                 model: db.Sport,
+                required: true,
                 attributes: ["sport_id"],
               },
             ],
@@ -304,23 +306,48 @@ const getRelatedProducts = async (product_id) => {
   });
   if (!product) return [];
 
-  // Lấy sport_id từ liên kết
-  const sport_id = product.Team?.Tournament?.Sport?.sport_id;
+  // Lấy tất cả sport_id liên quan
+  let sportIds = [];
+  if (product.Team) {
+    const teams = Array.isArray(product.Team) ? product.Team : [product.Team];
+    teams.forEach((team) => {
+      if (team.Tournament) {
+        const tournaments = Array.isArray(team.Tournament)
+          ? team.Tournament
+          : [team.Tournament];
+        tournaments.forEach((tournament) => {
+          if (tournament.Sport) {
+            const sports = Array.isArray(tournament.Sport)
+              ? tournament.Sport
+              : [tournament.Sport];
+            sports.forEach((sport) => {
+              if (sport.sport_id) sportIds.push(sport.sport_id);
+            });
+          }
+        });
+      }
+    });
+  }
+  sportIds = [...new Set(sportIds)]; // loại bỏ trùng lặp
 
-  if (!sport_id) return [];
+  if (!sportIds.length) return { success: true, products: [] };
 
-  // Lấy các sản phẩm liên quan cùng sport_id (qua liên kết)
+  // Lấy các sản phẩm liên quan cùng sport_id
+  const { Op } = db.Sequelize;
   const related = await db.Product.findAll({
     include: [
       {
         model: db.Team,
+        required: true,
         include: [
           {
             model: db.Tournament,
+            required: true,
             include: [
               {
                 model: db.Sport,
-                where: { sport_id },
+                required: true,
+                where: { sport_id: { [Op.in]: sportIds } },
               },
             ],
           },
@@ -328,7 +355,7 @@ const getRelatedProducts = async (product_id) => {
       },
     ],
     where: {
-      product_id: { [db.Sequelize.Op.ne]: product_id },
+      product_id: { [Op.ne]: product_id },
     },
     limit: 15,
   });
