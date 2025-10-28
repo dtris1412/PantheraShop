@@ -64,7 +64,7 @@ export default function HeaderSearchPopup({
 
   const handleProductClick = (productId: string | number) => {
     onClose();
-    navigate(`/products/${productId}`);
+    navigate(`/product/${productId}`);
   };
 
   return (
