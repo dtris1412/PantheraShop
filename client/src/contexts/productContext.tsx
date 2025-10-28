@@ -118,6 +118,7 @@ export const ProductProvider = ({
         )}`
       );
       const data = await res.json();
+      console.log("Kết quả search:", data);
       return Array.isArray(data) ? mapProductPrice(data) : [];
     } catch {
       return [];

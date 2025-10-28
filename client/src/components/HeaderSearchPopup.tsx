@@ -18,14 +18,14 @@ interface HeaderSearchPopupProps {
 }
 
 const POPULAR_TERMS = [
-  "road racing",
-  "sabrina 3",
-  "air force 1",
-  "jordan",
-  "nike tech",
-  "air max",
-  "jordan 1 low",
-  "basketball shoes",
+  "Manchester City",
+  "Giày",
+  "Áo đấu",
+  "Chelsea",
+  "Nike",
+  "Adidas",
+  "Bóng rổ",
+  "Bóng chuyển",
 ];
 
 export default function HeaderSearchPopup({
@@ -38,7 +38,7 @@ export default function HeaderSearchPopup({
   const [results, setResults] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { searchProducts } = useProduct();
+  const { products } = useProduct(); // lấy mảng products đã fetch
 
   useEffect(() => {
     if (open) {
@@ -54,10 +54,13 @@ export default function HeaderSearchPopup({
       return;
     }
     setLoading(true);
-    searchProducts(value)
-      .then((data) => setResults(data))
-      .finally(() => setLoading(false));
-  }, [value]);
+    // Lọc trực tiếp trên mảng products
+    const filtered = products.filter((p) =>
+      p.product_name.toLowerCase().includes(value.toLowerCase())
+    );
+    setResults(filtered);
+    setLoading(false);
+  }, [value, products]);
 
   const handleProductClick = (productId: string | number) => {
     onClose();
@@ -95,7 +98,7 @@ export default function HeaderSearchPopup({
                 ref={inputRef}
                 id="search-popup-input"
                 type="text"
-                placeholder="Search"
+                placeholder="Tìm kiếm sản phẩm..."
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 className="flex-1 bg-transparent outline-none text-base placeholder-gray-500"
@@ -107,13 +110,13 @@ export default function HeaderSearchPopup({
             className="ml-6 text-base font-semibold text-black hover:text-gray-600 transition-colors"
             onClick={onClose}
           >
-            Cancel
+            Đóng
           </button>
         </div>
         {/* Popular Search Terms */}
         <div className="px-8 pt-2">
           <div className="text-gray-700 font-medium mb-2 text-sm">
-            Popular Search Terms
+            Từ khóa phổ biến
           </div>
           <div className="flex flex-wrap gap-3 mb-2">
             {POPULAR_TERMS.map((term) => (
