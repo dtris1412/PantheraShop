@@ -105,7 +105,7 @@ export default function OrderCard({ order }: { order: Order }) {
         </div>
       </div>
       <div className="px-6 pt-2 pb-4 text-gray-500 text-sm border-b">
-        Placed on {new Date(order.order_date).toLocaleDateString("vi-VN")}
+        Đã đặt vào {new Date(order.order_date).toLocaleDateString("vi-VN")}
       </div>
       <div className="px-6 py-4">
         {order.orderProducts?.map((item, idx) => (

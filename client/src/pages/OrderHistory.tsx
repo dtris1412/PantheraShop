@@ -61,7 +61,7 @@ export default function OrderHistory() {
   return (
     <div className="min-h-screen pt-24 pb-12 bg-gray-50">
       <div className="max-w-4xl mx-auto px-6">
-        <h1 className="text-4xl font-bold mb-8">Order History</h1>
+        <h1 className="text-4xl font-bold mb-8">Lịch sử đơn hàng</h1>
 
         {/* Bộ lọc */}
         <div className="flex flex-wrap gap-4 mb-8">
@@ -114,7 +114,7 @@ export default function OrderHistory() {
         {loading ? (
           <div className="text-center py-16">Đang tải...</div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-16">No orders found.</div>
+          <div className="text-center py-16">Không tìm thấy đơn hàng nào.</div>
         ) : (
           <div className="space-y-8">
             {filtered.map((order: Order) => (
@@ -126,7 +126,7 @@ export default function OrderHistory() {
           className="mt-8 px-4 py-2 bg-black text-white rounded"
           onClick={() => navigate("/profile")}
         >
-          Back to Profile
+          Quay lại trang cá nhân
         </button>
       </div>
     </div>

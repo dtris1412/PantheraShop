@@ -170,7 +170,7 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen pt-24 pb-12">
       <div className="max-w-4xl mx-auto px-6">
-        <h1 className="text-4xl font-bold mb-8">My Profile</h1>
+        <h1 className="text-4xl font-bold mb-8">Thông tin cá nhân</h1>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1">
             <div className="bg-white border border-gray-200 p-6">
@@ -184,7 +184,7 @@ export default function ProfilePage() {
                   <button
                     className="absolute bottom-0 right-0 bg-black text-white rounded-full p-2 hover:bg-gray-800"
                     onClick={() => fileInputRef.current?.click()}
-                    title="Change avatar"
+                    title="Đổi ảnh đại diện"
                     type="button"
                   >
                     <Edit2 className="w-4 h-4" />
@@ -205,13 +205,13 @@ export default function ProfilePage() {
                   onClick={() => navigate("/order-history")}
                   className="w-full text-left px-4 py-3 border border-gray-200 hover:bg-gray-50 transition-colors font-medium"
                 >
-                  Order History
+                  Lịch sử đơn hàng
                 </button>
                 <button
                   onClick={() => setIsChangingPassword(true)}
                   className="w-full text-left px-4 py-3 border border-gray-200 hover:bg-gray-50 transition-colors font-medium"
                 >
-                  Change Password
+                  Đổi mật khẩu
                 </button>
                 <button
                   onClick={() => {
@@ -220,7 +220,7 @@ export default function ProfilePage() {
                   }}
                   className="w-full text-left px-4 py-3 border border-gray-200 hover:bg-gray-50 transition-colors font-medium text-red-600"
                 >
-                  Sign Out
+                  Đăng xuất
                 </button>
               </div>
             </div>
@@ -228,21 +228,21 @@ export default function ProfilePage() {
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-white border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold">Personal Information</h2>
+                <h2 className="text-2xl font-bold">Thông tin cá nhân</h2>
                 {!isEditing ? (
                   <button
                     onClick={() => setIsEditing(true)}
                     className="flex items-center space-x-2 text-sm font-medium hover:underline"
                   >
                     <Edit2 className="w-4 h-4" />
-                    <span>Edit</span>
+                    <span>Chỉnh sửa</span>
                   </button>
                 ) : (
                   <button
                     onClick={() => setIsEditing(false)}
                     className="text-sm font-medium text-gray-600 hover:underline"
                   >
-                    Cancel
+                    Hủy
                   </button>
                 )}
               </div>
@@ -250,7 +250,7 @@ export default function ProfilePage() {
                 <div>
                   <label className="flex items-center space-x-2 text-sm font-medium mb-2">
                     <User className="w-4 h-4" />
-                    <span>Full Name</span>
+                    <span>Họ và tên</span>
                   </label>
                   {isEditing ? (
                     <input
@@ -271,7 +271,7 @@ export default function ProfilePage() {
                 <div>
                   <label className="flex items-center space-x-2 text-sm font-medium mb-2">
                     <Mail className="w-4 h-4" />
-                    <span>Email Address</span>
+                    <span>Email</span>
                   </label>
                   {isEditing ? (
                     <input
@@ -292,7 +292,7 @@ export default function ProfilePage() {
                 <div>
                   <label className="flex items-center space-x-2 text-sm font-medium mb-2">
                     <Phone className="w-4 h-4" />
-                    <span>Phone Number</span>
+                    <span>Số điện thoại</span>
                   </label>
                   {isEditing ? (
                     <input
@@ -312,7 +312,7 @@ export default function ProfilePage() {
                 <div>
                   <label className="flex items-center space-x-2 text-sm font-medium mb-2">
                     <MapPin className="w-4 h-4" />
-                    <span>Address</span>
+                    <span>Địa chỉ</span>
                   </label>
                   {isEditing ? (
                     <textarea
@@ -338,7 +338,7 @@ export default function ProfilePage() {
                     className="w-full bg-black text-white py-3 font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center space-x-2"
                   >
                     <Save className="w-5 h-5" />
-                    <span>Save Changes</span>
+                    <span>Lưu thay đổi</span>
                   </button>
                 )}
               </form>
@@ -346,23 +346,23 @@ export default function ProfilePage() {
             {isChangingPassword && (
               <div className="bg-white border border-gray-200 p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold">Change Password</h2>
+                  <h2 className="text-2xl font-bold">Đổi mật khẩu</h2>
                   <button
                     onClick={() => setIsChangingPassword(false)}
                     className="text-sm font-medium text-gray-600 hover:underline"
                   >
-                    Cancel
+                    Hủy
                   </button>
                 </div>
                 <form onSubmit={handleChangePassword} className="space-y-4">
                   <div>
                     <label className="flex items-center space-x-2 text-sm font-medium mb-2">
                       <Lock className="w-4 h-4" />
-                      <span>Current Password</span>
+                      <span>Mật khẩu hiện tại</span>
                     </label>
                     <div className="relative">
                       <input
-                        placeholder="CurrentPassword123"
+                        placeholder="Nhập mật khẩu hiện tại"
                         type={showCurrent ? "text" : "password"}
                         value={passwordData.currentPassword}
                         onChange={(e) =>
@@ -391,11 +391,11 @@ export default function ProfilePage() {
                   <div>
                     <label className="flex items-center space-x-2 text-sm font-medium mb-2">
                       <Lock className="w-4 h-4" />
-                      <span>New Password</span>
+                      <span>Mật khẩu mới</span>
                     </label>
                     <div className="relative">
                       <input
-                        placeholder="NewPassword123"
+                        placeholder="Nhập mật khẩu mới"
                         type={showNew ? "text" : "password"}
                         value={passwordData.newPassword}
                         onChange={(e) =>
@@ -422,17 +422,17 @@ export default function ProfilePage() {
                       </button>
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
-                      Minimum 6 characters
+                      Tối thiểu 8 ký tự
                     </p>
                   </div>
                   <div>
                     <label className="flex items-center space-x-2 text-sm font-medium mb-2">
                       <Lock className="w-4 h-4" />
-                      <span>Confirm New Password</span>
+                      <span>Xác nhận mật khẩu mới</span>
                     </label>
                     <div className="relative">
                       <input
-                        placeholder="NewPassword123"
+                        placeholder="Nhập lại mật khẩu mới"
                         type={showConfirm ? "text" : "password"}
                         value={passwordData.confirmPassword}
                         onChange={(e) =>
@@ -463,7 +463,7 @@ export default function ProfilePage() {
                     type="submit"
                     className="w-full bg-black text-white py-3 font-semibold hover:bg-gray-800 transition-colors"
                   >
-                    Update Password
+                    Cập nhật mật khẩu
                   </button>
                 </form>
               </div>
