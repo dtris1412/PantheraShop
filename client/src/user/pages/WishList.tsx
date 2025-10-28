@@ -11,7 +11,7 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
 import { showToast } from "../components/Toast";
-import VariantSelectModal from "../components/VariantSelectModal";
+import VariantSelectModal from "../components/VariantSelectModal.tsx";
 import { useWishlist } from "../contexts/wishlistContext";
 import ProductFilterBar from "../components/ProductFilterBar";
 import { useAuth } from "../contexts/authContext";

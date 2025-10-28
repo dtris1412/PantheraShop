@@ -1,4 +1,4 @@
-import ProductCard from "../ProductCard";
+import ProductCard from "../ProductCard.tsx";
 import { useNavigate } from "react-router-dom";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";

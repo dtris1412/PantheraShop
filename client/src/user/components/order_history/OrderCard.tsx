@@ -4,7 +4,7 @@ import { useOrder } from "../../contexts/orderContext";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/authContext";
-import ReviewPopup from "../Review/ReviewPopup";
+import ReviewPopup from "../Review/ReviewPopup.tsx";
 
 interface Order {
   order_id: string;

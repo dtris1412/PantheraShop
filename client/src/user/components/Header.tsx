@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/authContext.tsx";
 import { useWishlist } from "../contexts/wishlistContext";
 import { useCart } from "../contexts/cartContext";
-import HeaderSearchPopup from "./HeaderSearchPopup";
+import HeaderSearchPopup from "../components/HeaderSearchPopup.tsx";
 
 interface HeaderProps {
   user?: {

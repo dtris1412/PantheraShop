@@ -1,5 +1,5 @@
 import { ArrowRight, TrendingUp } from "lucide-react";
-import ProductCard from "./ProductCard";
+import ProductCard from "../components/ProductCard";
 import { useNavigate } from "react-router-dom";
 import { useProduct } from "../contexts/productContext";
 import { Swiper, SwiperSlide } from "swiper/react";
