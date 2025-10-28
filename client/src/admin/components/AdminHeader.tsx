@@ -1,5 +1,6 @@
 import { Bell, Search, User, LogOut } from "lucide-react";
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 interface AdminHeaderProps {
   onLogout: () => void;
@@ -8,6 +9,12 @@ interface AdminHeaderProps {
 
 const AdminHeader = ({ onLogout, adminName = "Admin" }: AdminHeaderProps) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    onLogout();
+    navigate("/login");
+  };
 
   return (
     <header className="h-16 bg-white border-b border-gray-200 fixed top-0 right-0 left-64 z-10 transition-all duration-300">
@@ -21,7 +28,7 @@ const AdminHeader = ({ onLogout, adminName = "Admin" }: AdminHeaderProps) => {
             />
             <input
               type="text"
-              placeholder="Search or type command..."
+              placeholder="Tìm kiếm hoặc gõ lệnh..."
               className="w-full pl-12 pr-4 py-2.5 bg-gray-50 border-0 text-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-200"
             />
             <kbd className="absolute right-4 top-1/2 -translate-y-1/2 px-2 py-1 bg-gray-200 text-xs text-gray-600 font-mono">
@@ -76,12 +83,13 @@ const AdminHeader = ({ onLogout, adminName = "Admin" }: AdminHeaderProps) => {
                   <Link
                     to="/admin/profile"
                     className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
+                    onClick={() => setShowUserMenu(false)}
                   >
                     <User size={16} />
-                    <span>Profile</span>
+                    <span>Hồ sơ</span>
                   </Link>
                   <button
-                    onClick={onLogout}
+                    onClick={handleLogout}
                     className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200"
                   >
                     <LogOut size={16} />
@@ -96,8 +104,5 @@ const AdminHeader = ({ onLogout, adminName = "Admin" }: AdminHeaderProps) => {
     </header>
   );
 };
-
-// Missing import
-import { Link } from "react-router-dom";
 
 export default AdminHeader;

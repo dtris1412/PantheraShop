@@ -1,4 +1,4 @@
-import { useOrderHistory } from "../contexts/orderHistoryContext.tsx";
+import { useOrderHistory } from "../../shared/contexts/orderHistoryContext.tsx";
 import OrderCard from "../components/order_history/OrderCard";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";

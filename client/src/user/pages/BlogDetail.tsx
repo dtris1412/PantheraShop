@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useBlogContext } from "../contexts/blogContext";
+import { useBlogContext } from "../../shared/contexts/blogContext";
 import { Calendar, User, ArrowLeft } from "lucide-react";
 import { useEffect } from "react";
 

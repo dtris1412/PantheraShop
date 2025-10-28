@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Mail, Lock, Eye, EyeOff, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/authContext"; // ✅ thêm dòng này
+import { useAuth } from "../../shared/contexts/authContext"; // ✅ thêm dòng này
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login, register } = useAuth(); // ✅ lấy từ context
+  const { login, register, user } = useAuth(); // ✅ lấy từ context
 
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
@@ -33,12 +33,22 @@ export default function Login() {
       if (isLogin) {
         // dùng context login
         await login(formData.email, formData.password);
+
+        // Kiểm tra role_id để điều hướng
+        const userData = localStorage.getItem("user");
+        if (userData) {
+          const user = JSON.parse(userData);
+          if (user.role_id === 0) {
+            navigate("/admin"); // Admin -> admin dashboard
+          } else {
+            navigate("/"); // User thường -> home
+          }
+        }
       } else {
         // dùng context register
         await register(formData.username, formData.email, formData.password);
+        navigate("/"); // Sau khi đăng ký -> home
       }
-
-      navigate("/"); // chuyển hướng sau khi login/register thành công
     } catch (err: any) {
       setError(err.message || "Internal error");
     } finally {

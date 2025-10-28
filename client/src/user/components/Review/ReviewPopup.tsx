@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useAuth } from "../../contexts/authContext";
-import { showToast } from "../Toast";
+import { useAuth } from "../../../shared/contexts/authContext";
+import { showToast } from "../../../shared/components/Toast";
 
 interface ReviewPopupProps {
   order: any;

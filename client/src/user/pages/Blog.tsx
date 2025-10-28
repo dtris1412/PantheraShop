@@ -1,6 +1,6 @@
 import { Calendar, User, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useBlogContext } from "../contexts/blogContext";
+import { useBlogContext } from "../../shared/contexts/blogContext";
 import { useEffect, useState } from "react";
 
 export default function Blog() {

@@ -1,6 +1,6 @@
 import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useProduct } from "../contexts/productContext";
+import { useProduct } from "../../shared/contexts/productContext";
 
 export default function ShopBySportSection() {
   const navigate = useNavigate();

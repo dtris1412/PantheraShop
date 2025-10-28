@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Search, ShoppingBag, User, Heart, Menu, X } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../contexts/authContext.tsx";
-import { useWishlist } from "../contexts/wishlistContext";
-import { useCart } from "../contexts/cartContext";
+import { useAuth } from "../../shared/contexts/authContext.tsx";
+import { useWishlist } from "../../shared/contexts/wishlistContext";
+import { useCart } from "../../shared/contexts/cartContext";
 import HeaderSearchPopup from "../components/HeaderSearchPopup.tsx";
 
 interface HeaderProps {

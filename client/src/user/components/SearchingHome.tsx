@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useProduct } from "../contexts/productContext.tsx";
+import { useProduct } from "../../shared/contexts/productContext.tsx";
 
 export default function SearchProduct({
   products,

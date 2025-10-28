@@ -1,6 +1,6 @@
 import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useBlogContext } from "../contexts/blogContext";
+import { useBlogContext } from "../../shared/contexts/blogContext";
 
 export default function NewCollectionSection() {
   const navigate = useNavigate();

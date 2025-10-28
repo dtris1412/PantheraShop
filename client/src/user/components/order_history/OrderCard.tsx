@@ -1,9 +1,9 @@
 import { CheckCircle } from "lucide-react";
 import OrderItem from "./OrderItem";
-import { useOrder } from "../../contexts/orderContext";
+import { useOrder } from "../../../shared/contexts/orderContext";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { useAuth } from "../../contexts/authContext";
+import { useAuth } from "../../../shared/contexts/authContext";
 import ReviewPopup from "../Review/ReviewPopup.tsx";
 
 interface Order {

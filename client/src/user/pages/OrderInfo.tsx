@@ -7,8 +7,8 @@ import PaymentComponent from "../components/order_info/PaymentComponent";
 import VnpayPaymentComponent from "../components/order_info/VnpayPaymentComponent";
 import CashPaymentComponent from "../components/order_info/CashPaymentComponent";
 import { v4 as uuidv4 } from "uuid";
-import { useOrder } from "../contexts/orderContext";
-import { useAuth } from "../contexts/authContext";
+import { useOrder } from "../../shared/contexts/orderContext";
+import { useAuth } from "../../shared/contexts/authContext";
 import { useNavigate } from "react-router-dom";
 import ProgressLoading from "../components/Loading/ProgressLoading";
 

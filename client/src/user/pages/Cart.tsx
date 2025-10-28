@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { Minus, Plus, Trash2, ArrowRight } from "lucide-react";
-import { showToast } from "../components/Toast";
-import VariantSelectModal from "../components/VariantSelectModal"; // Import component ở đây
+import { showToast } from "../../shared/components/Toast";
+import VariantSelectModal from "../../user/components/VariantSelectModal"; // Import component ở đây
 import { useNavigate } from "react-router-dom";
-import { useOrder } from "../contexts/orderContext";
-import { useCart } from "../contexts/cartContext";
+import { useOrder } from "../../shared/contexts/orderContext";
+import { useCart } from "../../shared/contexts/cartContext";
 
 interface CartProps {
   onNavigate: (page: string) => void;

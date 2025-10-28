@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import QRCode from "react-qr-code";
-import { useAuth } from "../../contexts/authContext";
+import { useAuth } from "../../../shared/contexts/authContext";
 import { v4 as uuidv4 } from "uuid";
 import { ArrowLeft } from "lucide-react";
 

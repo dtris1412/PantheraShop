@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useProduct } from "../contexts/productContext";
+import { useProduct } from "../../shared/contexts/productContext";
 
 function Accordion({
   title,

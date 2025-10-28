@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useProduct } from "../contexts/productContext.tsx";
+import { useProduct } from "../../shared/contexts/productContext.tsx";
 
 interface Product {
   product_id: string | number;

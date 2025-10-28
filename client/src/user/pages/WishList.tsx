@@ -10,11 +10,11 @@ import {
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
-import { showToast } from "../components/Toast";
+import { showToast } from "../../shared/components/Toast.tsx";
 import VariantSelectModal from "../components/VariantSelectModal.tsx";
-import { useWishlist } from "../contexts/wishlistContext";
+import { useWishlist } from "../../shared/contexts/wishlistContext";
 import ProductFilterBar from "../components/ProductFilterBar";
-import { useAuth } from "../contexts/authContext";
+import { useAuth } from "../../shared/contexts/authContext";
 
 interface Variant {
   wishlist_variant_id: number;

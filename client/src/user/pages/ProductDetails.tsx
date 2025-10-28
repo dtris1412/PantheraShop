@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ShoppingBag, Heart, Truck, RotateCcw, Shield } from "lucide-react";
-import { showToast } from "../components/Toast";
+import { showToast } from "../../shared/components/Toast";
 import ProductGallery from "../components/ProductGallery";
-import { useWishlist } from "../contexts/wishlistContext";
-import { useCart } from "../contexts/cartContext";
+import { useWishlist } from "../../shared/contexts/wishlistContext";
+import { useCart } from "../../shared/contexts/cartContext";
 import ReviewDropdown from "../components/ProductDetail/ReviewDropdown";
 import PolicyDropdown from "../components/ProductDetail/PolicyDropdown";
 import RelatedProduct from "../components/ProductDetail/RelatedProduct";

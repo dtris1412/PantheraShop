@@ -4,12 +4,12 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import { AuthProvider, useAuth } from "../src/user/contexts/authContext";
-import { ProductProvider } from "../src/user/contexts/productContext";
-import { OrderProvider } from "../src/user/contexts/orderContext";
-import { BlogProvider } from "../src/user/contexts/blogContext";
-import { WishlistProvider } from "../src/user/contexts/wishlistContext";
-import { CartProvider } from "../src/user/contexts/cartContext";
+import { AuthProvider, useAuth } from "../src/shared/contexts/authContext";
+import { ProductProvider } from "../src/shared/contexts/productContext";
+import { OrderProvider } from "../src/shared/contexts/orderContext";
+import { BlogProvider } from "../src/shared/contexts/blogContext";
+import { WishlistProvider } from "../src/shared/contexts/wishlistContext";
+import { CartProvider } from "../src/shared/contexts/cartContext";
 import Header from "./user/components/Header.tsx";
 import Footer from "./user/components/Footer.tsx";
 import Home from "../src/user/pages/Home";
@@ -23,11 +23,11 @@ import Login from "../src/user/pages/Login";
 import Profile from "../src/user/pages/Profile.tsx";
 import Loading from "./user/components/Loading.tsx";
 import OrderHistory from "../src/user/pages/OrderHistory";
-import { ToastContainer } from "./user/components/Toast.tsx";
+import { ToastContainer } from "./shared/components/Toast.tsx";
 import { useNavigate } from "react-router-dom";
 import BlogDetail from "../src/user/pages/BlogDetail";
 import WishList from "../src/user/pages/WishList";
-import { OrderHistoryProvider } from "../src/user/contexts/orderHistoryContext.tsx";
+import { OrderHistoryProvider } from "../src/shared/contexts/orderHistoryContext.tsx";
 import OrderDetail from "../src/user/pages/OrderDetail";
 
 // Admin imports
@@ -36,6 +36,7 @@ import Dashboard from "./admin/pages/Dashboard";
 import UserList from "./admin/pages/UserList";
 import ProductList from "./admin/pages/ProductList";
 import OrderList from "./admin/pages/OrderList";
+import InventoryList from "./admin/pages/InventoryList";
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { isAuthenticated, loading } = useAuth();
   if (loading) return <Loading />;
@@ -47,9 +48,16 @@ function AdminProtectedRoute({ children }: { children: JSX.Element }) {
   const { isAuthenticated, user, loading } = useAuth();
   if (loading) return <Loading />;
 
-  // TODO: Thêm logic kiểm tra user.role === "admin"
-  // Hiện tại tạm thời cho phép tất cả authenticated users
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+  // Kiểm tra user có role_id === 0 (admin) không
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (user?.role_id !== 0) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
 }
 
 function AppContent() {
@@ -154,6 +162,7 @@ function AdminRoutes() {
         <Route path="/users" element={<UserList />} />
         <Route path="/products" element={<ProductList />} />
         <Route path="/orders" element={<OrderList />} />
+        <Route path="/inventory" element={<InventoryList />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>
     </AdminLayout>

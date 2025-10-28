@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { useAuth } from "../contexts/authContext";
+import { useAuth } from "../../shared/contexts/authContext";
 import { useNavigate } from "react-router-dom";
 import Loading from "../components/Loading";
 import {
@@ -13,7 +13,7 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
-import { showToast } from "../components/Toast";
+import { showToast } from "../../shared/components/Toast";
 
 export default function ProfilePage() {
   const {

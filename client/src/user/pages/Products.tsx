@@ -4,7 +4,7 @@ import ProductSortBar from "../components/ProductSortBar";
 import ProductGrid from "../components/ProductGrid";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams, useParams } from "react-router-dom";
-import { useProduct } from "../contexts/productContext";
+import { useProduct } from "../../shared/contexts/productContext";
 
 export default function Products() {
   const navigate = useNavigate();
