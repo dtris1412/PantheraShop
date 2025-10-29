@@ -9,10 +9,25 @@ interface User {
   role_id: number;
   created_at: string | null;
   avatar: string | null;
+  user_status: boolean;
+}
+
+interface CreateUserData {
+  user_name: string;
+  user_email: string;
+  user_password: string;
+  user_phone?: string;
+  user_address?: string;
+  role_id: number;
+  avatar?: string;
+  user_status?: boolean; // Default active status
 }
 
 interface AdminContextType {
   getAllUsers: () => Promise<User[]>;
+  createUser: (userData: CreateUserData) => Promise<any>;
+  updateUserStatus: (userId: number, shouldLock?: boolean) => Promise<any>;
+  uploadAvatar: (file: File) => Promise<string>;
   loading: boolean;
 }
 
@@ -51,10 +66,97 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
     }
   };
 
+  const createUser = async (userData: CreateUserData) => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+
+      // Add default active status if not provided
+      const userDataWithStatus = {
+        ...userData,
+        user_status:
+          userData.user_status !== undefined ? userData.user_status : true,
+      };
+
+      const res = await fetch("http://localhost:8080/api/admin/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(userDataWithStatus),
+      });
+
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message);
+      }
+      return data;
+    } catch (error) {
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateUserStatus = async (userId: number, shouldLock?: boolean) => {
+    // Don't set global loading for this action to avoid page reload effect
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `http://localhost:8080/api/admin/users/status/${userId}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ shouldLock }),
+        }
+      );
+
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message);
+      }
+
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const uploadAvatar = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append("avatar", file);
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:8080/api/admin/upload-avatar", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message);
+      }
+      return data.avatar_url;
+    } catch (error) {
+      throw error;
+    }
+  };
+
   return (
     <AdminContext.Provider
       value={{
         getAllUsers,
+        createUser,
+        updateUserStatus,
+        uploadAvatar,
         loading,
       }}
     >

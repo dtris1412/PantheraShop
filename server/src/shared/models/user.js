@@ -22,6 +22,7 @@ export default (sequelize, DataTypes) => {
       created_at: DataTypes.DATE,
       updated_at: DataTypes.DATE,
       avatar: DataTypes.STRING,
+      user_status: DataTypes.BOOLEAN,
     },
     {
       sequelize,

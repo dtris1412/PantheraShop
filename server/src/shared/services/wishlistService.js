@@ -3,7 +3,7 @@ import wishlist from "../../shared/models/wishlist.js";
 
 const createWishlist = async (user_id) => {
   if (!user_id) throw new Error("User ID is required");
-  const wishlist = await db.WishList.create({
+  const wishlist = await db.Wishlist.create({
     user_id,
     created_at: new Date(),
   });

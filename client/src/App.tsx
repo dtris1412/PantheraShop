@@ -37,7 +37,7 @@ import UserList from "./admin/pages/UserList";
 import ProductList from "./admin/pages/ProductList";
 import OrderList from "./admin/pages/OrderList";
 import InventoryList from "./admin/pages/InventoryList";
-import { AdminProvider } from "./admin/contexts/adminContext";
+import { AdminProvider } from "./admin/contexts/adminContext"; // Đổi import path
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { isAuthenticated, loading } = useAuth();
   if (loading) return <Loading />;
@@ -69,7 +69,6 @@ function AppContent() {
 
   return (
     <>
-      <ToastContainer /> {/* Đặt ở đây để Toast luôn hiển thị trên mọi trang */}
       <Header user={user} onLogout={logout} />
       <main className="flex-1 min-h-screen">
         <Routes>
@@ -127,6 +126,7 @@ export default function App() {
                 <WishlistProvider>
                   <CartProvider>
                     <OrderHistoryProvider>
+                      <ToastContainer /> {/* Toast cho toàn bộ app */}
                       <Routes>
                         {/* Admin Routes */}
                         <Route
