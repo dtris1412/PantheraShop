@@ -9,7 +9,10 @@ import {
   register as adminRegister,
   toggleUserStatus,
 } from "../../admin/controllers/authController.js";
-import { getAllUsers } from "../../admin/controllers/userController.js";
+import {
+  getAllUsers,
+  updateProfile,
+} from "../../admin/controllers/userController.js";
 const router = express.Router();
 
 const initAdminRoutes = (app) => {
@@ -22,6 +25,7 @@ const initAdminRoutes = (app) => {
     verifyAdmin,
     toggleUserStatus
   );
+  router.put("/api/admin/users/profile/:user_id", verifyAdmin, updateProfile);
   // Upload Avatar for User
   router.post(
     "/api/admin/upload-avatar",

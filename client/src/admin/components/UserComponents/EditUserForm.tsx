@@ -1,47 +1,45 @@
-import { useState, useRef } from "react";
-import {
-  X,
-  User,
-  Mail,
-  Phone,
-  Lock,
-  UserCheck,
-  MapPin,
-  Shield,
-  Camera,
-  Eye,
-  EyeOff,
-} from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { X, User, Mail, Phone, MapPin, Shield, Camera } from "lucide-react";
 import { useAdmin } from "../../contexts/adminContext";
 import { showToast } from "../../../shared/components/Toast";
 
-interface CreateUserFormProps {
+interface User {
+  user_id: number;
+  user_name: string;
+  user_email: string;
+  user_phone: string | null;
+  user_address: string | null;
+  role_id: number;
+  created_at: string | null;
+  avatar: string | null;
+  user_status: boolean;
+}
+
+interface EditUserFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  user: User | null;
 }
 
 interface FormData {
   user_name: string;
   user_email: string;
-  user_password: string;
-  confirm_password: string;
   user_phone: string;
   user_address: string;
   role_id: number;
   avatar?: string;
 }
 
-const CreateUserForm = ({
+const EditUserForm = ({
   isOpen,
   onClose,
   onSuccess,
-}: CreateUserFormProps) => {
+  user,
+}: EditUserFormProps) => {
   const [formData, setFormData] = useState<FormData>({
     user_name: "",
     user_email: "",
-    user_password: "",
-    confirm_password: "",
     user_phone: "",
     user_address: "",
     role_id: 2,
@@ -51,10 +49,23 @@ const CreateUserForm = ({
   const [submitting, setSubmitting] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string>("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { createUser, uploadAvatar } = useAdmin();
+  const { uploadAvatar, updateUser } = useAdmin();
+
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        user_name: user.user_name,
+        user_email: user.user_email,
+        user_phone: user.user_phone || "",
+        user_address: user.user_address || "",
+        role_id: user.user_id,
+        avatar: user.avatar || "",
+      });
+      setAvatarPreview(user.avatar || "");
+      setAvatarFile(null); // Reset file when user changes
+    }
+  }, [user]);
 
   // Handle avatar selection - Only preview, don't upload yet
   const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -86,7 +97,7 @@ const CreateUserForm = ({
       setErrors((prev) => ({ ...prev, avatar: "" }));
     }
 
-    showToast("Đã chọn ảnh, sẽ upload khi tạo tài khoản", "info");
+    showToast("Đã chọn ảnh, sẽ upload khi lưu thay đổi", "info");
   };
 
   const validateForm = () => {
@@ -100,21 +111,6 @@ const CreateUserForm = ({
       newErrors.user_email = "Email là bắt buộc";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.user_email)) {
       newErrors.user_email = "Email không đúng định dạng";
-    }
-
-    if (!formData.user_password) {
-      newErrors.user_password = "Mật khẩu là bắt buộc";
-    } else if (
-      !/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).{6,}$/.test(formData.user_password)
-    ) {
-      newErrors.user_password =
-        "Mật khẩu phải có ít nhất 6 ký tự, bao gồm chữ hoa, chữ thường và số";
-    }
-
-    if (!formData.confirm_password) {
-      newErrors.confirm_password = "Xác nhận mật khẩu là bắt buộc";
-    } else if (formData.user_password !== formData.confirm_password) {
-      newErrors.confirm_password = "Mật khẩu xác nhận không khớp";
     }
 
     if (formData.user_phone && !/^\d{9,11}$/.test(formData.user_phone)) {
@@ -134,15 +130,15 @@ const CreateUserForm = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) return;
+    if (!validateForm() || !user) return;
 
     setSubmitting(true);
-    showToast("Đang tạo tài khoản...", "info");
+    showToast("Đang cập nhật thông tin...", "info");
 
     try {
-      let avatarUrl = "";
+      let avatarUrl = formData.avatar;
 
-      // Upload avatar if file is selected
+      // Upload new avatar if file is selected
       if (avatarFile) {
         showToast("Đang upload avatar...", "info");
         try {
@@ -153,49 +149,21 @@ const CreateUserForm = ({
         }
       }
 
-      // Create user with uploaded avatar URL
-      await createUser({
+      // Update user with new data
+      await updateUser(user.user_id, {
         user_name: formData.user_name,
         user_email: formData.user_email,
-        user_password: formData.user_password,
-        user_phone: formData.user_phone || undefined,
-        user_address: formData.user_address || undefined,
+        user_phone: formData.user_phone || null,
+        user_address: formData.user_address || null,
         role_id: formData.role_id,
-        avatar: avatarUrl || undefined,
+        avatar: avatarUrl || null,
       });
 
-      // Reset form
-      setFormData({
-        user_name: "",
-        user_email: "",
-        user_password: "",
-        confirm_password: "",
-        user_phone: "",
-        user_address: "",
-        role_id: 2,
-        avatar: "",
-      });
-
-      // Clean up preview URL
-      if (avatarPreview) {
-        URL.revokeObjectURL(avatarPreview);
-      }
-
-      setAvatarPreview("");
-      setAvatarFile(null);
-      setErrors({});
-      setShowPassword(false);
-      setShowConfirmPassword(false);
-
-      showToast(
-        `Tạo tài khoản thành công cho ${formData.user_name}!`,
-        "success"
-      );
-
+      showToast("Cập nhật thông tin thành công!", "success");
       onSuccess();
       onClose();
     } catch (error: any) {
-      const errorMsg = error.message || "Có lỗi xảy ra khi tạo tài khoản";
+      const errorMsg = error.message || "Có lỗi xảy ra khi cập nhật thông tin";
       setErrors({ submit: errorMsg });
       showToast(errorMsg, "error");
     } finally {
@@ -220,53 +188,24 @@ const CreateUserForm = ({
   };
 
   const handleClose = () => {
-    const hasData =
-      formData.user_name ||
-      formData.user_email ||
-      formData.user_password ||
-      formData.user_phone ||
-      formData.user_address ||
-      avatarPreview;
-
-    if (hasData) {
-      if (
-        confirm("Bạn có chắc chắn muốn đóng form? Dữ liệu chưa lưu sẽ bị mất.")
-      ) {
-        setFormData({
-          user_name: "",
-          user_email: "",
-          user_password: "",
-          confirm_password: "",
-          user_phone: "",
-          user_address: "",
-          role_id: 2,
-          avatar: "",
-        });
-
-        // Clean up preview URL
-        if (avatarPreview) {
-          URL.revokeObjectURL(avatarPreview);
-        }
-
-        setAvatarPreview("");
-        setAvatarFile(null);
-        setErrors({});
-        setShowPassword(false);
-        setShowConfirmPassword(false);
-        onClose();
-      }
-    } else {
-      onClose();
+    // Clean up preview URL if it was created from file
+    if (avatarFile && avatarPreview) {
+      URL.revokeObjectURL(avatarPreview);
     }
+
+    setAvatarFile(null);
+    setErrors({});
+    onClose();
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !user) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-fadeIn">
+        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white z-10">
-          <h2 className="text-xl font-bold text-black">Tạo người dùng mới</h2>
+          <h2 className="text-xl font-bold text-black">Chỉnh sửa người dùng</h2>
           <button
             type="button"
             onClick={handleClose}
@@ -276,7 +215,9 @@ const CreateUserForm = ({
           </button>
         </div>
 
+        {/* Form */}
         <form onSubmit={handleSubmit} className="p-6">
+          {/* Avatar Upload Section */}
           <div className="flex justify-center mb-6">
             <div className="relative">
               <div className="w-24 h-24 bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden">
@@ -296,7 +237,7 @@ const CreateUserForm = ({
                 onClick={() => fileInputRef.current?.click()}
                 disabled={submitting}
                 className="absolute -bottom-2 -right-2 w-8 h-8 bg-black text-white flex items-center justify-center hover:bg-gray-800 disabled:opacity-50 transition-colors duration-200"
-                title="Chọn avatar"
+                title="Thay đổi avatar"
               >
                 <Camera size={14} />
               </button>
@@ -315,7 +256,7 @@ const CreateUserForm = ({
             <p className="text-sm text-gray-600">
               {avatarFile
                 ? `Đã chọn: ${avatarFile.name}`
-                : "Avatar (không bắt buộc)"}
+                : "Click vào avatar để thay đổi"}
             </p>
             {errors.avatar && (
               <p className="text-red-500 text-xs mt-1">{errors.avatar}</p>
@@ -375,84 +316,6 @@ const CreateUserForm = ({
               )}
             </div>
 
-            {/* Password */}
-            <div className="md:col-span-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Mật khẩu *
-              </label>
-              <div className="relative">
-                <Lock
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                  size={18}
-                />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  name="user_password"
-                  value={formData.user_password}
-                  onChange={handleChange}
-                  className={`w-full pl-10 pr-12 py-2.5 border ${
-                    errors.user_password ? "border-red-500" : "border-gray-300"
-                  } focus:outline-none focus:border-black transition-colors duration-200`}
-                  placeholder="Nhập mật khẩu"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
-                  title={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-              {errors.user_password && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.user_password}
-                </p>
-              )}
-            </div>
-
-            {/* Confirm Password */}
-            <div className="md:col-span-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Xác nhận mật khẩu *
-              </label>
-              <div className="relative">
-                <Shield
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                  size={18}
-                />
-                <input
-                  type={showConfirmPassword ? "text" : "password"}
-                  name="confirm_password"
-                  value={formData.confirm_password}
-                  onChange={handleChange}
-                  className={`w-full pl-10 pr-12 py-2.5 border ${
-                    errors.confirm_password
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  } focus:outline-none focus:border-black transition-colors duration-200`}
-                  placeholder="Nhập lại mật khẩu"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
-                  title={showConfirmPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff size={18} />
-                  ) : (
-                    <Eye size={18} />
-                  )}
-                </button>
-              </div>
-              {errors.confirm_password && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.confirm_password}
-                </p>
-              )}
-            </div>
-
             {/* Phone */}
             <div className="md:col-span-1">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -485,7 +348,7 @@ const CreateUserForm = ({
                 Vai trò *
               </label>
               <div className="relative">
-                <UserCheck
+                <Shield
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
                   size={18}
                 />
@@ -544,7 +407,7 @@ const CreateUserForm = ({
               disabled={submitting}
               className="flex-1 px-4 py-2.5 bg-black text-white font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
             >
-              {submitting ? "Đang tạo..." : "Tạo tài khoản"}
+              {submitting ? "Đang lưu..." : "Lưu thay đổi"}
             </button>
           </div>
         </form>
@@ -553,4 +416,4 @@ const CreateUserForm = ({
   );
 };
 
-export default CreateUserForm;
+export default EditUserForm;

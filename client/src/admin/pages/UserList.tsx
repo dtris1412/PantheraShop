@@ -10,9 +10,12 @@ import {
   ToggleRight,
   Lock,
   Unlock,
+  Eye,
 } from "lucide-react";
 import { useAdmin } from "../contexts/adminContext";
 import CreateUserForm from "../components/UserComponents/CreateUserForm";
+import EditUserForm from "../components/UserComponents/EditUserForm";
+import UserDetailModal from "../components/UserComponents/UserDetailModal";
 import ConfirmDialog from "../components/ConfirmDialog";
 import { showToast } from "../../shared/components/Toast";
 
@@ -35,6 +38,9 @@ const UserList = () => {
   const [statusFilter, setStatusFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [confirmConfig, setConfirmConfig] = useState<{
     title: string;
@@ -455,6 +461,22 @@ const UserList = () => {
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setShowDetailModal(true);
+                          }}
+                          className="p-2 hover:bg-blue-50 transition-colors duration-200"
+                          title="Xem chi tiết"
+                        >
+                          <Eye size={16} className="text-blue-600" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setShowEditForm(true);
+                          }}
                           className="p-2 hover:bg-gray-100 transition-colors duration-200"
                           title="Chỉnh sửa người dùng"
                         >
@@ -562,6 +584,25 @@ const UserList = () => {
         type={confirmConfig.type}
         confirmText="Xác nhận"
         cancelText="Hủy"
+      />
+
+      <UserDetailModal
+        isOpen={showDetailModal}
+        onClose={() => {
+          setShowDetailModal(false);
+          setSelectedUser(null);
+        }}
+        user={selectedUser}
+      />
+
+      <EditUserForm
+        isOpen={showEditForm}
+        onClose={() => {
+          setShowEditForm(false);
+          setSelectedUser(null);
+        }}
+        onSuccess={handleCreateSuccess}
+        user={selectedUser}
       />
 
       <CreateUserForm

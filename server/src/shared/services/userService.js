@@ -37,17 +37,10 @@ const getProfile = async (user_id) => {
 
 const updateProfile = async (
   user_id,
-  { user_name, user_email, user_phone, user_address }
+  { user_name, user_email, user_phone, user_address, role_id, avatar }
 ) => {
   if (!user_id) return { success: false, message: "Missing user_id" };
 
-  //validate data
-  // if (!user_name || !user_email) {
-  //   return { success: false, message: "Please enter all required information" };
-  // }
-  // if (!emailRegex.test(user_email)) {
-  //   return { success: false, message: "Email is incorrect format" };
-  // }
   if (user_phone && !phoneRegex.test(user_phone)) {
     return { success: false, message: "Phone number is incorrect format" };
   }
@@ -55,17 +48,26 @@ const updateProfile = async (
   const user = await db.User.findOne({ where: { user_id } });
   if (!user) return { success: false, message: "User not found" };
 
-  await db.User.update(
-    {
-      user_name,
-      user_email,
-      user_phone,
-      user_address,
-    },
-    {
-      where: { user_id },
-    }
-  );
+  const updateData = {
+    user_name,
+    user_email,
+    user_phone,
+    user_address,
+  };
+
+  // Only update role_id if provided and valid
+  if (role_id !== undefined && [0, 1, 2].includes(role_id)) {
+    updateData.role_id = role_id;
+  }
+
+  // Only update avatar if provided
+  if (avatar) {
+    updateData.avatar = avatar;
+  }
+
+  await db.User.update(updateData, {
+    where: { user_id },
+  });
 
   const updatedUser = await db.User.findOne({ where: { user_id } });
 

@@ -26,6 +26,7 @@ interface CreateUserData {
 interface AdminContextType {
   getAllUsers: () => Promise<User[]>;
   createUser: (userData: CreateUserData) => Promise<any>;
+  updateUser: (userId: number, userData: Partial<User>) => Promise<any>;
   updateUserStatus: (userId: number, shouldLock?: boolean) => Promise<any>;
   uploadAvatar: (file: File) => Promise<string>;
   loading: boolean;
@@ -99,6 +100,31 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
     }
   };
 
+  const updateUser = async (userId: number, userData: Partial<User>) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `http://localhost:8080/api/admin/users/profile/${userId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(userData),
+        }
+      );
+
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message);
+      }
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  };
+
   const updateUserStatus = async (userId: number, shouldLock?: boolean) => {
     // Don't set global loading for this action to avoid page reload effect
     try {
@@ -155,6 +181,7 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
       value={{
         getAllUsers,
         createUser,
+        updateUser,
         updateUserStatus,
         uploadAvatar,
         loading,
