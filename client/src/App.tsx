@@ -37,7 +37,10 @@ import UserList from "./admin/pages/UserList";
 import ProductList from "./admin/pages/ProductList";
 import OrderList from "./admin/pages/OrderList";
 import InventoryList from "./admin/pages/InventoryList";
-import { AdminProvider } from "./admin/contexts/adminContext"; // Đổi import path
+import CategoryPage from "./admin/pages/CategoryPage";
+import { AdminProvider } from "./admin/contexts/adminContext";
+import { ProductProvider as AdminProductProvider } from "./admin/contexts/productContext";
+
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { isAuthenticated, loading } = useAuth();
   if (loading) return <Loading />;
@@ -158,16 +161,19 @@ function AdminRoutes() {
 
   return (
     <AdminProvider>
-      <AdminLayout onLogout={logout} adminName={user?.user_name}>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/users" element={<UserList />} />
-          <Route path="/products" element={<ProductList />} />
-          <Route path="/orders" element={<OrderList />} />
-          <Route path="/inventory" element={<InventoryList />} />
-          <Route path="*" element={<Navigate to="/admin" replace />} />
-        </Routes>
-      </AdminLayout>
+      <AdminProductProvider>
+        <AdminLayout onLogout={logout} adminName={user?.user_name}>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/users" element={<UserList />} />
+            <Route path="/products" element={<ProductList />} />
+            <Route path="/categories" element={<CategoryPage />} />
+            <Route path="/orders" element={<OrderList />} />
+            <Route path="/inventory" element={<InventoryList />} />
+            <Route path="*" element={<Navigate to="/admin" replace />} />
+          </Routes>
+        </AdminLayout>
+      </AdminProductProvider>
     </AdminProvider>
   );
 }

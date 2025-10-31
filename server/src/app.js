@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 // import viewEngine from "./config/viewEngine.js";
 import initWebRoutes from "./user/routes/web.js";
 import initAdminRoutes from "./admin/routes/webAdmin.js";
+
 import connectDB from "./shared/config/connectDB.js";
 
 import cors from "cors";

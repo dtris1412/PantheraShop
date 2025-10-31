@@ -34,9 +34,11 @@ const getAllProducts = async () => {
   const productsWithRating = await Promise.all(
     products.map(async (product) => {
       const average_rating = await getProductRating(product.product_id);
+      const stock = await getProductStock(product.product_id);
       return {
         ...product.toJSON(),
         average_rating,
+        stock,
       };
     })
   );
@@ -363,6 +365,273 @@ const getRelatedProducts = async (product_id) => {
   return { success: true, products: related };
 };
 
+const getProductStock = async (product_id) => {
+  const stock = await db.Variant.sum("variant_stock", {
+    where: { product_id },
+  });
+  return stock || 0;
+};
+
+const createProduct = async (productData) => {
+  try {
+    const {
+      product_name,
+      product_description,
+      product_price,
+      category_id,
+      team_id,
+      product_image,
+      variants = [],
+      images = [],
+    } = productData;
+
+    if (!product_name) {
+      return { success: false, message: "Product name is required" };
+    }
+
+    if (!product_price) {
+      return { success: false, message: "Product price is required" };
+    }
+
+    if (!category_id) {
+      return { success: false, message: "Category ID is required" };
+    }
+
+    // Kiểm tra category tồn tại
+    const category = await db.Category.findOne({ where: { category_id } });
+    if (!category) {
+      return { success: false, message: "Category not found" };
+    }
+
+    // Kiểm tra team tồn tại (nếu có)
+    if (team_id) {
+      const team = await db.Team.findOne({ where: { team_id } });
+      if (!team) {
+        return { success: false, message: "Team not found" };
+      }
+    }
+
+    // Tạo sản phẩm
+    const product = await db.Product.create({
+      product_name,
+      product_description,
+      product_price,
+      category_id,
+      team_id: team_id || null,
+      product_image,
+    });
+
+    // Tạo variants nếu có
+    if (variants && variants.length > 0) {
+      const variantPromises = variants.map((variant) =>
+        db.Variant.create({
+          ...variant,
+          product_id: product.product_id,
+        })
+      );
+      await Promise.all(variantPromises);
+    }
+
+    // Tạo product images nếu có
+    if (images && images.length > 0) {
+      const imagePromises = images.map((image, index) =>
+        db.Product_Image.create({
+          product_id: product.product_id,
+          image_url: image.image_url,
+          order: image.order || index + 1,
+        })
+      );
+      await Promise.all(imagePromises);
+    }
+
+    // Load product với relations
+    const createdProduct = await db.Product.findOne({
+      where: { product_id: product.product_id },
+      include: [
+        {
+          model: db.Category,
+          attributes: ["category_id", "category_name"],
+        },
+        {
+          model: db.Team,
+          include: [
+            {
+              model: db.Tournament,
+              include: [
+                {
+                  model: db.Sport,
+                  attributes: ["sport_id", "sport_name"],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          model: db.Variant,
+        },
+        {
+          model: db.Product_Image,
+        },
+      ],
+    });
+
+    return { success: true, product: createdProduct };
+  } catch (error) {
+    console.error("Error in createProduct:", error);
+    return { success: false, message: "Internal server error" };
+  }
+};
+
+const updateProduct = async (product_id, productData) => {
+  try {
+    if (!product_id) {
+      return { success: false, message: "Product ID is required" };
+    }
+
+    const product = await db.Product.findOne({ where: { product_id } });
+    if (!product) {
+      return { success: false, message: "Product not found" };
+    }
+
+    const {
+      product_name,
+      product_description,
+      product_price,
+      category_id,
+      team_id,
+      product_image,
+      variants,
+      images,
+    } = productData;
+
+    // Kiểm tra category tồn tại (nếu có thay đổi)
+    if (category_id && category_id !== product.category_id) {
+      const category = await db.Category.findOne({ where: { category_id } });
+      if (!category) {
+        return { success: false, message: "Category not found" };
+      }
+    }
+
+    // Kiểm tra team tồn tại (nếu có thay đổi)
+    if (team_id && team_id !== product.team_id) {
+      const team = await db.Team.findOne({ where: { team_id } });
+      if (!team) {
+        return { success: false, message: "Team not found" };
+      }
+    }
+
+    // Cập nhật sản phẩm
+    await product.update({
+      product_name: product_name || product.product_name,
+      product_description:
+        product_description !== undefined
+          ? product_description
+          : product.product_description,
+      product_price: product_price || product.product_price,
+      category_id: category_id || product.category_id,
+      team_id: team_id !== undefined ? team_id : product.team_id,
+      product_image:
+        product_image !== undefined ? product_image : product.product_image,
+    });
+
+    // Cập nhật variants nếu có
+    if (variants) {
+      // Xóa các variants cũ
+      await db.Variant.destroy({ where: { product_id } });
+
+      // Tạo variants mới
+      if (variants.length > 0) {
+        const variantPromises = variants.map((variant) =>
+          db.Variant.create({
+            ...variant,
+            product_id,
+          })
+        );
+        await Promise.all(variantPromises);
+      }
+    }
+
+    // Cập nhật images nếu có
+    if (images) {
+      // Xóa images cũ
+      await db.Product_Image.destroy({ where: { product_id } });
+
+      // Tạo images mới
+      if (images.length > 0) {
+        const imagePromises = images.map((image, index) =>
+          db.Product_Image.create({
+            product_id,
+            image_url: image.image_url,
+            order: image.order || index + 1,
+          })
+        );
+        await Promise.all(imagePromises);
+      }
+    }
+
+    // Load updated product với relations
+    const updatedProduct = await db.Product.findOne({
+      where: { product_id },
+      include: [
+        {
+          model: db.Category,
+          attributes: ["category_id", "category_name"],
+        },
+        {
+          model: db.Team,
+          include: [
+            {
+              model: db.Tournament,
+              include: [
+                {
+                  model: db.Sport,
+                  attributes: ["sport_id", "sport_name"],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          model: db.Variant,
+        },
+        {
+          model: db.Product_Image,
+        },
+      ],
+    });
+
+    return { success: true, product: updatedProduct };
+  } catch (error) {
+    console.error("Error in updateProduct:", error);
+    return { success: false, message: "Internal server error" };
+  }
+};
+
+const deleteProduct = async (product_id) => {
+  try {
+    if (!product_id) {
+      return { success: false, message: "Product ID is required" };
+    }
+
+    const product = await db.Product.findOne({ where: { product_id } });
+    if (!product) {
+      return { success: false, message: "Product not found" };
+    }
+
+    // Xóa các bảng liên quan
+    await db.Variant.destroy({ where: { product_id } });
+    await db.Product_Image.destroy({ where: { product_id } });
+
+    // Xóa sản phẩm
+    await product.destroy();
+
+    return { success: true, message: "Product deleted successfully" };
+  } catch (error) {
+    console.error("Error in deleteProduct:", error);
+    return { success: false, message: "Internal server error" };
+  }
+};
+
 export {
   getAllProducts,
   getProductById,
@@ -372,4 +641,7 @@ export {
   searchProducts,
   getProductRating,
   getRelatedProducts,
+  createProduct,
+  updateProduct,
+  deleteProduct,
 };

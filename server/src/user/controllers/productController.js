@@ -25,10 +25,10 @@ const getAllProducts = async (req, res) => {
 const getTopRatedProducts = async (req, res) => {
   try {
     const result = await getTopRatedProductsService(10);
-    if (!result.success) {
+    if (!result) {
       return res.status(400).json(result);
     }
-    res.status(200).json(result.products);
+    res.status(200).json(result);
   } catch (err) {
     console.error("Error in getTopRatedProducts: ", err);
     res.status(500).json({ message: "Server error" });

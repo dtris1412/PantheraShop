@@ -2,9 +2,16 @@ import express from "express";
 import multer from "multer";
 import { verifyAdmin } from "../../shared/middlewares/adminMiddleware.js";
 import { uploadAvatarForUser } from "../../admin/controllers/uploadController.js";
-// Import admin controllers here
 
 const upload = multer({ dest: "uploads/" });
+
+import {
+  getAllProducts,
+  getProductById,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+} from "../../admin/controllers/productController.js";
 import {
   register as adminRegister,
   toggleUserStatus,
@@ -13,11 +20,46 @@ import {
   getAllUsers,
   updateProfile,
 } from "../../admin/controllers/userController.js";
+
+// Import category controllers
+import {
+  // Category routes
+  getAllCategories,
+  getCategoryById,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+
+  // Sport routes
+  getAllSports,
+  getSportById,
+  createSport,
+  updateSport,
+  deleteSport,
+
+  // Tournament routes
+  getAllTournaments,
+  getTournamentById,
+  getTournamentsBySport,
+  createTournament,
+  updateTournament,
+  deleteTournament,
+
+  // Team routes
+  getAllTeams,
+  getTeamById,
+  getTeamsByTournament,
+  createTeam,
+  updateTeam,
+  deleteTeam,
+} from "../controllers/categoryController.js";
+
 const router = express.Router();
 
 const initAdminRoutes = (app) => {
   //Admin Registration
   router.post("/api/admin/register", verifyAdmin, adminRegister);
+
   //User Management
   router.get("/api/admin/users", verifyAdmin, getAllUsers);
   router.patch(
@@ -26,6 +68,7 @@ const initAdminRoutes = (app) => {
     toggleUserStatus
   );
   router.put("/api/admin/users/profile/:user_id", verifyAdmin, updateProfile);
+
   // Upload Avatar for User
   router.post(
     "/api/admin/upload-avatar",
@@ -33,7 +76,84 @@ const initAdminRoutes = (app) => {
     upload.single("avatar"),
     uploadAvatarForUser
   );
-  //
+
+  //Product Management
+  router.get("/api/admin/products", verifyAdmin, getAllProducts);
+  router.get("/api/admin/products/:id", verifyAdmin, getProductById);
+  router.post("/api/admin/products", verifyAdmin, createProduct);
+  router.put("/api/admin/products/:id", verifyAdmin, updateProduct);
+  router.delete("/api/admin/products/:id", verifyAdmin, deleteProduct);
+
+  // =============== CATEGORY MANAGEMENT ROUTES ===============
+
+  // Category routes
+  router.get("/api/admin/categories", verifyAdmin, getAllCategories);
+  router.get("/api/admin/categories/:id", verifyAdmin, getCategoryById);
+  router.post("/api/admin/categories", verifyAdmin, createCategory);
+  router.put("/api/admin/categories/:id", verifyAdmin, updateCategory);
+  router.delete("/api/admin/categories/:id", verifyAdmin, deleteCategory);
+
+  // Sport routes
+  router.get("/api/admin/sports", verifyAdmin, getAllSports);
+  router.get("/api/admin/sports/:id", verifyAdmin, getSportById);
+  router.post(
+    "/api/admin/sports",
+    verifyAdmin,
+    upload.single("sport_icon"),
+    createSport
+  );
+  router.put(
+    "/api/admin/sports/:id",
+    verifyAdmin,
+    upload.single("sport_icon"),
+    updateSport
+  );
+  router.delete("/api/admin/sports/:id", verifyAdmin, deleteSport);
+
+  // Tournament routes
+  router.get("/api/admin/tournaments", verifyAdmin, getAllTournaments);
+  router.get("/api/admin/tournaments/:id", verifyAdmin, getTournamentById);
+  router.get(
+    "/api/admin/sports/:sport_id/tournaments",
+    verifyAdmin,
+    getTournamentsBySport
+  );
+  router.post(
+    "/api/admin/tournaments",
+    verifyAdmin,
+    upload.single("tournament_icon"),
+    createTournament
+  );
+  router.put(
+    "/api/admin/tournaments/:id",
+    verifyAdmin,
+    upload.single("tournament_icon"),
+    updateTournament
+  );
+  router.delete("/api/admin/tournaments/:id", verifyAdmin, deleteTournament);
+
+  // Team routes
+  router.get("/api/admin/teams", verifyAdmin, getAllTeams);
+  router.get("/api/admin/teams/:id", verifyAdmin, getTeamById);
+  router.get(
+    "/api/admin/tournaments/:tournament_id/teams",
+    verifyAdmin,
+    getTeamsByTournament
+  );
+  router.post(
+    "/api/admin/teams",
+    verifyAdmin,
+    upload.single("team_logo"),
+    createTeam
+  );
+  router.put(
+    "/api/admin/teams/:id",
+    verifyAdmin,
+    upload.single("team_logo"),
+    updateTeam
+  );
+  router.delete("/api/admin/teams/:id", verifyAdmin, deleteTeam);
+
   return app.use("/", router);
 };
 

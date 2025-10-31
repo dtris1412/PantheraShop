@@ -21,7 +21,7 @@ export default (sequelize, DataTypes) => {
       product_price: DataTypes.DOUBLE,
 
       product_description: DataTypes.STRING,
-      product_quantity: DataTypes.INTEGER,
+      // product_quantity: DataTypes.INTEGER,
       release_date: DataTypes.DATE,
       created_at: DataTypes.DATE,
       updated_at: DataTypes.DATE,
