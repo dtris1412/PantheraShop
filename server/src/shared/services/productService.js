@@ -47,54 +47,80 @@ const getAllProducts = async () => {
 };
 
 const getProductById = async (product_id) => {
-  if (!product_id) {
-    return { success: false, message: "Missing product_id" };
+  try {
+    if (!product_id) {
+      return { success: false, message: "Missing product_id" };
+    }
+
+    const product = await db.Product.findOne({
+      where: { product_id },
+      include: [
+        {
+          model: db.Category,
+          attributes: ["category_id", "category_name"],
+        },
+        {
+          model: db.Product_Image,
+          attributes: ["product_image_id", "image_url", "order"],
+        },
+        {
+          model: db.Team,
+          include: [
+            {
+              model: db.Tournament,
+              include: [
+                {
+                  model: db.Sport,
+                  attributes: ["sport_id", "sport_name"],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          model: db.Variant,
+        },
+      ],
+    });
+
+    if (!product) {
+      return { success: false, message: "Product not found" };
+    }
+
+    // Thêm average_rating vào object trả về với error handling
+    let average_rating = 0;
+    try {
+      average_rating = await getProductRating(product_id);
+    } catch (ratingError) {
+      console.error("Error getting product rating:", ratingError);
+      // Tiếp tục với rating = 0 thay vì crash
+    }
+
+    // Thêm stock với error handling
+    let stock = 0;
+    try {
+      stock = await getProductStock(product_id);
+    } catch (stockError) {
+      console.error("Error getting product stock:", stockError);
+      // Tiếp tục với stock = 0 thay vì crash
+    }
+
+    return {
+      success: true,
+      product: {
+        ...product.toJSON(),
+        average_rating,
+        stock,
+      },
+    };
+  } catch (error) {
+    console.error("Error in getProductById service:", error);
+    return {
+      success: false,
+      message: "Error fetching product details",
+      error: error.message,
+    };
   }
-  const product = await db.Product.findOne({
-    where: { product_id },
-    include: [
-      {
-        model: db.Category,
-        attributes: ["category_id", "category_name"],
-      },
-      {
-        model: db.Product_Image,
-        attributes: ["product_image_id", "image_url", "order"],
-      },
-      {
-        model: db.Team,
-        include: [
-          {
-            model: db.Tournament,
-            include: [
-              {
-                model: db.Sport,
-                attributes: ["sport_id", "sport_name"],
-              },
-            ],
-          },
-        ],
-      },
-      {
-        model: db.Variant,
-      },
-    ],
-  });
-
-  if (!product) {
-    return { success: false, message: "Product not found" };
-  }
-
-  // Thêm average_rating vào object trả về
-  const average_rating = await getProductRating(product_id);
-
-  return {
-    success: true,
-    product: {
-      ...product.toJSON(),
-      average_rating,
-    },
-  };
 };
 
 const getTopRatedProducts = async () => {
@@ -264,24 +290,31 @@ const searchProducts = async (keyword) => {
 };
 
 const getProductRating = async (product_id) => {
-  const variants = await db.Variant.findAll({
-    where: { product_id },
-    attributes: ["variant_id"],
-  });
-  const variantIds = variants.map((v) => v.variant_id);
+  try {
+    const variants = await db.Variant.findAll({
+      where: { product_id },
+      attributes: ["variant_id"],
+    });
 
-  if (variantIds.length === 0) return 0;
+    const variantIds = variants.map((v) => v.variant_id);
 
-  const ratings = await db.OrderProductReview.findOne({
-    attributes: [
-      [db.Sequelize.fn("AVG", db.Sequelize.col("rating")), "average_rating"],
-    ],
-    where: {
-      variant_id: variantIds, // Lọc theo các variant của sản phẩm
-    },
-  });
+    if (variantIds.length === 0) return 0;
 
-  return ratings?.get("average_rating") || 0;
+    const ratings = await db.OrderProductReview.findOne({
+      attributes: [
+        [db.Sequelize.fn("AVG", db.Sequelize.col("rating")), "average_rating"],
+      ],
+      where: {
+        variant_id: variantIds,
+      },
+    });
+
+    const avgRating = ratings?.get("average_rating");
+    return avgRating ? parseFloat(avgRating) : 0;
+  } catch (error) {
+    console.error("Error in getProductRating:", error);
+    return 0; // Trả về 0 thay vì crash
+  }
 };
 
 const getRelatedProducts = async (product_id) => {
