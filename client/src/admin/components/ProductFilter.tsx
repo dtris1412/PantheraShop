@@ -28,7 +28,7 @@ interface FilterState {
   tournament_id: number | null;
   team_id: number | null;
   category_id: number | null;
-  status: "all" | "in_stock" | "low_stock" | "out_of_stock";
+  status: "all" | "active" | "inactive"; // Đã đúng
   sortBy: "name_asc" | "name_desc" | "price_asc" | "price_desc" | "newest";
 }
 
@@ -310,10 +310,10 @@ const ProductFilter = ({
               ))}
             </select>
           </div>
-          s{/* Status Filter */}
+          {/* Status Filter */}
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-2">
-              Trạng thái
+              Trạng thái bán
             </label>
             <select
               value={filters.status}
@@ -321,9 +321,8 @@ const ProductFilter = ({
               className="w-full px-3 py-2 text-sm border border-gray-300 focus:outline-none focus:border-black transition-colors"
             >
               <option value="all">Tất cả</option>
-              <option value="in_stock">Còn hàng</option>
-              <option value="low_stock">Sắp hết</option>
-              <option value="out_of_stock">Hết hàng</option>
+              <option value="active">Đang bán</option>
+              <option value="inactive">Ngừng bán</option>
             </select>
           </div>
           {/* Sort By */}

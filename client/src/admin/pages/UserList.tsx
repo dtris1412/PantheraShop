@@ -55,6 +55,7 @@ const UserList = () => {
   });
   const { getAllUsers, updateUserStatus, loading } = useAdmin();
   const itemsPerPage = 10;
+  const [statusLoading, setStatusLoading] = useState<number | null>(null);
 
   // Fetch users on mount ONLY ONCE
   useEffect(() => {
@@ -97,6 +98,7 @@ const UserList = () => {
     userId: number,
     shouldLock?: boolean
   ): Promise<void> => {
+    setStatusLoading(userId);
     try {
       const result = await updateUserStatus(userId, shouldLock);
 
@@ -117,6 +119,8 @@ const UserList = () => {
         error.message || "Có lỗi xảy ra khi cập nhật trạng thái",
         "error"
       );
+    } finally {
+      setStatusLoading(null);
     }
   };
 
@@ -437,7 +441,9 @@ const UserList = () => {
                               ? "opacity-50 cursor-not-allowed"
                               : ""
                           }`}
-                          disabled={user.role_id === 0}
+                          disabled={
+                            user.role_id === 0 || statusLoading === user.user_id
+                          }
                           title={
                             user.role_id === 0
                               ? "Không thể thay đổi trạng thái Admin"
@@ -446,7 +452,9 @@ const UserList = () => {
                               : "Click để mở khóa tài khoản"
                           }
                         >
-                          {user.user_status ? (
+                          {statusLoading === user.user_id ? (
+                            <span className="animate-spin w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full inline-block"></span>
+                          ) : user.user_status ? (
                             <ToggleRight className="w-5 h-5 text-green-600" />
                           ) : (
                             <ToggleLeft className="w-5 h-5 text-gray-400" />

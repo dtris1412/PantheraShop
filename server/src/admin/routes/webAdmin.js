@@ -14,6 +14,7 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
+  setProductLockStatus,
 } from "../../admin/controllers/productController.js";
 import {
   register as adminRegister,
@@ -107,6 +108,7 @@ const initAdminRoutes = (app) => {
   router.post("/api/admin/products", verifyAdmin, createProduct);
   router.put("/api/admin/products/:id", verifyAdmin, updateProduct);
   router.delete("/api/admin/products/:id", verifyAdmin, deleteProduct);
+  router.put("/api/admin/products/:id/lock", verifyAdmin, setProductLockStatus);
 
   // =============== VARIANT MANAGEMENT ROUTES ===============
 

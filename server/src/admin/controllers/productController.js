@@ -4,6 +4,7 @@ import {
   createProduct as createProductService,
   updateProduct as updateProductService,
   deleteProduct as deleteProductService,
+  setProductLockStatus as setProductLockStatusService,
 } from "../../shared/services/productService.js";
 
 const getAllProducts = async (req, res) => {
@@ -106,10 +107,31 @@ const deleteProduct = async (req, res) => {
   }
 };
 
+const setProductLockStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { is_active } = req.body;
+    const result = await setProductLockStatusService(id, is_active);
+
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+
+    res.status(200).json(result);
+  } catch (err) {
+    console.error("Error in setProductLockStatus controller: ", err);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: err.message,
+    });
+  }
+};
 export {
   getAllProducts,
   getProductById,
   createProduct,
   updateProduct,
   deleteProduct,
+  setProductLockStatus,
 };

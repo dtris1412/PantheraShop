@@ -9,6 +9,7 @@ import {
   DollarSign,
   Tag,
   AlertTriangle,
+  Lock,
 } from "lucide-react";
 import { useProduct } from "../contexts/productContext";
 import { showToast } from "../../shared/components/Toast";
@@ -29,6 +30,7 @@ interface Product {
   created_at: string;
   stock: number;
   average_rating: number;
+  is_active: boolean;
   Category?: {
     category_id: number;
     category_name: string;
@@ -56,7 +58,7 @@ const ProductList = () => {
     tournament_id: null as number | null,
     team_id: null as number | null,
     category_id: null as number | null,
-    status: "all" as "all" | "in_stock" | "low_stock" | "out_of_stock",
+    status: "all" as "all" | "active" | "inactive",
     sortBy: "newest" as
       | "newest"
       | "name_asc"
@@ -72,7 +74,7 @@ const ProductList = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  const { getAllProducts, loading } = useProduct();
+  const { getAllProducts, loading, setProductLockStatus } = useProduct();
   const navigate = useNavigate();
   const itemsPerPage = 10;
 
@@ -87,7 +89,12 @@ const ProductList = () => {
       console.log("Products loaded:", productsData);
       console.log("First product:", productsData[0]);
       console.log("Products length:", productsData.length);
-      setProducts(productsData);
+      // Add default is_active property if it doesn't exist
+      const productsWithActiveStatus = productsData.map((product) => ({
+        ...product,
+        is_active: product.is_active !== undefined ? product.is_active : true,
+      }));
+      setProducts(productsWithActiveStatus);
     } catch (error) {
       console.error("Failed to fetch data:", error);
       showToast("Không thể tải dữ liệu", "error");
@@ -134,6 +141,20 @@ const ProductList = () => {
     setSelectedProduct(null);
     fetchData(); // Reload products
     showToast("Cập nhật sản phẩm thành công", "success");
+  };
+
+  const handleLockProduct = async (product: Product) => {
+    try {
+      await setProductLockStatus(product.product_id, !product.is_active);
+      fetchData(); // Reload products to reflect the change
+      showToast(
+        `${product.is_active ? "Ngừng bán" : "Đang bán"} sản phẩm thành công`,
+        "success"
+      );
+    } catch (error) {
+      console.error("Failed to update product status:", error);
+      showToast("Không thể cập nhật trạng thái sản phẩm", "error");
+    }
   };
 
   const formatPrice = (price: number | string) => {
@@ -209,12 +230,10 @@ const ProductList = () => {
       // Status filter
       let matchStatus = true;
       if (filters.status !== "all") {
-        if (filters.status === "out_of_stock") {
-          matchStatus = product.stock === 0;
-        } else if (filters.status === "low_stock") {
-          matchStatus = product.stock > 0 && product.stock < 20;
-        } else if (filters.status === "in_stock") {
-          matchStatus = product.stock >= 20;
+        if (filters.status === "active") {
+          matchStatus = product.is_active === true;
+        } else if (filters.status === "inactive") {
+          matchStatus = product.is_active === false;
         }
       }
 
@@ -348,7 +367,7 @@ const ProductList = () => {
       </div>
 
       {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white p-4 border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
@@ -362,9 +381,9 @@ const ProductList = () => {
         <div className="bg-white p-4 border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Còn hàng</p>
+              <p className="text-sm text-gray-600">Đang bán</p>
               <p className="text-2xl font-bold text-green-600">
-                {products.filter((p) => p.stock >= 20).length}
+                {products.filter((p) => p.is_active).length}
               </p>
             </div>
             <Package className="w-8 h-8 text-green-400" />
@@ -374,24 +393,12 @@ const ProductList = () => {
         <div className="bg-white p-4 border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Sắp hết hàng</p>
-              <p className="text-2xl font-bold text-yellow-600">
-                {products.filter((p) => p.stock > 0 && p.stock < 20).length}
+              <p className="text-sm text-gray-600">Ngừng bán</p>
+              <p className="text-2xl font-bold text-gray-600">
+                {products.filter((p) => !p.is_active).length}
               </p>
             </div>
-            <AlertTriangle className="w-8 h-8 text-yellow-400" />
-          </div>
-        </div>
-
-        <div className="bg-white p-4 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Hết hàng</p>
-              <p className="text-2xl font-bold text-red-600">
-                {products.filter((p) => p.stock === 0).length}
-              </p>
-            </div>
-            <Package className="w-8 h-8 text-red-400" />
+            <Lock className="w-8 h-8 text-gray-400" />
           </div>
         </div>
       </div>
@@ -418,112 +425,112 @@ const ProductList = () => {
                   <th className="px-6 py-4">Sản phẩm</th>
                   <th className="px-6 py-4">Danh mục</th>
                   <th className="px-6 py-4">Giá</th>
-                  <th className="px-6 py-4">Tồn kho</th>
-                  <th className="px-6 py-4">Trạng thái</th>
+                  {/* XÓA cột tồn kho và trạng thái kho */}
+                  <th className="px-6 py-4">Trạng thái bán</th>
                   <th className="px-6 py-4">Ngày tạo</th>
                   <th className="px-6 py-4">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {currentProducts.map((product) => {
-                  const stockStatus = getStockStatus(product.stock); // ✅ Đổi
-                  return (
-                    <tr
-                      key={product.product_id}
-                      className="hover:bg-gray-50 transition-colors duration-200"
-                    >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          {product.product_image ? (
-                            <img
-                              src={product.product_image}
-                              alt={product.product_name}
-                              className="w-12 h-12 object-cover border border-gray-200"
-                            />
-                          ) : (
-                            <div className="w-12 h-12 bg-gray-100 flex items-center justify-center">
-                              <Package className="w-6 h-6 text-gray-400" />
-                            </div>
-                          )}
-                          <div className="max-w-xs">
-                            <p className="text-sm font-medium text-black line-clamp-1">
-                              {product.product_name}
-                            </p>
-                            {product.product_description && (
-                              <p className="text-xs text-gray-500 line-clamp-1">
-                                {product.product_description}
-                              </p>
-                            )}
+                {currentProducts.map((product) => (
+                  <tr
+                    key={product.product_id}
+                    className={`hover:bg-gray-50 transition-colors duration-200 ${
+                      !product.is_active ? "opacity-60 bg-gray-100" : ""
+                    }`}
+                  >
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        {product.product_image ? (
+                          <img
+                            src={product.product_image}
+                            alt={product.product_name}
+                            className="w-12 h-12 object-cover border border-gray-200"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 bg-gray-100 flex items-center justify-center">
+                            <Package className="w-6 h-6 text-gray-400" />
                           </div>
+                        )}
+                        <div className="max-w-xs">
+                          <p className="text-sm font-medium text-black line-clamp-1">
+                            {product.product_name}
+                          </p>
+                          {product.product_description && (
+                            <p className="text-xs text-gray-500 line-clamp-1">
+                              {product.product_description}
+                            </p>
+                          )}
                         </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="px-3 py-1 text-xs font-medium bg-blue-100 text-blue-800">
-                          {product.Category?.category_name || "N/A"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm font-medium text-black">
-                          {formatPrice(product.product_price)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          {product.stock < 20 &&
-                            product.stock > 0 && ( // ✅ Đổi
-                              <AlertTriangle
-                                size={16}
-                                className={stockStatus.icon}
-                              />
-                            )}
-                          <span className="text-sm font-medium text-gray-900">
-                            {product.stock} {/* ✅ Đổi */}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`px-3 py-1 text-xs font-medium ${stockStatus.color}`}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="px-3 py-1 text-xs font-medium bg-blue-100 text-blue-800">
+                        {product.Category?.category_name || "N/A"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm font-medium text-black">
+                        {formatPrice(product.product_price)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`px-3 py-1 text-xs font-medium ${
+                          product.is_active
+                            ? "bg-green-100 text-green-800"
+                            : "bg-gray-300 text-gray-700"
+                        }`}
+                      >
+                        {product.is_active ? "Đang bán" : "Ngừng bán"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {formatDate(product.created_at)}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleViewProduct(product)}
+                          className="p-2 hover:bg-blue-50 transition-colors duration-200"
+                          title="Xem chi tiết"
                         >
-                          {stockStatus.label}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        {formatDate(product.created_at)}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleViewProduct(product)}
-                            className="p-2 hover:bg-blue-50 transition-colors duration-200"
-                            title="Xem chi tiết"
-                          >
-                            <Eye size={16} className="text-blue-600" />
-                          </button>
+                          <Eye size={16} className="text-blue-600" />
+                        </button>
 
-                          <button
-                            type="button"
-                            onClick={() => handleEditProduct(product)}
-                            className="p-2 hover:bg-gray-100 transition-colors duration-200"
-                            title="Chỉnh sửa"
-                          >
-                            <Edit size={16} className="text-gray-600" />
-                          </button>
+                        <button
+                          type="button"
+                          onClick={() => handleEditProduct(product)}
+                          className="p-2 hover:bg-gray-100 transition-colors duration-200"
+                          title="Chỉnh sửa"
+                        >
+                          <Edit size={16} className="text-gray-600" />
+                        </button>
 
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteProduct(product)}
-                            className="p-2 hover:bg-red-50 transition-colors duration-200"
-                            title="Xóa"
-                          >
-                            <Trash2 size={16} className="text-red-600" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
+                        <button
+                          type="button"
+                          onClick={() => handleLockProduct(product)}
+                          className="p-2 hover:bg-yellow-50 transition-colors duration-200"
+                          title={
+                            product.is_active
+                              ? "Khóa sản phẩm (Ngừng bán)"
+                              : "Mở khóa sản phẩm (Đang bán)"
+                          }
+                        >
+                          <Lock
+                            size={16}
+                            className={
+                              product.is_active
+                                ? "text-yellow-600"
+                                : "text-gray-400"
+                            }
+                          />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

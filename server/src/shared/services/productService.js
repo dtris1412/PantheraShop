@@ -665,6 +665,25 @@ const deleteProduct = async (product_id) => {
   }
 };
 
+const setProductLockStatus = async (product_id, is_active) => {
+  try {
+    if (!product_id) {
+      return { success: false, message: "Product ID is required" };
+    }
+
+    const product = await db.Product.findOne({ where: { product_id } });
+    if (!product) {
+      return { success: false, message: "Product not found" };
+    }
+
+    await product.update({ is_active });
+    return { success: true, product };
+  } catch (err) {
+    console.error("Error in setProductLockStatus:", err);
+    return { success: false, message: "Internal server error" };
+  }
+};
+
 export {
   getAllProducts,
   getProductById,
@@ -677,4 +696,5 @@ export {
   createProduct,
   updateProduct,
   deleteProduct,
+  setProductLockStatus,
 };

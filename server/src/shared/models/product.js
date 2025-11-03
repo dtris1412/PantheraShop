@@ -26,6 +26,7 @@ export default (sequelize, DataTypes) => {
       created_at: DataTypes.DATE,
       updated_at: DataTypes.DATE,
       product_image: DataTypes.STRING,
+      is_active: DataTypes.BOOLEAN,
       team_id: {
         type: DataTypes.INTEGER,
         foreignKey: true,

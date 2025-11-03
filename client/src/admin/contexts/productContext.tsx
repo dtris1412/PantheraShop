@@ -20,6 +20,7 @@ interface Product {
   category_id: number;
   product_image: string | null;
   created_at: string;
+  is_active: boolean;
   stock: number;
   average_rating: number;
   Category?: Category;
@@ -66,6 +67,11 @@ interface ProductContextType {
     variantData: Omit<ProductVariant, "variant_id"> & { product_id: number }
   ) => Promise<any>;
   deleteVariant: (variantId: number) => Promise<boolean>;
+
+  setProductLockStatus: (
+    product_id: number,
+    is_active: boolean
+  ) => Promise<any>;
 
   loading: boolean;
 }
@@ -467,6 +473,38 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
     }
   };
 
+  const setProductLockStatus = async (
+    product_id: number,
+    is_active: boolean
+  ) => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `http://localhost:8080/api/admin/products/${product_id}/lock`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ is_active }),
+        }
+      );
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to update product status");
+      }
+      const data = await res.json();
+      return data;
+    } catch (error) {
+      console.error("Error updating product status:", error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <ProductContext.Provider
       value={{
@@ -479,6 +517,7 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
         createVariant,
         updateVariant,
         deleteVariant,
+        setProductLockStatus,
         loading,
       }}
     >
