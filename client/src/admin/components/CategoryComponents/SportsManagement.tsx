@@ -381,7 +381,7 @@ const SportsManagement = () => {
                     onImageSelect={handleImageSelect}
                     onImageRemove={handleImageRemove}
                     placeholder="Icon thể thao"
-                    maxSize={2}
+                    maxSizeMB={2}
                     className="w-20 h-20"
                   />
                 </div>

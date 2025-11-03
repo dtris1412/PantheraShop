@@ -1,32 +1,60 @@
 import { useState, useEffect } from "react";
 import { X, Upload, Plus, Trash2 } from "lucide-react";
 import { showToast } from "../../../shared/components/Toast";
-
-interface Product {
-  product_id: number;
-  product_name: string;
-  product_description: string;
-  product_price: string;
-  category_id: number;
-  team_id?: number;
-  product_image: string;
-}
+import { useProduct } from "../../contexts/productContext";
+import { useCategory } from "../../contexts/categoryContext";
 
 interface Category {
   category_id: number;
   category_name: string;
 }
 
+interface Sport {
+  sport_id: number;
+  sport_name: string;
+  sport_icon?: string;
+}
+
+interface Tournament {
+  tournament_id: number;
+  tournament_name: string;
+  tournament_icon?: string;
+  sport_id: number;
+}
+
 interface Team {
   team_id: number;
   team_name: string;
+  team_logo?: string;
+  tournament_id: number;
 }
 
 interface ProductVariant {
   variant_id?: number;
   variant_size: string;
   variant_color: string;
-  variant_stock: number;
+}
+
+interface Product {
+  product_id: number;
+  product_name: string;
+  product_description: string | null;
+  product_price: number | string;
+  category_id: number;
+  team_id?: number;
+  product_image: string | null;
+  created_at?: string;
+  Category?: Category;
+  Team?: {
+    team_id: number;
+    team_name: string;
+    Tournament?: {
+      tournament_id: number;
+      tournament_name: string;
+      Sport?: Sport;
+    };
+  };
+  Variants?: ProductVariant[];
 }
 
 interface EditProductFormProps {
@@ -42,79 +70,126 @@ const EditProductForm = ({
   onClose,
   onSuccess,
 }: EditProductFormProps) => {
+  const { updateProduct } = useProduct();
+  const { getAllCategories, getAllSports, getAllTournaments, getAllTeams } =
+    useCategory();
+
   const [formData, setFormData] = useState({
     product_name: "",
     product_description: "",
     product_price: "",
     category_id: "",
+    sport_id: "",
+    tournament_id: "",
     team_id: "",
     product_image: "",
   });
 
   const [categories, setCategories] = useState<Category[]>([]);
+  const [sports, setSports] = useState<Sport[]>([]);
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
-  const [variants, setVariants] = useState<ProductVariant[]>([]);
+  const [variants, setVariants] = useState<ProductVariant[]>([
+    { variant_size: "", variant_color: "" },
+  ]);
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>("");
 
-  // Reset form when product changes
+  // Fetch initial data
+  useEffect(() => {
+    if (isOpen) {
+      fetchInitialData();
+    }
+  }, [isOpen]);
+
+  // Load product data when modal opens
   useEffect(() => {
     if (product && isOpen) {
       setFormData({
         product_name: product.product_name,
         product_description: product.product_description || "",
-        product_price: product.product_price,
+        product_price:
+          typeof product.product_price === "number"
+            ? product.product_price.toString()
+            : product.product_price,
         category_id: product.category_id.toString(),
+        sport_id: product.Team?.Tournament?.Sport?.sport_id?.toString() || "",
+        tournament_id:
+          product.Team?.Tournament?.tournament_id?.toString() || "",
         team_id: product.team_id?.toString() || "",
-        product_image: product.product_image,
+        product_image: product.product_image || "",
       });
-      fetchProductVariants();
-      fetchInitialData();
+
+      // Set image preview
+      if (product.product_image) {
+        setImagePreview(product.product_image);
+      }
+
+      // Set variants
+      if (product.Variants && product.Variants.length > 0) {
+        setVariants(
+          product.Variants.map((v) => ({
+            variant_id: v.variant_id,
+            variant_size: v.variant_size || "",
+            variant_color: v.variant_color || "",
+          }))
+        );
+      } else {
+        setVariants([{ variant_size: "", variant_color: "" }]);
+      }
     }
   }, [product, isOpen]);
 
+  // Filter tournaments by selected sport
+  useEffect(() => {
+    if (formData.sport_id) {
+      const filteredTournaments = tournaments.filter(
+        (t) => t.sport_id === parseInt(formData.sport_id)
+      );
+      if (
+        formData.tournament_id &&
+        !filteredTournaments.find(
+          (t) => t.tournament_id === parseInt(formData.tournament_id)
+        )
+      ) {
+        setFormData((prev) => ({ ...prev, tournament_id: "", team_id: "" }));
+      }
+    }
+  }, [formData.sport_id, tournaments]);
+
+  // Filter teams by selected tournament
+  useEffect(() => {
+    if (formData.tournament_id) {
+      const filteredTeams = teams.filter(
+        (t) => t.tournament_id === parseInt(formData.tournament_id)
+      );
+      if (
+        formData.team_id &&
+        !filteredTeams.find((t) => t.team_id === parseInt(formData.team_id))
+      ) {
+        setFormData((prev) => ({ ...prev, team_id: "" }));
+      }
+    }
+  }, [formData.tournament_id, teams]);
+
   const fetchInitialData = async () => {
     try {
-      // TODO: Implement API calls
-      showToast("Chức năng đang phát triển", "info");
+      const [categoriesData, sportsData, tournamentsData, teamsData] =
+        await Promise.all([
+          getAllCategories(),
+          getAllSports(),
+          getAllTournaments(),
+          getAllTeams(),
+        ]);
 
-      // Mock data for now
-      setCategories([
-        { category_id: 1, category_name: "Áo đấu" },
-        { category_id: 2, category_name: "Giày đá bóng" },
-      ]);
-
-      setTeams([
-        { team_id: 1, team_name: "Manchester City" },
-        { team_id: 2, team_name: "Arsenal" },
-      ]);
+      setCategories(categoriesData);
+      setSports(sportsData);
+      setTournaments(tournamentsData);
+      setTeams(teamsData);
     } catch (error) {
       console.error("Error fetching data:", error);
       showToast("Không thể tải dữ liệu", "error");
-    }
-  };
-
-  const fetchProductVariants = async () => {
-    try {
-      // TODO: Implement API call
-      // Mock data for now
-      setVariants([
-        {
-          variant_id: 1,
-          variant_size: "M",
-          variant_color: "Xanh",
-          variant_stock: 10,
-        },
-        {
-          variant_id: 2,
-          variant_size: "L",
-          variant_color: "Xanh",
-          variant_stock: 15,
-        },
-      ]);
-    } catch (error) {
-      console.error("Error fetching variants:", error);
-      showToast("Không thể tải biến thể sản phẩm", "error");
     }
   };
 
@@ -144,10 +219,7 @@ const EditProductForm = ({
   };
 
   const addVariant = () => {
-    setVariants([
-      ...variants,
-      { variant_size: "", variant_color: "", variant_stock: 0 },
-    ]);
+    setVariants([...variants, { variant_size: "", variant_color: "" }]);
   };
 
   const removeVariant = (index: number) => {
@@ -177,11 +249,29 @@ const EditProductForm = ({
     setLoading(true);
 
     try {
+      console.log("All variants:", variants);
+
+      // Filter valid variants - at least one field (size OR color) must be filled
+      const validVariants = variants.filter(
+        (v) => v.variant_size?.trim() || v.variant_color?.trim()
+      );
+
+      console.log("Valid variants after filter:", validVariants);
+
+      // Add default values and stock for each variant
+      const variantsWithDefaults = validVariants.map((v) => ({
+        variant_id: v.variant_id,
+        variant_size: v.variant_size?.trim() || "Standard",
+        variant_color: v.variant_color?.trim() || "Default",
+        variant_stock: 0,
+      }));
+
       // TODO: Implement API call
       console.log("Updated product data:", {
         product_id: product?.product_id,
         ...formData,
-        variants,
+        variants:
+          variantsWithDefaults.length > 0 ? variantsWithDefaults : undefined,
       });
 
       // Mock success
@@ -363,7 +453,13 @@ const EditProductForm = ({
           {/* Variants */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium">Biến thể sản phẩm</h3>
+              <div>
+                <h3 className="text-lg font-medium">Biến thể sản phẩm</h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  Nhập ít nhất kích cỡ HOẶC màu sắc (hoặc cả hai). Để trống nếu
+                  sản phẩm không có biến thể.
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={addVariant}
@@ -378,11 +474,14 @@ const EditProductForm = ({
               {variants.map((variant, index) => (
                 <div
                   key={index}
-                  className="grid grid-cols-1 md:grid-cols-4 gap-3 p-3 border rounded"
+                  className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3 border rounded"
                 >
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Kích thước
+                      Kích cỡ{" "}
+                      <span className="text-gray-400 font-normal">
+                        (tùy chọn)
+                      </span>
                     </label>
                     <input
                       type="text"
@@ -395,12 +494,16 @@ const EditProductForm = ({
                         )
                       }
                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:border-black"
+                      placeholder="S, M, L, XL... (bỏ trống nếu không có)"
                     />
                   </div>
 
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Màu sắc
+                      Màu sắc{" "}
+                      <span className="text-gray-400 font-normal">
+                        (tùy chọn)
+                      </span>
                     </label>
                     <input
                       type="text"
@@ -413,25 +516,7 @@ const EditProductForm = ({
                         )
                       }
                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:border-black"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Số lượng
-                    </label>
-                    <input
-                      type="number"
-                      value={variant.variant_stock}
-                      onChange={(e) =>
-                        handleVariantChange(
-                          index,
-                          "variant_stock",
-                          parseInt(e.target.value) || 0
-                        )
-                      }
-                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:border-black"
-                      min="0"
+                      placeholder="Đỏ, Xanh, Vàng... (bỏ trống nếu không có)"
                     />
                   </div>
 
@@ -439,9 +524,10 @@ const EditProductForm = ({
                     <button
                       type="button"
                       onClick={() => removeVariant(index)}
-                      className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                      className="w-full px-2 py-1.5 text-red-600 hover:text-white hover:bg-red-600 border border-red-600 rounded transition-colors"
+                      title="Xóa biến thể"
                     >
-                      <Trash2 size={16} />
+                      <Trash2 size={16} className="mx-auto" />
                     </button>
                   </div>
                 </div>

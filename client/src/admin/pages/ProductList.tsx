@@ -578,6 +578,57 @@ const ProductList = () => {
           )}
         </>
       )}
+
+      {/* Create Product Modal */}
+      {showCreateModal && (
+        <CreateProductForm
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={handleProductCreated}
+        />
+      )}
+
+      {/* Edit Product Modal */}
+      {showEditModal && selectedProduct && (
+        <EditProductForm
+          isOpen={showEditModal}
+          product={selectedProduct}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedProduct(null);
+          }}
+          onSuccess={handleProductUpdated}
+        />
+      )}
+
+      {/* Product Detail Modal */}
+      {showDetailModal && selectedProduct && (
+        <ProductDetailModal
+          isOpen={showDetailModal}
+          product={selectedProduct}
+          onClose={() => {
+            setShowDetailModal(false);
+            setSelectedProduct(null);
+          }}
+          onEdit={() => handleEditProduct(selectedProduct)}
+          onDelete={() => handleDeleteProduct(selectedProduct)}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showDeleteDialog}
+        title="Xóa sản phẩm"
+        message={`Bạn có chắc chắn muốn xóa sản phẩm "${selectedProduct?.product_name}"? Hành động này không thể hoàn tác.`}
+        onConfirm={confirmDeleteProduct}
+        onClose={() => {
+          setShowDeleteDialog(false);
+          setSelectedProduct(null);
+        }}
+        confirmText="Xóa"
+        cancelText="Hủy"
+        type="danger"
+      />
     </div>
   );
 };

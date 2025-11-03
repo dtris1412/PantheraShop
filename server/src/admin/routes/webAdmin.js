@@ -1,7 +1,10 @@
 import express from "express";
 import multer from "multer";
 import { verifyAdmin } from "../../shared/middlewares/adminMiddleware.js";
-import { uploadAvatarForUser } from "../../admin/controllers/uploadController.js";
+import {
+  uploadAvatarForUser,
+  uploadProductImage,
+} from "../../admin/controllers/uploadController.js";
 
 const upload = multer({ dest: "uploads/" });
 
@@ -20,6 +23,14 @@ import {
   getAllUsers,
   updateProfile,
 } from "../../admin/controllers/userController.js";
+
+//import variant controllers
+import {
+  createVariant,
+  getVariantsById,
+  updateVariant,
+  deleteVariant,
+} from "../../admin/controllers/variantController.js";
 
 // Import category controllers
 import {
@@ -54,6 +65,11 @@ import {
   deleteTeam,
 } from "../controllers/categoryController.js";
 
+//Import gallery controllers
+import {
+  getAllProductImages,
+  getProductImageById,
+} from "../controllers/product_imageController.js";
 const router = express.Router();
 
 const initAdminRoutes = (app) => {
@@ -77,12 +93,40 @@ const initAdminRoutes = (app) => {
     uploadAvatarForUser
   );
 
+  // Upload Product Image
+  router.post(
+    "/api/admin/upload-product-image",
+    verifyAdmin,
+    upload.single("image"),
+    uploadProductImage
+  );
+
   //Product Management
   router.get("/api/admin/products", verifyAdmin, getAllProducts);
   router.get("/api/admin/products/:id", verifyAdmin, getProductById);
   router.post("/api/admin/products", verifyAdmin, createProduct);
   router.put("/api/admin/products/:id", verifyAdmin, updateProduct);
   router.delete("/api/admin/products/:id", verifyAdmin, deleteProduct);
+
+  // =============== VARIANT MANAGEMENT ROUTES ===============
+
+  router.get("/api/admin/variants/:id", verifyAdmin, getVariantsById);
+  router.post("/api/admin/variants", verifyAdmin, createVariant);
+  router.put("/api/admin/variants/:id", verifyAdmin, updateVariant);
+  router.delete("/api/admin/variants/:id", verifyAdmin, deleteVariant);
+
+  // =============== VARIANT MANAGEMENT ROUTES ===============
+  router.get("/api/admin/variants", verifyAdmin, getAllProductImages);
+  router.get("/api/admin/variants/:id", verifyAdmin, getVariantsById);
+  // router.post("/api/admin/variants", verifyAdmin, createVariant);
+  // router.put("/api/admin/variants/:id", verifyAdmin, updateVariant);
+  // router.delete("/api/admin/variants/:id", verifyAdmin, deleteVariant);
+  // =============== PRODUCT IMAGES ROUTES ===============
+  router.get(
+    "/api/admin/product-images/:product_id",
+    verifyAdmin,
+    getProductImageById
+  );
 
   // =============== CATEGORY MANAGEMENT ROUTES ===============
 

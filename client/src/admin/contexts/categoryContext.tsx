@@ -630,14 +630,35 @@ export const CategoryProvider = ({ children }: CategoryProviderProps) => {
   };
 
   const createTournament = async (
-    tournamentData: Partial<Tournament>
+    tournamentData: Partial<Tournament> & { imageFile?: File }
   ): Promise<Tournament> => {
     setLoading(true);
     try {
+      let body: FormData | string;
+      let headers: HeadersInit;
+
+      if (tournamentData.imageFile) {
+        // Use FormData for file upload
+        const formData = new FormData();
+        Object.entries(tournamentData).forEach(([key, value]) => {
+          if (key !== "imageFile" && value !== undefined) {
+            formData.append(key, value.toString());
+          }
+        });
+        formData.append("image", tournamentData.imageFile);
+
+        body = formData;
+        headers = { Authorization: `Bearer ${localStorage.getItem("token")}` };
+      } else {
+        // Use JSON for regular data
+        body = JSON.stringify(tournamentData);
+        headers = getAuthHeaders();
+      }
+
       const response = await fetch(`${API_BASE_URL}/tournaments`, {
         method: "POST",
-        headers: getAuthHeaders(),
-        body: JSON.stringify(tournamentData),
+        headers,
+        body,
       });
 
       const data = await response.json();
@@ -657,14 +678,35 @@ export const CategoryProvider = ({ children }: CategoryProviderProps) => {
 
   const updateTournament = async (
     id: number,
-    tournamentData: Partial<Tournament>
+    tournamentData: Partial<Tournament> & { imageFile?: File }
   ): Promise<Tournament> => {
     setLoading(true);
     try {
+      let body: FormData | string;
+      let headers: HeadersInit;
+
+      if (tournamentData.imageFile) {
+        // Use FormData for file upload
+        const formData = new FormData();
+        Object.entries(tournamentData).forEach(([key, value]) => {
+          if (key !== "imageFile" && value !== undefined) {
+            formData.append(key, value.toString());
+          }
+        });
+        formData.append("image", tournamentData.imageFile);
+
+        body = formData;
+        headers = { Authorization: `Bearer ${localStorage.getItem("token")}` };
+      } else {
+        // Use JSON for regular data
+        body = JSON.stringify(tournamentData);
+        headers = getAuthHeaders();
+      }
+
       const response = await fetch(`${API_BASE_URL}/tournaments/${id}`, {
         method: "PUT",
-        headers: getAuthHeaders(),
-        body: JSON.stringify(tournamentData),
+        headers,
+        body,
       });
 
       const data = await response.json();

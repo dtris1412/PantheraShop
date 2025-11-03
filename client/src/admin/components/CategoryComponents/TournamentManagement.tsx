@@ -150,6 +150,8 @@ const TournamentManagement = () => {
       sport_id: tournament.sport_id.toString(),
       tournament_icon: tournament.tournament_icon || "",
     });
+    setImagePreview(tournament.tournament_icon || "");
+    setImageFile(null);
     setShowForm(true);
   };
 
@@ -174,25 +176,13 @@ const TournamentManagement = () => {
       tournament_icon: "",
     });
     setEditingTournament(null);
+    setImageFile(null);
+    setImagePreview("");
   };
 
   const handleCloseForm = () => {
     setShowForm(false);
     resetForm();
-  };
-
-  const handleIconChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData((prev) => ({
-          ...prev,
-          tournament_icon: reader.result as string,
-        }));
-      };
-      reader.readAsDataURL(file);
-    }
   };
 
   const filteredTournaments = tournaments.filter((tournament) => {
@@ -434,61 +424,14 @@ const TournamentManagement = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Icon giải đấu
                 </label>
-                <div className="flex items-center gap-3">
-                  {formData.tournament_icon && (
-                    <div className="relative">
-                      {formData.tournament_icon.startsWith("data:") ? (
-                        <img
-                          src={formData.tournament_icon}
-                          alt="Icon"
-                          className="w-12 h-12 object-cover rounded"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 flex items-center justify-center text-2xl bg-gray-100 rounded">
-                          {formData.tournament_icon}
-                        </div>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            tournament_icon: "",
-                          }))
-                        }
-                        className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
-                      >
-                        <X size={12} />
-                      </button>
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <input
-                      type="text"
-                      value={formData.tournament_icon}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          tournament_icon: e.target.value,
-                        }))
-                      }
-                      placeholder="Nhập emoji hoặc text..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-black"
-                    />
-                    <div className="mt-2">
-                      <label className="cursor-pointer text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1">
-                        <Upload size={14} />
-                        Hoặc tải lên hình ảnh
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleIconChange}
-                          className="hidden"
-                        />
-                      </label>
-                    </div>
-                  </div>
-                </div>
+                <ImageUpload
+                  onImageSelect={handleImageSelect}
+                  onImageRemove={handleImageRemove}
+                  currentImage={
+                    imagePreview || editingTournament?.tournament_icon
+                  }
+                  maxSizeMB={3}
+                />
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-4">

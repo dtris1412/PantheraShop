@@ -8,7 +8,7 @@ interface ImageUploadProps {
   onImageRemove: () => void;
   placeholder?: string;
   disabled?: boolean;
-  maxSize?: number; // MB
+  maxSizeMB?: number; // MB
   className?: string;
 }
 
@@ -18,7 +18,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   onImageRemove,
   placeholder = "Chọn ảnh",
   disabled = false,
-  maxSize = 5, // 5MB default
+  maxSizeMB = 2, // 2MB default
   className = "w-24 h-24",
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -34,9 +34,9 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     }
 
     // Validate file size
-    const maxSizeBytes = maxSize * 1024 * 1024;
+    const maxSizeBytes = maxSizeMB * 1024 * 1024;
     if (file.size > maxSizeBytes) {
-      showToast(`File ảnh không được vượt quá ${maxSize}MB`, "error");
+      showToast(`File ảnh không được vượt quá ${maxSizeMB}MB`, "error");
       return;
     }
 
@@ -117,7 +117,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       </div>
 
       <p className="text-xs text-gray-500 mt-2 text-center">
-        Tối đa {maxSize}MB
+        Tối đa {maxSizeMB}MB
         <br />
         JPG, PNG, GIF
       </p>
