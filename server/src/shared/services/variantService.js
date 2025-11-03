@@ -1,13 +1,13 @@
 import db from "../../shared/models/index.js";
 
 const createVariant = async (variant_size, variant_color, product_id) => {
-  if (!variant_stock || !product_id) {
+  if (!product_id) {
     return { success: false, message: "Missing required fields" };
   }
   const newVariant = await db.Variant.create({
-    variant_size,
-    variant_color,
-    variant_stock,
+    variant_size: variant_size || "Standard",
+    variant_color: variant_color || "Default",
+    variant_stock: 0,
     product_id,
   });
   return { success: true, variant: newVariant };
@@ -20,18 +20,10 @@ const getVariantsById = async (product_id) => {
   const variants = await db.Variant.findAll({
     where: { product_id },
   });
-  if (!variants) {
-    return { success: false, message: "Variants not found" };
-  }
-  return { success: true, variant };
+  return { success: true, variants };
 };
 
-const updateVariant = async (
-  variant_id,
-  variant_size,
-  variant_color,
-  variant_stock
-) => {
+const updateVariant = async (variant_id, variant_size, variant_color) => {
   if (!variant_id) {
     return { success: false, message: "Missing required fields" };
   }
@@ -41,9 +33,10 @@ const updateVariant = async (
   if (!variant) {
     return { success: false, message: "Variant not found" };
   }
+
   variant.variant_size = variant_size || variant.variant_size;
   variant.variant_color = variant_color || variant.variant_color;
-  variant.variant_stock = variant_stock || variant.variant_stock;
+
   await variant.save();
   return { success: true, variant };
 };
@@ -60,16 +53,6 @@ const deleteVariant = async (variant_id) => {
   }
   await variant.destroy();
   return { success: true, message: "Variant deleted successfully" };
-};
-
-const deleteVariantById = async (product_id) => {
-  if (!product_id) {
-    return { success: false, message: "Missing required fields" };
-  }
-  await db.Variant.destroy({
-    where: { product_id },
-  });
-  return { success: true, message: "Variants deleted successfully" };
 };
 
 const decreaseVariantStock = async (variant_id, quantity) => {

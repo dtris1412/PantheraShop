@@ -116,8 +116,8 @@ const initAdminRoutes = (app) => {
   router.delete("/api/admin/variants/:id", verifyAdmin, deleteVariant);
 
   // =============== VARIANT MANAGEMENT ROUTES ===============
-  router.get("/api/admin/variants", verifyAdmin, getAllProductImages);
-  router.get("/api/admin/variants/:id", verifyAdmin, getVariantsById);
+  // router.get("/api/admin/variants", verifyAdmin, getAllProductImages);
+  // router.get("/api/admin/variants/:id", verifyAdmin, getVariantsById);
   // router.post("/api/admin/variants", verifyAdmin, createVariant);
   // router.put("/api/admin/variants/:id", verifyAdmin, updateVariant);
   // router.delete("/api/admin/variants/:id", verifyAdmin, deleteVariant);

@@ -16,7 +16,7 @@ interface Product {
   product_id: number;
   product_name: string;
   product_description: string | null;
-  product_price: number | string; //Chấp nhận cả string và number
+  product_price: number | string;
   category_id: number;
   product_image: string | null;
   created_at: string;
@@ -26,6 +26,7 @@ interface Product {
 }
 
 interface ProductVariant {
+  variant_id?: number;
   variant_size: string;
   variant_color: string;
   variant_stock: number;
@@ -54,6 +55,18 @@ interface ProductContextType {
     imageFile?: File | null
   ) => Promise<any>;
   deleteProduct: (id: number) => Promise<boolean>;
+
+  // Variant functions
+  getVariantsByProductId: (productId: number) => Promise<ProductVariant[]>;
+  createVariant: (
+    variantData: Omit<ProductVariant, "variant_id"> & { product_id: number }
+  ) => Promise<any>;
+  updateVariant: (
+    variantId: number,
+    variantData: Omit<ProductVariant, "variant_id"> & { product_id: number }
+  ) => Promise<any>;
+  deleteVariant: (variantId: number) => Promise<boolean>;
+
   loading: boolean;
 }
 
@@ -88,13 +101,11 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
 
       const data = await res.json();
 
-      // API returns array directly, not wrapped in object
       if (Array.isArray(data)) {
         console.log(`✅ Loaded ${data.length} products`);
         return data;
       }
 
-      // Fallback for wrapped format
       if (data.products && Array.isArray(data.products)) {
         console.log(`✅ Loaded ${data.products.length} products`);
         return data.products;
@@ -112,8 +123,6 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
 
   const getProductById = useCallback(
     async (id: number): Promise<Product | null> => {
-      // KHÔNG setLoading ở đây để tránh gây re-render toàn bộ context
-      // Component gọi hàm này sẽ tự quản lý loading state
       try {
         const token = localStorage.getItem("token");
         const res = await fetch(
@@ -256,7 +265,7 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
         }
       }
 
-      // Update product with variants
+      // Update product
       const payload = {
         ...productData,
         product_image,
@@ -333,6 +342,131 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
     }
   };
 
+  // ============= VARIANT FUNCTIONS =============
+
+  const getVariantsByProductId = async (
+    productId: number
+  ): Promise<ProductVariant[]> => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `http://localhost:8080/api/admin/variants/${productId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch variants");
+      }
+
+      const data = await res.json();
+
+      if (data.success && data.variants) {
+        console.log(
+          `✅ Loaded ${data.variants.length} variants for product ${productId}`
+        );
+        return data.variants;
+      }
+
+      return [];
+    } catch (error) {
+      console.error("Error fetching variants:", error);
+      throw error;
+    }
+  };
+
+  const createVariant = async (
+    variantData: Omit<ProductVariant, "variant_id"> & { product_id: number }
+  ) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:8080/api/admin/variants", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(variantData),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to create variant");
+      }
+
+      const data = await res.json();
+      console.log("✅ Variant created successfully:", data);
+      return data;
+    } catch (error) {
+      console.error("Error creating variant:", error);
+      throw error;
+    }
+  };
+
+  const updateVariant = async (
+    variantId: number,
+    variantData: Omit<ProductVariant, "variant_id"> & { product_id: number }
+  ) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `http://localhost:8080/api/admin/variants/${variantId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(variantData),
+        }
+      );
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to update variant");
+      }
+
+      const data = await res.json();
+      console.log("✅ Variant updated successfully:", data);
+      return data;
+    } catch (error) {
+      console.error("Error updating variant:", error);
+      throw error;
+    }
+  };
+
+  const deleteVariant = async (variantId: number): Promise<boolean> => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `http://localhost:8080/api/admin/variants/${variantId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to delete variant");
+      }
+
+      console.log("✅ Variant deleted successfully");
+      return true;
+    } catch (error) {
+      console.error("Error deleting variant:", error);
+      throw error;
+    }
+  };
+
   return (
     <ProductContext.Provider
       value={{
@@ -341,6 +475,10 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
         createProduct,
         updateProduct,
         deleteProduct,
+        getVariantsByProductId,
+        createVariant,
+        updateVariant,
+        deleteVariant,
         loading,
       }}
     >

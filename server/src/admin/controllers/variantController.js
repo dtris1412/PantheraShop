@@ -7,11 +7,11 @@ import {
 
 const createVariant = async (req, res) => {
   try {
-    const { variant_size, variant_color, variant_stock, product_id } = req.body;
+    // ✅ Chỉ lấy size và color, không lấy stock
+    const { variant_size, variant_color, product_id } = req.body;
     const result = await createVariantService(
       variant_size,
       variant_color,
-      variant_stock,
       product_id
     );
     if (!result.success) {
@@ -30,11 +30,12 @@ const createVariant = async (req, res) => {
 
 const getVariantsById = async (req, res) => {
   try {
-    const { product_id } = req.params;
-    const result = await getVariantsByIdService(product_id);
+    const { id } = req.params;
+    const result = await getVariantsByIdService(id);
     if (!result.success) {
       return res.status(400).json(result);
     }
+    res.status(200).json(result);
   } catch (err) {
     console.error("Error in getVariantsById controller: ", err);
     res.status(500).json({
@@ -47,14 +48,10 @@ const getVariantsById = async (req, res) => {
 
 const updateVariant = async (req, res) => {
   try {
-    const { variant_id } = req.params;
-    const { variant_size, variant_color, variant_stock } = req.body;
-    const result = await updateVariantService(
-      variant_id,
-      variant_size,
-      variant_color,
-      variant_stock
-    );
+    const { id } = req.params;
+
+    const { variant_size, variant_color } = req.body;
+    const result = await updateVariantService(id, variant_size, variant_color);
     if (!result.success) {
       return res.status(400).json(result);
     }
@@ -71,8 +68,8 @@ const updateVariant = async (req, res) => {
 
 const deleteVariant = async (req, res) => {
   try {
-    const { variant_id } = req.params;
-    const result = await deleteVariantService(variant_id);
+    const { id } = req.params;
+    const result = await deleteVariantService(id);
     if (!result.success) {
       return res.status(400).json(result);
     }
