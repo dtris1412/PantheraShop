@@ -298,14 +298,13 @@ const EditProductForm = ({
     }
   };
 
-  // Add this type above the EditProductForm component or import it if defined elsewhere
   type CreateProductData = {
     product_name: string;
     product_description: string;
     product_price: string | number;
     category_id: string | number;
     team_id?: string | number;
-    supplier_id?: string | number; // Thêm dòng này
+    supplier_id?: string | number;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

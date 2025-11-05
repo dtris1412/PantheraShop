@@ -44,4 +44,23 @@ const uploadProductImage = async (req, res) => {
   }
 };
 
-export { uploadAvatarForUser, uploadProductImage };
+const uploadGalleryImage = async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: "No file uploaded" });
+  }
+  try {
+    const imageUrl = await uploadToCloudinary(req.file.path, "galleries");
+    res.json({
+      success: true,
+      imageUrl,
+      message: "Gallery image uploaded successfully",
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+export { uploadAvatarForUser, uploadProductImage, uploadGalleryImage };

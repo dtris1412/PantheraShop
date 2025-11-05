@@ -5,6 +5,7 @@ export default (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       Product_Images.belongsTo(models.Variant, { foreignKey: "product_id" });
+      Product_Images.belongsTo(models.Product, { foreignKey: "product_id" });
     }
   }
   Product_Images.init(

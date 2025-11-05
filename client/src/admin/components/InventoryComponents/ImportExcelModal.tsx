@@ -1,22 +1,76 @@
 import React, { useState } from "react";
+import * as XLSX from "xlsx";
 
 interface ImportExcelModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const SUPPLIERS = [
-  { value: "nike", label: "Nike" },
-  { value: "adidas", label: "Adidas" },
-  { value: "puma", label: "Puma" },
-  { value: "other", label: "Khác" },
-];
+const generateTemplate = () => {
+  // Sheet 1: Products
+  const products = [
+    {
+      product_id: "",
+      product_name: "Áo Nike Pro",
+      product_price: 499000,
+      product_description: "Áo thể thao nam",
+      release_date: "",
+      created_at: "",
+      updated_at: "",
+      product_image: "",
+      team_id: "",
+      category_id: 1,
+      is_active: 1,
+      supplier_id: "",
+    },
+    {
+      product_id: "",
+      product_name: "Quần Adidas Run",
+      product_price: 399000,
+      product_description: "Quần chạy bộ nữ",
+      release_date: "",
+      created_at: "",
+      updated_at: "",
+      product_image: "",
+      team_id: "",
+      category_id: 4,
+      is_active: 1,
+      supplier_id: "",
+    },
+  ];
+
+  // Sheet 2: Variants
+  const variants = [
+    {
+      variant_id: "",
+      variant_size: "M",
+      variant_stock: "",
+      product_id: "",
+      variant_color: "Đen",
+    },
+    {
+      variant_id: "",
+      variant_size: "L",
+      variant_stock: "",
+      product_id: "",
+      variant_color: "Đen",
+    },
+  ];
+
+  const wb = XLSX.utils.book_new();
+  const wsProducts = XLSX.utils.json_to_sheet(products);
+  const wsVariants = XLSX.utils.json_to_sheet(variants);
+
+  XLSX.utils.book_append_sheet(wb, wsProducts, "Products");
+  XLSX.utils.book_append_sheet(wb, wsVariants, "Variants");
+
+  XLSX.writeFile(wb, "template_import_kho.xlsx");
+};
 
 const ImportExcelModal: React.FC<ImportExcelModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const [selectedSupplier, setSelectedSupplier] = useState("");
   const [importFile, setImportFile] = useState<File | null>(null);
 
   if (!isOpen) return null;
@@ -36,7 +90,6 @@ const ImportExcelModal: React.FC<ImportExcelModalProps> = ({
             className="text-gray-400 hover:text-black text-3xl"
             onClick={() => {
               onClose();
-              setSelectedSupplier("");
               setImportFile(null);
             }}
             title="Đóng"
@@ -54,28 +107,9 @@ const ImportExcelModal: React.FC<ImportExcelModalProps> = ({
         {/* Content */}
         <form
           className="flex-1 px-10 py-8 flex flex-col gap-8 justify-center"
-          onSubmit={e => e.preventDefault()}
+          onSubmit={(e) => e.preventDefault()}
         >
-          {/* 1. Chọn nhà cung cấp */}
-          <div>
-            <label className="block text-lg font-semibold mb-3 text-gray-700">
-              Chọn nhà cung cấp
-            </label>
-            <select
-              className="w-full border border-gray-300 px-4 py-3 text-lg focus:outline-none focus:border-black bg-gray-50 transition-colors duration-200"
-              value={selectedSupplier}
-              onChange={e => setSelectedSupplier(e.target.value)}
-              style={{ borderRadius: 0 }}
-            >
-              <option value="">-- Chọn nhà cung cấp --</option>
-              {SUPPLIERS.map(s => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          {/* 2. Khung tải template */}
+          {/* 1. Khung tải template */}
           <div>
             <label className="block text-lg font-semibold mb-3 text-gray-700">
               Tải file mẫu
@@ -83,15 +117,16 @@ const ImportExcelModal: React.FC<ImportExcelModalProps> = ({
             <button
               className="w-full px-5 py-4 bg-gradient-to-r from-gray-100 to-gray-200 border border-gray-300 hover:bg-gray-200 text-base font-semibold text-black transition-colors duration-200 shadow-sm"
               style={{ borderRadius: 0 }}
-              onClick={() => {
-                window.open("/assets/template-import-variant.xlsx", "_blank");
-              }}
+              onClick={generateTemplate}
               type="button"
             >
               Bấm để tải file mẫu Excel
             </button>
+            <div className="text-xs text-gray-500 mt-2">
+              category_id: 1 = Áo đấu, 2 = Giày, 3 = Bóng, 4 = Phụ kiện
+            </div>
           </div>
-          {/* 3. Khung import file excel */}
+          {/* 2. Khung import file excel */}
           <div>
             <label className="block text-lg font-semibold mb-3 text-gray-700">
               Import file Excel
@@ -100,12 +135,13 @@ const ImportExcelModal: React.FC<ImportExcelModalProps> = ({
               type="file"
               accept=".xlsx,.xls"
               className="block w-full text-base text-gray-700 file:mr-4 file:py-4 file:px-4 file:rounded-none file:border-0 file:text-base file:font-semibold file:bg-gray-50 file:text-black hover:file:bg-gray-100 border border-gray-300"
-              onChange={e => setImportFile(e.target.files?.[0] || null)}
+              onChange={(e) => setImportFile(e.target.files?.[0] || null)}
               style={{ borderRadius: 0 }}
             />
             {importFile && (
               <div className="text-sm text-green-700 mt-2">
-                Đã chọn: <span className="font-semibold">{importFile.name}</span>
+                Đã chọn:{" "}
+                <span className="font-semibold">{importFile.name}</span>
               </div>
             )}
           </div>
@@ -116,7 +152,6 @@ const ImportExcelModal: React.FC<ImportExcelModalProps> = ({
               style={{ borderRadius: 0 }}
               onClick={() => {
                 onClose();
-                setSelectedSupplier("");
                 setImportFile(null);
               }}
               type="button"
@@ -127,7 +162,7 @@ const ImportExcelModal: React.FC<ImportExcelModalProps> = ({
               className="px-6 py-3 bg-black text-white hover:bg-gray-900 text-lg font-semibold transition-colors duration-200 disabled:opacity-50"
               style={{ borderRadius: 0 }}
               type="button"
-              disabled={!selectedSupplier || !importFile}
+              disabled={!importFile}
             >
               Import
             </button>

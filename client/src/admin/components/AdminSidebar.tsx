@@ -40,12 +40,18 @@ const AdminSidebar = () => {
       path: "/admin/users",
     },
     {
+      id: "suppliers",
+      label: "Quản lý nhà cung cấp",
+      icon: <Warehouse size={20} />,
+      path: "/admin/suppliers",
+    },
+    {
       id: "products",
       label: "Quản lý sản phẩm",
       icon: <Package size={20} />,
       subItems: [
         { label: "Danh sách sản phẩm", path: "/admin/products" },
-        { label: "Thêm sản phẩm", path: "/admin/products/create" },
+        { label: "Thư viện ảnh", path: "/admin/product-images" },
         { label: "Danh mục", path: "/admin/categories" },
       ],
     },

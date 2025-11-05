@@ -43,6 +43,8 @@ import { ProductProvider as AdminProductProvider } from "./admin/contexts/produc
 import { InventoryProvider } from "./admin/contexts/inventoryContext";
 import { SupplierProvider } from "./admin/contexts/supplierContext";
 import SupplierList from "./admin/pages/SupplierList";
+import ProductImagePage from "./admin/pages/ProductImagePage";
+import { ProductImageProvider } from "./admin/contexts/product_imageContext";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { isAuthenticated, loading } = useAuth();
@@ -167,18 +169,24 @@ function AdminRoutes() {
       <AdminProductProvider>
         <InventoryProvider>
           <SupplierProvider>
-            <AdminLayout onLogout={logout} adminName={user?.user_name}>
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/users" element={<UserList />} />
-                <Route path="/products" element={<ProductList />} />
-                <Route path="/categories" element={<CategoryPage />} />
-                <Route path="/orders" element={<OrderList />} />
-                <Route path="/inventory" element={<InventoryList />} />
-                <Route path="/suppliers" element={<SupplierList />} />
-                <Route path="*" element={<Navigate to="/admin" replace />} />
-              </Routes>
-            </AdminLayout>
+            <ProductImageProvider>
+              <AdminLayout onLogout={logout} adminName={user?.user_name}>
+                <Routes>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/users" element={<UserList />} />
+                  <Route path="/products" element={<ProductList />} />
+                  <Route path="/categories" element={<CategoryPage />} />
+                  <Route path="/orders" element={<OrderList />} />
+                  <Route path="/inventory" element={<InventoryList />} />
+                  <Route path="/suppliers" element={<SupplierList />} />
+                  <Route
+                    path="/product-images"
+                    element={<ProductImagePage />}
+                  />
+                  <Route path="*" element={<Navigate to="/admin" replace />} />
+                </Routes>
+              </AdminLayout>
+            </ProductImageProvider>
           </SupplierProvider>
         </InventoryProvider>
       </AdminProductProvider>

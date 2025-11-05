@@ -4,6 +4,7 @@ import { verifyAdmin } from "../../shared/middlewares/adminMiddleware.js";
 import {
   uploadAvatarForUser,
   uploadProductImage,
+  uploadGalleryImage,
 } from "../../admin/controllers/uploadController.js";
 
 const upload = multer({ dest: "uploads/" });
@@ -87,6 +88,9 @@ import {
 import {
   getAllProductImages,
   getProductImageById,
+  createProductImage,
+  updateProductImage,
+  deleteProductImage,
 } from "../controllers/product_imageController.js";
 const router = express.Router();
 
@@ -117,6 +121,14 @@ const initAdminRoutes = (app) => {
     verifyAdmin,
     upload.single("image"),
     uploadProductImage
+  );
+
+  // Upload Gallery Image (cho product gallery)
+  router.post(
+    "/api/admin/upload-gallery-image",
+    verifyAdmin,
+    upload.single("image"),
+    uploadGalleryImage
   );
 
   //Product Management
@@ -155,10 +167,22 @@ const initAdminRoutes = (app) => {
     setSupplierConnectionStatus
   );
   // =============== PRODUCT IMAGES ROUTES ===============
+  router.get("/api/admin/product-images", verifyAdmin, getAllProductImages);
   router.get(
     "/api/admin/product-images/:product_id",
     verifyAdmin,
     getProductImageById
+  );
+  router.post("/api/admin/product-images", verifyAdmin, createProductImage);
+  router.put(
+    "/api/admin/product-images/:product_image_id",
+    verifyAdmin,
+    updateProductImage
+  );
+  router.delete(
+    "/api/admin/product-images/:id",
+    verifyAdmin,
+    deleteProductImage
   );
 
   // =============== CATEGORY MANAGEMENT ROUTES ===============
