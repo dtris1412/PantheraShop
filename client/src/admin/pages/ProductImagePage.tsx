@@ -12,6 +12,7 @@ import {
 import { useProductImageContext } from "../contexts/product_imageContext";
 import AddImagesModal from "../components/GalleryComponents/AddImagesModal";
 import EditImageModal from "../components/GalleryComponents/EditImageModal";
+import EditProductGalleryModal from "../components/GalleryComponents/EditProductGalleryModal"; // import modal mới
 import { ProductImage } from "../contexts/product_imageContext";
 
 const ProductImagePage: React.FC = () => {
@@ -22,6 +23,7 @@ const ProductImagePage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editGalleryModalOpen, setEditGalleryModalOpen] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<number | null>(
     null
   );
@@ -66,6 +68,13 @@ const ProductImagePage: React.FC = () => {
   const handleEditImage = (img: ProductImage) => {
     setSelectedImage(img);
     setEditModalOpen(true);
+  };
+
+  // Thêm hàm mở modal chỉnh sửa gallery
+  const handleEditGallery = (productId: number) => {
+    setSelectedProductId(productId);
+    setEditGalleryModalOpen(true);
+    setMenuOpen(null);
   };
 
   // Xử lý xóa ảnh
@@ -194,7 +203,7 @@ const ProductImagePage: React.FC = () => {
                           </button>
                           {/* Menu thao tác (placeholder) */}
                           {menuOpen === product.product_id && (
-                            <div className="absolute z-10 right-0 mt-2 w-36 bg-white border border-gray-200 shadow">
+                            <div className="absolute z-10 right-0 mt-2 w-44 bg-white border border-gray-200 shadow">
                               <button
                                 className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm"
                                 onClick={() =>
@@ -204,7 +213,15 @@ const ProductImagePage: React.FC = () => {
                                 <Plus size={16} className="inline mr-2" />
                                 Thêm ảnh
                               </button>
-                              {/* Có thể thêm các thao tác khác nếu muốn */}
+                              <button
+                                className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm"
+                                onClick={() =>
+                                  handleEditGallery(product.product_id)
+                                }
+                              >
+                                <Edit size={16} className="inline mr-2" />
+                                Chỉnh sửa gallery
+                              </button>
                             </div>
                           )}
                         </div>
@@ -289,6 +306,14 @@ const ProductImagePage: React.FC = () => {
         image={selectedImage}
         open={editModalOpen}
         onClose={() => setEditModalOpen(false)}
+        onSuccess={fetchAllImages}
+      />
+
+      {/* Modal chỉnh sửa toàn bộ gallery */}
+      <EditProductGalleryModal
+        productId={selectedProductId}
+        open={editGalleryModalOpen}
+        onClose={() => setEditGalleryModalOpen(false)}
         onSuccess={fetchAllImages}
       />
     </div>

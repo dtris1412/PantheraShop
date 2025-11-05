@@ -75,23 +75,19 @@ export const ProductImageProvider = ({
   }, []); // <-- useCallback để giữ reference
 
   const fetchImagesByProductId = async (productId: number | string) => {
-    setLoading(true);
-    try {
-      const res = await fetch(
-        `http://localhost:8080/api/admin/product-images/${productId}`,
-        {
-          method: "GET",
-          headers: getAuthHeaders(),
-          credentials: "include",
-        }
-      );
-      if (!res.ok)
-        throw new Error("Failed to fetch product images by product id");
-      const data = await res.json();
-      return Array.isArray(data.data) ? data.data : [];
-    } finally {
-      setLoading(false);
-    }
+    // KHÔNG setLoading ở đây!
+    const res = await fetch(
+      `http://localhost:8080/api/admin/product-images/${productId}`,
+      {
+        method: "GET",
+        headers: getAuthHeaders(),
+        credentials: "include",
+      }
+    );
+    if (!res.ok)
+      throw new Error("Failed to fetch product images by product id");
+    const data = await res.json();
+    return Array.isArray(data.data) ? data.data : [];
   };
 
   const uploadGalleryImage = async (file: File) => {
