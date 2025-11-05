@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   ChevronDown,
   ChevronRight,
@@ -28,11 +28,24 @@ const ProductImagePage: React.FC = () => {
     null
   );
   const [selectedImage, setSelectedImage] = useState<ProductImage | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     fetchAllImages();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Đóng menu khi click ra ngoài
+  useEffect(() => {
+    if (menuOpen === null) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [menuOpen]);
 
   // Lấy danh sách sản phẩm duy nhất từ images
   const products = React.useMemo(() => {
@@ -54,8 +67,11 @@ const ProductImagePage: React.FC = () => {
   }, [products, searchTerm]);
 
   // Lấy ảnh theo product_id
-  const getImagesByProduct = (product_id: number) =>
-    images.filter((img: any) => img.product_id === product_id);
+  const getImagesByProduct = (product_id: number) => {
+    const arr = images.filter((img: any) => img.product_id === product_id);
+    console.log("gallery for product", product_id, arr);
+    return arr;
+  };
 
   // Thêm hàm mở modal thêm ảnh
   const handleAddImage = (productId: number) => {
@@ -203,7 +219,10 @@ const ProductImagePage: React.FC = () => {
                           </button>
                           {/* Menu thao tác (placeholder) */}
                           {menuOpen === product.product_id && (
-                            <div className="absolute z-10 right-0 mt-2 w-44 bg-white border border-gray-200 shadow">
+                            <div
+                              ref={menuRef}
+                              className="absolute z-10 right-0 mt-2 w-44 bg-white border border-gray-200 shadow"
+                            >
                               <button
                                 className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm"
                                 onClick={() =>
@@ -235,23 +254,27 @@ const ProductImagePage: React.FC = () => {
                               Sản phẩm này chưa có ảnh gallery nào.
                             </div>
                           ) : (
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                            <div
+                              className="w-full max-w-4xl flex gap-6 overflow-x-auto pb-2 px-2"
+                              style={{
+                                scrollbarWidth: "thin",
+                                scrollbarColor: "#d1d5db #f3f4f6",
+                                minHeight: 220,
+                              }}
+                            >
                               {gallery.map((img: ProductImage) => (
                                 <div
                                   key={img.product_image_id}
-                                  className="relative bg-white border border-gray-200 overflow-hidden shadow-sm group transition-all duration-200"
-                                  style={{ borderRadius: 0 }}
+                                  className="relative border border-gray-200 min-w-[180px] max-w-[220px] flex-shrink-0 group"
                                 >
                                   <img
                                     src={img.image_url}
-                                    alt={`Ảnh sản phẩm ${product.product_name}`}
-                                    className="object-cover w-full h-40"
-                                    style={{ borderRadius: 0 }}
+                                    alt="Ảnh sản phẩm"
+                                    className="object-cover w-full h-44"
                                   />
                                   <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition">
                                     <button
-                                      className="bg-white p-1 shadow hover:bg-gray-200 border border-gray-200"
-                                      style={{ borderRadius: 0 }}
+                                      className="bg-white p-1 hover:bg-gray-200 border border-gray-200"
                                       onClick={() => handleEditImage(img)}
                                       title="Sửa"
                                     >
@@ -261,8 +284,7 @@ const ProductImagePage: React.FC = () => {
                                       />
                                     </button>
                                     <button
-                                      className="bg-white p-1 shadow hover:bg-red-100 border border-gray-200"
-                                      style={{ borderRadius: 0 }}
+                                      className="bg-white p-1 hover:bg-red-100 border border-gray-200"
                                       onClick={() => handleDeleteImage(img)}
                                       title="Xóa"
                                     >
@@ -272,10 +294,7 @@ const ProductImagePage: React.FC = () => {
                                       />
                                     </button>
                                   </div>
-                                  <div
-                                    className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1"
-                                    style={{ borderRadius: 0 }}
-                                  >
+                                  <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1">
                                     Thứ tự: {img.order}
                                   </div>
                                 </div>

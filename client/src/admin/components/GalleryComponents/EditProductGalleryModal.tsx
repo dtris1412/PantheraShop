@@ -99,25 +99,32 @@ const EditProductGalleryModal: React.FC<EditProductGalleryModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <h2 className="text-lg font-bold mb-4">
-          Sửa toàn bộ ảnh gallery sản phẩm
-        </h2>
-        {loading ? (
-          <div>Đang tải...</div>
-        ) : (
-          <>
-            <button
-              className="mb-4 px-4 py-2 bg-blue-600 text-white rounded"
-              onClick={() => setAddModalOpen(true)}
-            >
-              Thêm ảnh mới
-            </button>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="bg-white p-0 shadow-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+        <div
+          className="p-8 border-b border-gray-200"
+          style={{ borderRadius: 0 }}
+        >
+          <h2 className="text-2xl font-extrabold mb-2 tracking-tight uppercase">
+            Sửa toàn bộ ảnh gallery sản phẩm
+          </h2>
+          <button
+            className="mb-4 px-5 py-2 bg-black text-white font-semibold uppercase"
+            style={{ borderRadius: 0 }}
+            onClick={() => setAddModalOpen(true)}
+          >
+            Thêm ảnh mới
+          </button>
+        </div>
+        <div className="p-8">
+          {loading ? (
+            <div>Đang tải...</div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
               {images.map((img) => (
                 <div
                   key={img.product_image_id}
-                  className="border p-2 rounded relative"
+                  className="border border-gray-200 p-0 relative flex flex-col items-stretch"
+                  style={{ borderRadius: 0, background: "#fff" }}
                 >
                   <img
                     src={
@@ -128,12 +135,14 @@ const EditProductGalleryModal: React.FC<EditProductGalleryModalProps> = ({
                         : img.image_url
                     }
                     alt=""
-                    className="w-full h-32 object-cover rounded"
+                    className="w-full h-44 object-cover"
+                    style={{ borderRadius: 0 }}
                   />
                   <input
                     type="file"
                     accept="image/*"
-                    className="mt-2"
+                    className="mt-3"
+                    style={{ borderRadius: 0 }}
                     onChange={(e) =>
                       handleFileChange(
                         img.product_image_id,
@@ -143,8 +152,8 @@ const EditProductGalleryModal: React.FC<EditProductGalleryModalProps> = ({
                       )
                     }
                   />
-                  <div className="mt-2">
-                    <label className="block text-xs">Thứ tự:</label>
+                  <div className="mt-3 flex items-center gap-2">
+                    <span className="text-xs text-gray-500">Thứ tự:</span>
                     <input
                       type="number"
                       value={
@@ -156,11 +165,13 @@ const EditProductGalleryModal: React.FC<EditProductGalleryModalProps> = ({
                           Number(e.target.value)
                         )
                       }
-                      className="border px-2 py-1 rounded w-full"
+                      className="w-14 px-2 py-1 border border-gray-300 text-sm"
+                      style={{ borderRadius: 0 }}
                     />
                   </div>
                   <button
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded px-2 py-1 text-xs"
+                    className="absolute top-2 right-2 bg-white p-1 border border-gray-200 text-red-600 text-xs hover:bg-red-100"
+                    style={{ borderRadius: 0 }}
                     onClick={() => handleDelete(img)}
                   >
                     Xóa
@@ -168,35 +179,39 @@ const EditProductGalleryModal: React.FC<EditProductGalleryModalProps> = ({
                 </div>
               ))}
             </div>
-            <div className="flex justify-end gap-2 mt-6">
-              <button
-                className="px-4 py-2 bg-gray-200 rounded"
-                onClick={onClose}
-                disabled={loading}
-              >
-                Hủy
-              </button>
-              <button
-                className="px-4 py-2 bg-blue-600 text-white rounded"
-                onClick={handleSaveAll}
-                disabled={loading}
-              >
-                Lưu tất cả
-              </button>
-            </div>
-          </>
-        )}
+          )}
+          <div
+            className="flex justify-end gap-2 border-t border-gray-200 p-6 mt-8"
+            style={{ borderRadius: 0 }}
+          >
+            <button
+              className="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold uppercase"
+              onClick={onClose}
+              disabled={loading}
+              style={{ borderRadius: 0 }}
+            >
+              Hủy
+            </button>
+            <button
+              className="px-5 py-2 bg-black text-white font-semibold uppercase"
+              onClick={handleSaveAll}
+              disabled={loading}
+              style={{ borderRadius: 0 }}
+            >
+              Lưu tất cả
+            </button>
+          </div>
+        </div>
         {/* Modal thêm ảnh mới */}
         <AddImagesModal
           productId={productId}
           open={addModalOpen}
           onClose={async () => {
             setAddModalOpen(false);
-            // Chỉ reload lại gallery nhỏ, không gọi onSuccess ở đây
             const imgs = await fetchImagesByProductId(productId);
             setImages(imgs);
           }}
-          onSuccess={undefined} // Không cần truyền gì ở đây
+          onSuccess={undefined}
         />
       </div>
     </div>

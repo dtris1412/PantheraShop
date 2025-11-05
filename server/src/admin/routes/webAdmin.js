@@ -180,7 +180,7 @@ const initAdminRoutes = (app) => {
     updateProductImage
   );
   router.delete(
-    "/api/admin/product-images/:id",
+    "/api/admin/product-images/:product_image_id",
     verifyAdmin,
     deleteProductImage
   );
