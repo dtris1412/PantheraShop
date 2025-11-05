@@ -8,6 +8,14 @@ import {
 
 const upload = multer({ dest: "uploads/" });
 
+//Import inventory Controllers
+import {
+  getAllInventories,
+  createVariantInventory,
+  getVariantsByIdInventory,
+  updateVariantInventory,
+} from "../../admin/controllers/inventoryController.js";
+
 import {
   getAllProducts,
   getProductById,
@@ -117,12 +125,12 @@ const initAdminRoutes = (app) => {
   router.put("/api/admin/variants/:id", verifyAdmin, updateVariant);
   router.delete("/api/admin/variants/:id", verifyAdmin, deleteVariant);
 
-  // =============== VARIANT MANAGEMENT ROUTES ===============
-  // router.get("/api/admin/variants", verifyAdmin, getAllProductImages);
-  // router.get("/api/admin/variants/:id", verifyAdmin, getVariantsById);
-  // router.post("/api/admin/variants", verifyAdmin, createVariant);
-  // router.put("/api/admin/variants/:id", verifyAdmin, updateVariant);
-  // router.delete("/api/admin/variants/:id", verifyAdmin, deleteVariant);
+  // =============== INVENTORY MANAGEMENT ROUTES ===============
+  router.get("/api/admin/inventory", verifyAdmin, getAllInventories);
+  router.get("/api/admin/inventory/:id", verifyAdmin, getVariantsByIdInventory);
+  router.post("/api/admin/inventory", verifyAdmin, createVariantInventory);
+  router.put("/api/admin/inventory/:id", verifyAdmin, updateVariantInventory);
+
   // =============== PRODUCT IMAGES ROUTES ===============
   router.get(
     "/api/admin/product-images/:product_id",

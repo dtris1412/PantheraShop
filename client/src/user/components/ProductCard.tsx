@@ -9,6 +9,7 @@ interface Product {
   average_rating?: number;
   description?: string;
   sport?: string;
+  is_active?: boolean | number; // Thêm trường này
 }
 
 interface ProductCardProps {
@@ -33,10 +34,17 @@ export default function ProductCard({
       )
     : 0;
 
+  // Kiểm tra trạng thái bán
+  const isInactive = product.is_active === false || product.is_active === 0;
+
   return (
     <div
-      className="group cursor-pointer"
-      onClick={() => onViewDetails(product.id)}
+      className={`group cursor-pointer relative ${
+        isInactive ? "opacity-60 pointer-events-none" : ""
+      }`}
+      onClick={() => {
+        if (!isInactive) onViewDetails(product.id);
+      }}
     >
       <div className="relative bg-gray-100 mb-3 overflow-hidden">
         <img
@@ -51,25 +59,17 @@ export default function ProductCard({
           </span>
         )}
 
-        {/* XÓA PHẦN NÚT YÊU THÍCH */}
-        {/* 
-        <button
-          className="absolute top-3 right-3 w-9 h-9 bg-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110 transform duration-200"
-          onClick={(e) => {
-            e.stopPropagation();
-          }}
-        >
-          <Heart className="w-4 h-4" />
-        </button>
-        */}
+        {/* Hiển thị chữ "Ngừng bán" nếu sản phẩm bị khóa */}
+        {isInactive && (
+          <span className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 text-white text-base font-bold">
+            Ngừng bán
+          </span>
+        )}
       </div>
 
       <div className="space-y-1">
-        {/* sport name: chữ nhỏ, màu xám */}
         <div className="text-xs text-gray-500">{product.sport}</div>
-        {/* Hiển thị tên sản phẩm */}
         <div className="font-medium text-base truncate">{product.name}</div>
-        {/* Hiển thị rating nếu có */}
         {product.average_rating !== undefined && (
           <div className="text-yellow-500 text-xs">
             ⭐ {Number(product.average_rating).toFixed(1)}

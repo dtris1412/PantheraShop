@@ -31,6 +31,7 @@ export interface Product {
   product_rating: number;
   product_description?: string;
   release_date?: string;
+  is_active?: boolean | number;
   Team?: Team;
   Category?: Category;
   // ...các trường khác nếu cần
