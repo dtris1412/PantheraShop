@@ -9,6 +9,7 @@ export default (sequelize, DataTypes) => {
       // Product.hasMany(models.Variant, { foreignKey: "product_id" });
       Product.hasMany(models.Product_Image, { foreignKey: "product_id" });
       Product.belongsTo(models.Variant, { foreignKey: "product_id" });
+      Product.belongsTo(models.Supplier, { foreignKey: "supplier_id" });
     }
   }
   Product.init(
@@ -42,6 +43,14 @@ export default (sequelize, DataTypes) => {
         references: {
           model: "Category",
           key: "category_id",
+        },
+      },
+      supplier_id: {
+        type: DataTypes.INTEGER,
+        foreignKey: true,
+        references: {
+          model: "Supplier",
+          key: "supplier_id",
         },
       },
     },

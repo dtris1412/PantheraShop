@@ -41,6 +41,8 @@ import CategoryPage from "./admin/pages/CategoryPage";
 import { AdminProvider } from "./admin/contexts/adminContext";
 import { ProductProvider as AdminProductProvider } from "./admin/contexts/productContext";
 import { InventoryProvider } from "./admin/contexts/inventoryContext";
+import { SupplierProvider } from "./admin/contexts/supplierContext";
+import SupplierList from "./admin/pages/SupplierList";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { isAuthenticated, loading } = useAuth();
@@ -164,17 +166,20 @@ function AdminRoutes() {
     <AdminProvider>
       <AdminProductProvider>
         <InventoryProvider>
-          <AdminLayout onLogout={logout} adminName={user?.user_name}>
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/users" element={<UserList />} />
-              <Route path="/products" element={<ProductList />} />
-              <Route path="/categories" element={<CategoryPage />} />
-              <Route path="/orders" element={<OrderList />} />
-              <Route path="/inventory" element={<InventoryList />} />
-              <Route path="*" element={<Navigate to="/admin" replace />} />
-            </Routes>
-          </AdminLayout>
+          <SupplierProvider>
+            <AdminLayout onLogout={logout} adminName={user?.user_name}>
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/users" element={<UserList />} />
+                <Route path="/products" element={<ProductList />} />
+                <Route path="/categories" element={<CategoryPage />} />
+                <Route path="/orders" element={<OrderList />} />
+                <Route path="/inventory" element={<InventoryList />} />
+                <Route path="/suppliers" element={<SupplierList />} />
+                <Route path="*" element={<Navigate to="/admin" replace />} />
+              </Routes>
+            </AdminLayout>
+          </SupplierProvider>
         </InventoryProvider>
       </AdminProductProvider>
     </AdminProvider>

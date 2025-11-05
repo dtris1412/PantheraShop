@@ -8,6 +8,15 @@ import {
 
 const upload = multer({ dest: "uploads/" });
 
+//Import supplier Controllers
+import {
+  getAllSuppliers,
+  createSupplier,
+  updateSupplier,
+  // cancelTerminalConnection,
+  setSupplierConnectionStatus,
+} from "../../admin/controllers/supplierController.js";
+
 //Import inventory Controllers
 import {
   getAllInventories,
@@ -131,6 +140,20 @@ const initAdminRoutes = (app) => {
   router.post("/api/admin/inventory", verifyAdmin, createVariantInventory);
   router.put("/api/admin/inventory/:id", verifyAdmin, updateVariantInventory);
 
+  // =============== SUPPLIER MANAGEMENT ROUTES ===============
+  router.get("/api/admin/suppliers", verifyAdmin, getAllSuppliers);
+  router.post("/api/admin/suppliers", verifyAdmin, createSupplier);
+  router.put("/api/admin/suppliers/:supplier_id", verifyAdmin, updateSupplier);
+  // router.patch(
+  //   "/api/admin/suppliers/:supplier_id/cancel-connection",
+  //   verifyAdmin,
+  //   cancelTerminalConnection
+  // );
+  router.patch(
+    "/api/admin/suppliers/:supplier_id/connection-status",
+    verifyAdmin,
+    setSupplierConnectionStatus
+  );
   // =============== PRODUCT IMAGES ROUTES ===============
   router.get(
     "/api/admin/product-images/:product_id",
