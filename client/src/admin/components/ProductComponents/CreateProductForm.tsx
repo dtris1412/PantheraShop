@@ -3,6 +3,7 @@ import { X, Upload, Plus, Trash2 } from "lucide-react";
 import { showToast } from "../../../shared/components/Toast";
 import { useCategory } from "../../contexts/categoryContext";
 import { useProduct } from "../../contexts/productContext";
+import { useSupplier } from "../../contexts/supplierContext";
 import ImageUpload from "../ImageUpload";
 
 interface Category {
@@ -49,6 +50,7 @@ const CreateProductForm = ({
   const { getAllCategories, getAllSports, getAllTournaments, getAllTeams } =
     useCategory();
   const { createProduct } = useProduct();
+  const { suppliers, fetchSuppliers } = useSupplier();
 
   const [formData, setFormData] = useState({
     product_name: "",
@@ -58,6 +60,7 @@ const CreateProductForm = ({
     sport_id: "",
     tournament_id: "",
     team_id: "",
+    supplier_id: "",
   });
 
   const [categories, setCategories] = useState<Category[]>([]);
@@ -109,6 +112,10 @@ const CreateProductForm = ({
       }
     }
   }, [formData.tournament_id, teams]);
+
+  useEffect(() => {
+    fetchSuppliers();
+  }, []);
 
   const fetchInitialData = async () => {
     try {
@@ -201,6 +208,8 @@ const CreateProductForm = ({
         product_price: formData.product_price,
         category_id: formData.category_id,
         team_id: formData.team_id || undefined,
+
+        supplier_id: formData.supplier_id, // <-- thêm dòng này
         variants:
           variantsWithDefaults.length > 0 ? variantsWithDefaults : undefined,
       };
@@ -235,6 +244,7 @@ const CreateProductForm = ({
       sport_id: "",
       tournament_id: "",
       team_id: "",
+      supplier_id: "",
     });
     setVariants([{ variant_size: "", variant_color: "" }]);
     setImageFile(null);
@@ -555,6 +565,29 @@ const CreateProductForm = ({
                           value={category.category_id}
                         >
                           {category.category_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-3">
+                      NHÀ CUNG CẤP *
+                    </label>
+                    <select
+                      name="supplier_id"
+                      value={formData.supplier_id || ""}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 focus:border-black focus:outline-none transition-colors duration-200 bg-white"
+                      required
+                    >
+                      <option value="">Chọn nhà cung cấp</option>
+                      {suppliers.map((supplier) => (
+                        <option
+                          key={supplier.supplier_id}
+                          value={supplier.supplier_id}
+                        >
+                          {supplier.supplier_name}
                         </option>
                       ))}
                     </select>

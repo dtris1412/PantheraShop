@@ -3,6 +3,7 @@ import { X, Upload, Plus, Trash2 } from "lucide-react";
 import { showToast } from "../../../shared/components/Toast";
 import { useProduct } from "../../contexts/productContext";
 import { useCategory } from "../../contexts/categoryContext";
+import { useSupplier } from "../../contexts/supplierContext";
 
 interface Category {
   category_id: number;
@@ -45,6 +46,7 @@ interface Product {
   product_price: number | string;
   category_id: number;
   team_id?: number;
+  supplier_id?: number; // Added supplier_id property
   product_image: string | null;
   created_at?: string;
   Category?: Category;
@@ -82,6 +84,7 @@ const EditProductForm = ({
   } = useProduct();
   const { getAllCategories, getAllSports, getAllTournaments, getAllTeams } =
     useCategory();
+  const { suppliers, fetchSuppliers } = useSupplier();
 
   const [formData, setFormData] = useState({
     product_name: "",
@@ -91,6 +94,7 @@ const EditProductForm = ({
     sport_id: "",
     tournament_id: "",
     team_id: "",
+    supplier_id: "", // thêm trường này
   });
 
   const [categories, setCategories] = useState<Category[]>([]);
@@ -112,6 +116,11 @@ const EditProductForm = ({
     }
   }, [isOpen]);
 
+  // Fetch suppliers on mount
+  useEffect(() => {
+    fetchSuppliers();
+  }, []);
+
   // Load product data when modal opens
   useEffect(() => {
     if (product && isOpen) {
@@ -127,6 +136,7 @@ const EditProductForm = ({
         tournament_id:
           product.Team?.Tournament?.tournament_id?.toString() || "",
         team_id: product.team_id?.toString() || "",
+        supplier_id: product.supplier_id?.toString() || "", // gán giá trị supplier_id
       });
 
       // Set image preview
@@ -288,6 +298,16 @@ const EditProductForm = ({
     }
   };
 
+  // Add this type above the EditProductForm component or import it if defined elsewhere
+  type CreateProductData = {
+    product_name: string;
+    product_description: string;
+    product_price: string | number;
+    category_id: string | number;
+    team_id?: string | number;
+    supplier_id?: string | number; // Thêm dòng này
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -304,6 +324,7 @@ const EditProductForm = ({
           product_price: formData.product_price,
           category_id: formData.category_id,
           team_id: formData.team_id || undefined,
+          supplier_id: formData.supplier_id, // truyền supplier_id khi cập nhật
         },
         imageFile
       );
@@ -676,6 +697,29 @@ const EditProductForm = ({
                           value={category.category_id}
                         >
                           {category.category_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-3">
+                      NHÀ CUNG CẤP *
+                    </label>
+                    <select
+                      name="supplier_id"
+                      value={formData.supplier_id}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 focus:border-black focus:outline-none transition-colors duration-200 bg-white"
+                      required
+                    >
+                      <option value="">Chọn nhà cung cấp</option>
+                      {suppliers.map((supplier) => (
+                        <option
+                          key={supplier.supplier_id}
+                          value={supplier.supplier_id}
+                        >
+                          {supplier.supplier_name}
                         </option>
                       ))}
                     </select>

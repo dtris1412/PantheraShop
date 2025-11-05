@@ -41,6 +41,7 @@ interface CreateProductData {
   team_id?: string | number;
   product_image?: string;
   variants?: ProductVariant[];
+  supplier_id?: string | number; // <-- Thêm dòng này
 }
 
 interface ProductContextType {

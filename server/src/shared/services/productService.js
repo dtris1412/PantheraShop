@@ -413,6 +413,7 @@ const createProduct = async (productData) => {
       product_price,
       category_id,
       team_id,
+      supplier_id,
       product_image,
       variants = [],
       images = [],
@@ -452,6 +453,9 @@ const createProduct = async (productData) => {
       category_id,
       team_id: team_id || null,
       product_image,
+      supplier_id,
+      created_at: new Date(),
+      updated_at: new Date(),
     });
 
     // Tạo variants nếu có
@@ -531,6 +535,7 @@ const updateProduct = async (product_id, productData) => {
       product_description,
       product_price,
       category_id,
+      supplier_id,
       team_id,
       product_image,
       variants,
@@ -563,8 +568,11 @@ const updateProduct = async (product_id, productData) => {
       product_price: product_price || product.product_price,
       category_id: category_id || product.category_id,
       team_id: team_id !== undefined ? team_id : product.team_id,
+      supplier_id:
+        supplier_id !== undefined ? supplier_id : product.supplier_id,
       product_image:
         product_image !== undefined ? product_image : product.product_image,
+      updated_at: new Date(),
     });
 
     // Cập nhật variants nếu có
