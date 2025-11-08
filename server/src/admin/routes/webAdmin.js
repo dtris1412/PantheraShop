@@ -10,6 +10,13 @@ import {
 
 const upload = multer({ dest: "uploads/" });
 
+import {
+  getAllOrders,
+  getStatusOrder,
+  getOrderHistoryByUserId,
+  approveOrder,
+} from "../../admin/controllers/orderController.js";
+
 //Import supplier Controllers
 import {
   getAllSuppliers,
@@ -302,6 +309,16 @@ const initAdminRoutes = (app) => {
     updateTeam
   );
   router.delete("/api/admin/teams/:id", verifyAdmin, deleteTeam);
+
+  // =============== ORDER MANAGEMENT ROUTES ===============
+  router.get("/api/admin/orders", verifyAdmin, getAllOrders);
+  router.get("/api/admin/orders/status", verifyAdmin, getStatusOrder);
+  router.get(
+    "/api/admin/orders/history/:user_id",
+    verifyAdmin,
+    getOrderHistoryByUserId
+  );
+  router.post("/api/admin/orders/:order_id/approve", verifyAdmin, approveOrder);
 
   return app.use("/", router);
 };

@@ -69,6 +69,59 @@ const getStatusOrder = async (order_id) => {
   return { success: true, data: order };
 };
 
+const getAllOrders = async () => {
+  try {
+    const orders = await db.Order.findAll({
+      include: [
+        {
+          model: db.User,
+          attributes: ["user_id", "user_name", "user_email"],
+        },
+      ],
+      order: [["order_date", "DESC"]],
+    });
+
+    const orderDetails = await Promise.all(
+      orders.map(async (order) => {
+        const orderProducts = await db.OrderProduct.findAll({
+          where: { order_id: order.order_id },
+
+          include: [
+            {
+              model: db.Variant,
+              include: [
+                {
+                  model: db.Product,
+                  attributes: [
+                    "product_name",
+                    "product_image",
+                    "product_description",
+                    "category_id",
+                  ],
+                  include: [
+                    {
+                      model: db.Category,
+                      attributes: ["category_name"],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        });
+        return { ...order.toJSON(), orderProducts };
+      })
+    );
+
+    if (!orders || orders.length === 0) {
+      return { success: false, message: "No orders found" };
+    }
+    return { success: true, data: orderDetails };
+  } catch (err) {
+    console.error("Error in getAllOrders:", err);
+    return { success: false, message: "Error fetching orders" };
+  }
+};
 const getOrderHistoryByUserId = async (user_id) => {
   if (!user_id) {
     return { success: false, message: "Missing user_id" };
@@ -85,6 +138,7 @@ const getOrderHistoryByUserId = async (user_id) => {
       ],
     },
   });
+
   const orderDetails = await Promise.all(
     orders.map(async (order) => {
       const orderProducts = await db.OrderProduct.findAll({
@@ -120,9 +174,36 @@ const getOrderHistoryByUserId = async (user_id) => {
   }
   return { success: true, data: orderDetails };
 };
+
+const approveOrder = async (order_id, status) => {
+  try {
+    if (!order_id) {
+      return { success: false, message: "Missing order_id" };
+    }
+    if (!status) {
+      return { success: false, message: "Missing status" };
+    }
+    const order = await db.Order.findOne({ where: { order_id } });
+    if (!order) {
+      return { success: false, message: "Order not found" };
+    }
+    order.order_status = status;
+    await order.save();
+    return {
+      success: true,
+      message: "Order status updated successfully",
+      data: order,
+    };
+  } catch (err) {
+    console.error("Error in approveOrder:", err);
+    return { success: false, message: "Error updating order status" };
+  }
+};
 export {
   createOrder,
   createOrderProduct,
   getStatusOrder,
   getOrderHistoryByUserId,
+  getAllOrders,
+  approveOrder,
 };

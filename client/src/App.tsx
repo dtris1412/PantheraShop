@@ -36,12 +36,14 @@ import Dashboard from "./admin/pages/Dashboard";
 import UserList from "./admin/pages/UserList";
 import ProductList from "./admin/pages/ProductList";
 import OrderList from "./admin/pages/OrderList";
+import AdminOrderDetail from "./admin/pages/OrderDetail";
 import InventoryList from "./admin/pages/InventoryList";
 import CategoryPage from "./admin/pages/CategoryPage";
 import { AdminProvider } from "./admin/contexts/adminContext";
 import { ProductProvider as AdminProductProvider } from "./admin/contexts/productContext";
 import { InventoryProvider } from "./admin/contexts/inventoryContext";
 import { SupplierProvider } from "./admin/contexts/supplierContext";
+import { OrderProvider as AdminOrderProvider } from "./admin/contexts/orderContext";
 import SupplierList from "./admin/pages/SupplierList";
 import ProductImagePage from "./admin/pages/ProductImagePage";
 import { ProductImageProvider } from "./admin/contexts/product_imageContext";
@@ -170,22 +172,31 @@ function AdminRoutes() {
         <InventoryProvider>
           <SupplierProvider>
             <ProductImageProvider>
-              <AdminLayout onLogout={logout} adminName={user?.user_name}>
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/users" element={<UserList />} />
-                  <Route path="/products" element={<ProductList />} />
-                  <Route path="/categories" element={<CategoryPage />} />
-                  <Route path="/orders" element={<OrderList />} />
-                  <Route path="/inventory" element={<InventoryList />} />
-                  <Route path="/suppliers" element={<SupplierList />} />
-                  <Route
-                    path="/product-images"
-                    element={<ProductImagePage />}
-                  />
-                  <Route path="*" element={<Navigate to="/admin" replace />} />
-                </Routes>
-              </AdminLayout>
+              <AdminOrderProvider>
+                <AdminLayout onLogout={logout} adminName={user?.user_name}>
+                  <Routes>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/users" element={<UserList />} />
+                    <Route path="/products" element={<ProductList />} />
+                    <Route path="/categories" element={<CategoryPage />} />
+                    <Route path="/orders" element={<OrderList />} />
+                    <Route
+                      path="/orders/:orderId"
+                      element={<AdminOrderDetail />}
+                    />
+                    <Route path="/inventory" element={<InventoryList />} />
+                    <Route path="/suppliers" element={<SupplierList />} />
+                    <Route
+                      path="/product-images"
+                      element={<ProductImagePage />}
+                    />
+                    <Route
+                      path="*"
+                      element={<Navigate to="/admin" replace />}
+                    />
+                  </Routes>
+                </AdminLayout>
+              </AdminOrderProvider>
             </ProductImageProvider>
           </SupplierProvider>
         </InventoryProvider>
