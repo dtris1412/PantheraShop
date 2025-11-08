@@ -1,77 +1,100 @@
 import React, { useState } from "react";
-import * as XLSX from "xlsx";
+import { showToast } from "../../../shared/components/Toast";
 
 interface ImportExcelModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
 }
-
-const generateTemplate = () => {
-  // Sheet 1: Products
-  const products = [
-    {
-      product_id: "",
-      product_name: "Áo Nike Pro",
-      product_price: 499000,
-      product_description: "Áo thể thao nam",
-      release_date: "",
-      created_at: "",
-      updated_at: "",
-      product_image: "",
-      team_id: "",
-      category_id: 1,
-      is_active: 1,
-      supplier_id: "",
-    },
-    {
-      product_id: "",
-      product_name: "Quần Adidas Run",
-      product_price: 399000,
-      product_description: "Quần chạy bộ nữ",
-      release_date: "",
-      created_at: "",
-      updated_at: "",
-      product_image: "",
-      team_id: "",
-      category_id: 4,
-      is_active: 1,
-      supplier_id: "",
-    },
-  ];
-
-  // Sheet 2: Variants
-  const variants = [
-    {
-      variant_id: "",
-      variant_size: "M",
-      variant_stock: "",
-      product_id: "",
-      variant_color: "Đen",
-    },
-    {
-      variant_id: "",
-      variant_size: "L",
-      variant_stock: "",
-      product_id: "",
-      variant_color: "Đen",
-    },
-  ];
-
-  const wb = XLSX.utils.book_new();
-  const wsProducts = XLSX.utils.json_to_sheet(products);
-  const wsVariants = XLSX.utils.json_to_sheet(variants);
-
-  XLSX.utils.book_append_sheet(wb, wsProducts, "Products");
-  XLSX.utils.book_append_sheet(wb, wsVariants, "Variants");
-
-  XLSX.writeFile(wb, "template_import_kho.xlsx");
-};
 
 const ImportExcelModal: React.FC<ImportExcelModalProps> = ({
   isOpen,
   onClose,
+  onSuccess,
 }) => {
-  const [importFile, setImportFile] = useState<File | null>(null);
+  const [excelFile, setExcelFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleDownloadTemplate = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        "http://localhost:8080/api/admin/products/excel/template",
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to download template");
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "template_inventory_stock.xlsx";
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      showToast("Đã tải template thành công", "success");
+    } catch (error) {
+      console.error("Download template error:", error);
+      showToast("Không thể tải template", "error");
+    }
+  };
+
+  const handleImport = async () => {
+    if (!excelFile) return;
+
+    setUploading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const formData = new FormData();
+      formData.append("excel", excelFile);
+
+      const response = await fetch(
+        "http://localhost:8080/api/admin/inventory/excel/import-stock",
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to import Excel");
+
+      const result = await response.json();
+      if (!result.success) throw new Error(result.message || "Import failed");
+
+      // Display result message from backend
+      showToast(result.message || "Import thành công", "success");
+      onSuccess?.();
+      onClose();
+    } catch (error) {
+      console.error("Import error:", error);
+      showToast(
+        error instanceof Error ? error.message : "Không thể import file",
+        "error"
+      );
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleClose = () => {
+    if (!uploading) {
+      setExcelFile(null);
+      onClose();
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -88,10 +111,8 @@ const ImportExcelModal: React.FC<ImportExcelModalProps> = ({
           </h2>
           <button
             className="text-gray-400 hover:text-black text-3xl"
-            onClick={() => {
-              onClose();
-              setImportFile(null);
-            }}
+            onClick={handleClose}
+            disabled={uploading}
             title="Đóng"
           >
             <svg width="32" height="32" fill="none" viewBox="0 0 24 24">
@@ -104,28 +125,52 @@ const ImportExcelModal: React.FC<ImportExcelModalProps> = ({
             </svg>
           </button>
         </div>
+
         {/* Content */}
         <form
           className="flex-1 px-10 py-8 flex flex-col gap-8 justify-center"
-          onSubmit={(e) => e.preventDefault()}
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleImport();
+          }}
         >
+          {/* Instructions */}
+          <div className="bg-blue-50 border border-blue-200 p-4">
+            <h3 className="font-semibold text-blue-900 mb-2">
+              Hướng dẫn sử dụng:
+            </h3>
+            <ol className="list-decimal list-inside text-sm text-blue-800 space-y-1">
+              <li>Tải file mẫu Excel bên dưới</li>
+              <li>
+                Điền thông tin vào sheet "Variants": product_name, variant_size,
+                variant_color, variant_stock
+              </li>
+              <li>
+                Chỉ các variant đã tồn tại trong hệ thống mới được cập nhật
+              </li>
+              <li>Upload file Excel đã điền để import</li>
+            </ol>
+          </div>
+
           {/* 1. Khung tải template */}
           <div>
             <label className="block text-lg font-semibold mb-3 text-gray-700">
               Tải file mẫu
             </label>
             <button
-              className="w-full px-5 py-4 bg-gradient-to-r from-gray-100 to-gray-200 border border-gray-300 hover:bg-gray-200 text-base font-semibold text-black transition-colors duration-200 shadow-sm"
+              className="w-full px-5 py-4 bg-gradient-to-r from-gray-100 to-gray-200 border border-gray-300 hover:bg-gray-200 text-base font-semibold text-black transition-colors duration-200 shadow-sm disabled:opacity-50"
               style={{ borderRadius: 0 }}
-              onClick={generateTemplate}
+              onClick={handleDownloadTemplate}
               type="button"
+              disabled={uploading}
             >
               Bấm để tải file mẫu Excel
             </button>
             <div className="text-xs text-gray-500 mt-2">
-              category_id: 1 = Áo đấu, 2 = Giày, 3 = Bóng, 4 = Phụ kiện
+              Sử dụng sheet "Variants" để cập nhật stock cho các biến thể đã có
             </div>
           </div>
+
           {/* 2. Khung import file excel */}
           <div>
             <label className="block text-lg font-semibold mb-3 text-gray-700">
@@ -134,37 +179,36 @@ const ImportExcelModal: React.FC<ImportExcelModalProps> = ({
             <input
               type="file"
               accept=".xlsx,.xls"
-              className="block w-full text-base text-gray-700 file:mr-4 file:py-4 file:px-4 file:rounded-none file:border-0 file:text-base file:font-semibold file:bg-gray-50 file:text-black hover:file:bg-gray-100 border border-gray-300"
-              onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+              className="block w-full text-base text-gray-700 file:mr-4 file:py-4 file:px-4 file:rounded-none file:border-0 file:text-base file:font-semibold file:bg-gray-50 file:text-black hover:file:bg-gray-100 border border-gray-300 disabled:opacity-50"
+              onChange={(e) => setExcelFile(e.target.files?.[0] || null)}
               style={{ borderRadius: 0 }}
+              disabled={uploading}
             />
-            {importFile && (
+            {excelFile && (
               <div className="text-sm text-green-700 mt-2">
-                Đã chọn:{" "}
-                <span className="font-semibold">{importFile.name}</span>
+                Đã chọn: <span className="font-semibold">{excelFile.name}</span>
               </div>
             )}
           </div>
+
           {/* Footer */}
           <div className="flex justify-end gap-4 pt-8 border-t border-gray-200 bg-gray-50">
             <button
-              className="px-6 py-3 bg-white border border-gray-300 hover:bg-gray-100 text-lg font-medium transition-colors duration-200"
+              className="px-6 py-3 bg-white border border-gray-300 hover:bg-gray-100 text-lg font-medium transition-colors duration-200 disabled:opacity-50"
               style={{ borderRadius: 0 }}
-              onClick={() => {
-                onClose();
-                setImportFile(null);
-              }}
+              onClick={handleClose}
               type="button"
+              disabled={uploading}
             >
               Hủy
             </button>
             <button
               className="px-6 py-3 bg-black text-white hover:bg-gray-900 text-lg font-semibold transition-colors duration-200 disabled:opacity-50"
               style={{ borderRadius: 0 }}
-              type="button"
-              disabled={!importFile}
+              type="submit"
+              disabled={!excelFile || uploading}
             >
-              Import
+              {uploading ? "Đang import..." : "Import"}
             </button>
           </div>
         </form>

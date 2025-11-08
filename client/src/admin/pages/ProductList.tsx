@@ -10,6 +10,7 @@ import {
   Tag,
   AlertTriangle,
   Lock,
+  FileSpreadsheet,
 } from "lucide-react";
 import { useProduct } from "../contexts/productContext";
 import { showToast } from "../../shared/components/Toast";
@@ -19,6 +20,7 @@ import CreateProductForm from "../components/ProductComponents/CreateProductForm
 import EditProductForm from "../components/ProductComponents/EditProductForm";
 import ProductDetailModal from "../components/ProductComponents/ProductDetailModal";
 import ConfirmDialog from "../components/ConfirmDialog";
+import ImportExcelModal from "../components/ProductComponents/ImportExcelModal";
 
 interface Product {
   product_id: number;
@@ -72,6 +74,7 @@ const ProductList = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const { getAllProducts, loading, setProductLockStatus } = useProduct();
@@ -104,6 +107,10 @@ const ProductList = () => {
   // CRUD handlers
   const handleCreateProduct = () => {
     setShowCreateModal(true);
+  };
+
+  const handleImportExcel = () => {
+    setShowImportModal(true);
   };
 
   const handleEditProduct = (product: Product) => {
@@ -323,6 +330,14 @@ const ProductList = () => {
           >
             <Plus size={20} />
             <span className="font-medium">Thêm sản phẩm</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowImportModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white hover:bg-green-700 transition-colors duration-200"
+          >
+            <FileSpreadsheet size={20} />
+            <span className="font-medium">Import Excel</span>
           </button>
         </div>
       </div>
@@ -636,6 +651,18 @@ const ProductList = () => {
         cancelText="Hủy"
         type="danger"
       />
+
+      {/* Import Excel Modal */}
+      {showImportModal && (
+        <ImportExcelModal
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          onSuccess={() => {
+            setShowImportModal(false);
+            fetchData();
+          }}
+        />
+      )}
     </div>
   );
 };

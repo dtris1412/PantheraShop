@@ -63,4 +63,43 @@ const uploadGalleryImage = async (req, res) => {
   }
 };
 
-export { uploadAvatarForUser, uploadProductImage, uploadGalleryImage };
+const uploadExcelImages = async (req, res) => {
+  try {
+    const files = req.files;
+    if (!files || files.length === 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "No images uploaded" });
+    }
+
+    // Upload tất cả ảnh lên Cloudinary
+    const uploadPromises = files.map(async (file) => {
+      const imageUrl = await uploadToCloudinary(file.path, "products");
+      return {
+        filename: file.originalname,
+        url: imageUrl,
+      };
+    });
+
+    const images = await Promise.all(uploadPromises);
+
+    res.json({
+      success: true,
+      images,
+      message: "Images uploaded successfully",
+    });
+  } catch (err) {
+    console.error("Error uploading excel images:", err);
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+export {
+  uploadAvatarForUser,
+  uploadProductImage,
+  uploadGalleryImage,
+  uploadExcelImages,
+};

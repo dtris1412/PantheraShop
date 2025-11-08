@@ -5,6 +5,7 @@ import {
   uploadAvatarForUser,
   uploadProductImage,
   uploadGalleryImage,
+  uploadExcelImages,
 } from "../../admin/controllers/uploadController.js";
 
 const upload = multer({ dest: "uploads/" });
@@ -33,6 +34,10 @@ import {
   updateProduct,
   deleteProduct,
   setProductLockStatus,
+  downloadExcelTemplate,
+  importProductsFromExcel,
+  importProductsWithVariants,
+  importInventoryStock,
 } from "../../admin/controllers/productController.js";
 import {
   register as adminRegister,
@@ -131,6 +136,14 @@ const initAdminRoutes = (app) => {
     uploadGalleryImage
   );
 
+  // Upload Excel Images (bulk upload cho Excel import)
+  router.post(
+    "/api/admin/products/upload-excel-images",
+    verifyAdmin,
+    upload.array("images", 50),
+    uploadExcelImages
+  );
+
   //Product Management
   router.get("/api/admin/products", verifyAdmin, getAllProducts);
   router.get("/api/admin/products/:id", verifyAdmin, getProductById);
@@ -138,6 +151,41 @@ const initAdminRoutes = (app) => {
   router.put("/api/admin/products/:id", verifyAdmin, updateProduct);
   router.delete("/api/admin/products/:id", verifyAdmin, deleteProduct);
   router.put("/api/admin/products/:id/lock", verifyAdmin, setProductLockStatus);
+
+  // Excel Import Routes
+  router.post(
+    "/api/admin/products/excel/template",
+    verifyAdmin,
+    downloadExcelTemplate
+  );
+  router.post(
+    "/api/admin/products/excel/import",
+    verifyAdmin,
+    upload.fields([
+      { name: "excel", maxCount: 1 },
+      { name: "images", maxCount: 50 },
+    ]),
+    importProductsFromExcel
+  );
+
+  // Import Products with Variants (không cập nhật stock)
+  router.post(
+    "/api/admin/products/excel/import-with-variants",
+    verifyAdmin,
+    upload.fields([
+      { name: "excel", maxCount: 1 },
+      { name: "images", maxCount: 50 },
+    ]),
+    importProductsWithVariants
+  );
+
+  // Import Inventory Stock (chỉ cập nhật stock cho variant có sẵn)
+  router.post(
+    "/api/admin/inventory/excel/import-stock",
+    verifyAdmin,
+    upload.single("excel"),
+    importInventoryStock
+  );
 
   // =============== VARIANT MANAGEMENT ROUTES ===============
 
