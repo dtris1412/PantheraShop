@@ -10,6 +10,15 @@ import {
 
 const upload = multer({ dest: "uploads/" });
 
+//Import voucher Controllers
+import {
+  createVoucher,
+  updateVoucher,
+  getAllVouchers,
+} from "../../admin/controllers/voucherController.js";
+
+//Import order Controllers
+
 import {
   getAllOrders,
   getStatusOrder,
@@ -320,6 +329,10 @@ const initAdminRoutes = (app) => {
   );
   router.post("/api/admin/orders/:order_id/approve", verifyAdmin, approveOrder);
 
+  // =============== VOUCHER MANAGEMENT ROUTES ===============
+  router.get("/api/admin/vouchers", verifyAdmin, getAllVouchers);
+  router.post("/api/admin/vouchers", verifyAdmin, createVoucher);
+  router.put("/api/admin/vouchers/:voucher_id", verifyAdmin, updateVoucher);
   return app.use("/", router);
 };
 
