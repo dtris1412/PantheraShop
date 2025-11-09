@@ -85,9 +85,15 @@ export default function ProductDetails() {
   const [wishlistVariantIds, setWishlistVariantIds] = useState<number[]>([]);
   const [reviews, setReviews] = useState([]);
   const [averageRating, setAverageRating] = useState(0);
+  const [variants, setVariants] = useState<any[]>([]);
   const navigate = useNavigate();
   const { refresh } = useWishlist();
   const { refresh: refreshCart } = useCart();
+
+  // Reset error khi chọn size hoặc màu
+  useEffect(() => {
+    setError("");
+  }, [selectedSize, selectedColor]);
 
   useEffect(() => {
     async function fetchProduct() {
@@ -100,6 +106,23 @@ export default function ProductDetails() {
       }
     }
     fetchProduct();
+  }, [id]);
+
+  // Fetch variants using the API
+  useEffect(() => {
+    async function fetchVariants() {
+      if (!id) return;
+      try {
+        const res = await fetch(
+          `http://localhost:8080/api/variants/product/${id}`
+        );
+        const data = await res.json();
+        setVariants(data.variants || []);
+      } catch {
+        setVariants([]);
+      }
+    }
+    fetchVariants();
   }, [id]);
 
   useEffect(() => {
@@ -152,11 +175,6 @@ export default function ProductDetails() {
   const isShoe = category.includes("giày");
   const isBall = category.includes("bóng");
   const isGear = category.includes("phụ kiện") || category.includes("dụng cụ");
-
-  // Lấy danh sách variants từ product (nếu có)
-  const variants = product?.Variants || product?.variants || [];
-
-  console.log("variants", variants);
 
   // Tìm variant theo lựa chọn
   const selectedVariant = (() => {
@@ -330,9 +348,26 @@ export default function ProductDetails() {
   const isBallOutOfStock =
     isBall && variants.length > 0 && variants[0].variant_stock === 0;
 
+  // Kiểm tra sản phẩm ngừng bán
+  const isProductInactive =
+    product.is_active === false || product.is_active === 0;
+
   // Chuẩn bị mảng ảnh gallery
   const galleryImages =
     product.Product_Images?.map((img: any) => img.image_url) || [];
+
+  // Tạo map màu động từ tên sang mã hex
+  const COLOR_MAP: Record<string, string> = {
+    Đen: "#222",
+    Trắng: "#fff",
+    Đỏ: "#dc2626",
+    // Nếu có thêm màu, thêm vào đây hoặc tự động sinh màu ngẫu nhiên nếu chưa có
+  };
+
+  // Lấy danh sách size động
+  const shoeSizes = Array.from(new Set(variants.map((v) => v.variant_size)));
+  // Lấy danh sách màu động
+  const colors = Array.from(new Set(variants.map((v) => v.variant_color)));
 
   return (
     <div className="min-h-screen pt-24 pb-12">
@@ -377,20 +412,16 @@ export default function ProductDetails() {
               {product.product_description || product.description}
             </p>
             {/* Hiển thị chọn kích cỡ nếu là áo đấu hoặc giày */}
-            {(isClothing || isShoe) && (
+            {isClothing && (
               <div>
                 <span className="font-semibold block mb-3">Chọn kích cỡ</span>
                 <div className="grid grid-cols-3 gap-3">
-                  {(isClothing ? CLOTHING_SIZES : SHOE_SIZES).map((size) => {
-                    // Tìm variant tương ứng với size (và màu nếu là giày)
-                    const variant = isClothing
-                      ? variants.find((v: any) => v.variant_size === size)
-                      : variants.find(
-                          (v: any) =>
-                            v.variant_size === size &&
-                            v.variant_color?.toLowerCase() ===
-                              SHOE_COLORS[selectedColor].name.toLowerCase()
-                        );
+                  {Array.from(
+                    new Set(variants.map((v: any) => v.variant_size))
+                  ).map((size) => {
+                    const variant = variants.find(
+                      (v: any) => v.variant_size === size
+                    );
                     const outOfStock = !variant || variant.variant_stock === 0;
                     return (
                       <button
@@ -408,8 +439,7 @@ export default function ProductDetails() {
                     );
                   })}
                 </div>
-                {/* Hiển thị tồn kho nếu đã chọn size và có variant */}
-                {isClothing && selectedSize && selectedVariant && (
+                {selectedSize && selectedVariant && (
                   <div className="mt-2 text-sm text-gray-600">
                     Số lượng còn lại:{" "}
                     <span className="font-semibold">
@@ -417,9 +447,38 @@ export default function ProductDetails() {
                     </span>
                   </div>
                 )}
+              </div>
+            )}
 
-                {/* Giày: chọn size và màu mới hiển thị số lượng */}
-                {isShoe && selectedSize && selectedVariant && (
+            {isShoe && (
+              <div>
+                <span className="font-semibold block mb-3">Chọn kích cỡ</span>
+                <div className="grid grid-cols-3 gap-3">
+                  {shoeSizes.map((size) => {
+                    // Chỉ enable nếu có variant với size và màu đang chọn
+                    const variant = variants.find(
+                      (v: any) =>
+                        v.variant_size === size &&
+                        v.variant_color === colors[selectedColor]
+                    );
+                    const outOfStock = !variant || variant.variant_stock === 0;
+                    return (
+                      <button
+                        key={size}
+                        onClick={() => !outOfStock && setSelectedSize(size)}
+                        className={`py-3 text-center border-2 font-medium transition-colors ${
+                          selectedSize === size
+                            ? "border-black bg-black text-white"
+                            : "border-gray-300 hover:border-gray-400"
+                        } ${outOfStock ? "opacity-50 cursor-not-allowed" : ""}`}
+                        disabled={outOfStock}
+                      >
+                        {size}
+                      </button>
+                    );
+                  })}
+                </div>
+                {selectedSize && selectedVariant && (
                   <div className="mt-2 text-sm text-gray-600">
                     Số lượng còn lại:{" "}
                     <span className="font-semibold">
@@ -429,62 +488,40 @@ export default function ProductDetails() {
                 )}
               </div>
             )}
-            {isBall && variants.length > 0 && (
-              <div className="mt-2 text-sm text-gray-600">
-                Số lượng còn lại:{" "}
-                <span className="font-semibold">
-                  {variants[0].variant_stock}
-                </span>
-              </div>
-            )}
-            {isGear && selectedVariant && (
-              <div className="mt-2 text-sm text-gray-600">
-                Số lượng còn lại:{" "}
-                <span className="font-semibold">
-                  {selectedVariant.variant_stock}
-                </span>
-              </div>
-            )}
-            {/* Hiển thị chọn màu cho giày và phụ kiện */}
-            {(isShoe || isGear) && (
+
+            {isShoe && (
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <span className="font-semibold">Chọn màu</span>
                   <span className="text-sm text-gray-600">
-                    {SHOE_COLORS[selectedColor].name}
+                    {colors[selectedColor]}
                   </span>
                 </div>
                 <div className="flex space-x-3">
-                  {SHOE_COLORS.map((color, index) => {
-                    let variant;
-                    if (isShoe) {
-                      variant = variants.find(
-                        (v: any) =>
-                          v.variant_size === selectedSize &&
-                          v.variant_color?.toLowerCase() ===
-                            color.name.toLowerCase()
-                      );
-                    } else if (isGear) {
-                      variant = variants.find(
-                        (v: any) =>
-                          v.variant_color?.toLowerCase() ===
-                          color.name.toLowerCase()
-                      );
-                    }
+                  {colors.map((color, index) => {
+                    // Chỉ enable nếu có variant với size đang chọn và màu này
+                    const variant = variants.find(
+                      (v: any) =>
+                        v.variant_size === selectedSize &&
+                        v.variant_color === color
+                    );
                     const outOfStock = !variant || variant.variant_stock === 0;
                     return (
                       <button
-                        key={color.name}
+                        key={color}
                         onClick={() => !outOfStock && setSelectedColor(index)}
                         className={`w-12 h-12 border-2 transition-colors ${
                           selectedColor === index
                             ? "border-black"
                             : "border-gray-300"
                         } ${outOfStock ? "opacity-50 cursor-not-allowed" : ""}`}
-                        style={{ backgroundColor: color.hex }}
-                        title={color.name}
+                        style={{ backgroundColor: COLOR_MAP[color] || "#eee" }}
+                        title={color}
                         disabled={outOfStock}
-                      />
+                      >
+                        {/* Nếu màu nền là trắng thì viền đen cho dễ nhìn */}
+                        {color}
+                      </button>
                     );
                   })}
                 </div>

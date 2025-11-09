@@ -73,10 +73,20 @@ const decreaseVariantStock = async (variant_id, quantity) => {
   return { success: true, message: "Stock decreased successfully" };
 };
 
+const getAllVariantsByProductId = async (product_id) => {
+  if (!product_id) {
+    return { success: false, message: "Missing required fields" };
+  }
+  const variants = await db.Variant.findAll({
+    where: { product_id },
+  });
+  return { success: true, variants };
+};
 export {
   decreaseVariantStock,
   createVariant,
   getVariantsById,
   updateVariant,
   deleteVariant,
+  getAllVariantsByProductId,
 };

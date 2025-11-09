@@ -11,6 +11,9 @@ import multer from "multer";
 import { uploadAvatar } from "../controllers/uploadController.js";
 // import verifyToken nếu bạn đã có
 import { verifyToken } from "../../shared/middlewares/authMiddleware.js";
+//import variant controller
+import { getVariantsByProductId } from "../controllers/variantController.js";
+
 //product
 import {
   getAllProducts,
@@ -189,6 +192,9 @@ const initWebRoutes = (app) => {
   router.post("/api/review", verifyToken, createReview);
   router.get("/api/review/check", verifyToken, checkReviewExists);
   router.get("/api/review/product/:product_id", getAllReviewsForProduct);
+
+  //variant apis
+  router.get("/api/variants/product/:product_id", getVariantsByProductId);
   return app.use("/", router);
 };
 

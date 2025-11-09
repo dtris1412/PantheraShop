@@ -15,16 +15,17 @@ interface CartItem {
 }
 
 interface Voucher {
-  voucher_id: number | string;
+  voucher_id: string | number;
   voucher_code: string;
-  voucher_status?: string;
-  discount_value?: number | string;
-  min_order_value?: number | string;
+  voucher_status: string; // <-- luôn là string, không phải string | undefined
+  discount_value: number;
+  min_order_value: number;
+  discount_type: string; // <-- thêm dòng này để fix lỗi
   usage_limit?: number;
   used_count?: number;
   start_date?: string;
   end_date?: string;
-  discount_type?: "order" | "shipping";
+  // Thêm các trường khác nếu cần
 }
 
 const formatVND = (value: number) =>
@@ -32,17 +33,23 @@ const formatVND = (value: number) =>
     value
   );
 
-export default function OrderPaymentMethod({ ...props }) {
+interface OrderPaymentMethodProps {
+  value: PaymentMethod;
+  onChange: (method: PaymentMethod) => void;
+  items: CartItem[];
+  vouchers?: Voucher[];
+  onConfirmPayment: () => void;
+  onTotalChange?: (total: number) => void;
+  onOrderVoucherChange?: (voucher: Voucher | null) => void;
+}
+
+export default function OrderPaymentMethod({
+  vouchers = [],
+  ...props
+}: OrderPaymentMethodProps) {
   const { value, onChange, items, onConfirmPayment, onTotalChange } = props;
-  const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [selectedOrderVoucher, setSelectedOrderVoucher] =
     useState<Voucher | null>(null);
-
-  useEffect(() => {
-    fetch("http://localhost:8080/api/vouchers")
-      .then((res) => res.json())
-      .then((data) => setVouchers(Array.isArray(data) ? data : []));
-  }, []);
 
   const subtotal = items.reduce(
     (sum: number, item: CartItem) => sum + Number(item.price) * item.quantity,
@@ -115,7 +122,9 @@ export default function OrderPaymentMethod({ ...props }) {
                   String(v.voucher_id) === e.target.value &&
                   v.discount_type === "order"
               );
-              setSelectedOrderVoucher(v ?? null);
+              setSelectedOrderVoucher(
+                v ? { ...v, voucher_id: String(v.voucher_id) } : null
+              );
             }}
           >
             <option value="">-- Không chọn voucher --</option>

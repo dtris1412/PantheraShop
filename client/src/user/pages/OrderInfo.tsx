@@ -34,9 +34,9 @@ interface RecipientInfo {
 type PaymentMethod = "cod" | "momo" | "VnPay";
 
 interface Voucher {
-  voucher_id: string;
+  voucher_id: string | number;
   voucher_code: string;
-  voucher_status: string;
+  voucher_status: string; // <-- luôn là string, không phải string | undefined
   discount_value: number;
   min_order_value: number;
   usage_limit?: number;
@@ -117,7 +117,13 @@ export default function OrderInfo() {
   useEffect(() => {
     fetch("http://localhost:8080/api/vouchers")
       .then((res) => res.json())
-      .then((data) => setVouchers(data));
+      .then((data) => {
+        if (Array.isArray(data.data)) {
+          setVouchers(data.data);
+        } else {
+          setVouchers([]);
+        }
+      });
   }, []);
 
   const handleCancel = () => {
@@ -361,6 +367,7 @@ export default function OrderInfo() {
                     console.log("Chọn phương thức:", v);
                   }}
                   items={cartItems}
+                  vouchers={vouchers} // <-- truyền đúng mảng voucher
                   onConfirmPayment={() => {
                     if (validateRecipient()) setShowPayment(true);
                   }}
