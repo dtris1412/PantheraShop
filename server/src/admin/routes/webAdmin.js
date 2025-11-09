@@ -6,9 +6,19 @@ import {
   uploadProductImage,
   uploadGalleryImage,
   uploadExcelImages,
+  uploadBlogImage,
 } from "../../admin/controllers/uploadController.js";
 
 const upload = multer({ dest: "uploads/" });
+
+//Import Blog Controllers
+import {
+  getAllBlogs,
+  createBlog,
+  updateBlog,
+  deleteBlog,
+  getBlogById,
+} from "../../admin/controllers/blogController.js";
 
 //Import voucher Controllers
 import {
@@ -333,6 +343,19 @@ const initAdminRoutes = (app) => {
   router.get("/api/admin/vouchers", verifyAdmin, getAllVouchers);
   router.post("/api/admin/vouchers", verifyAdmin, createVoucher);
   router.put("/api/admin/vouchers/:voucher_id", verifyAdmin, updateVoucher);
+
+  // =============== BLOG MANAGEMENT ROUTES ===============
+  router.get("/api/admin/blogs", verifyAdmin, getAllBlogs);
+  router.get("/api/admin/blogs/:blog_id", verifyAdmin, getBlogById);
+  router.post("/api/admin/blogs", verifyAdmin, createBlog);
+  router.put("/api/admin/blogs/:blog_id", verifyAdmin, updateBlog);
+  router.delete("/api/admin/blogs/:blog_id", verifyAdmin, deleteBlog);
+  router.post(
+    "/api/admin/upload-blog-image",
+    verifyAdmin,
+    upload.single("image"),
+    uploadBlogImage
+  );
   return app.use("/", router);
 };
 

@@ -97,9 +97,29 @@ const uploadExcelImages = async (req, res) => {
   }
 };
 
+const uploadBlogImage = async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: "No file uploaded" });
+  }
+  try {
+    const imageUrl = await uploadToCloudinary(req.file.path, "blogs");
+    res.json({
+      success: true,
+      imageUrl,
+      message: "Blog image uploaded successfully",
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
 export {
   uploadAvatarForUser,
   uploadProductImage,
   uploadGalleryImage,
   uploadExcelImages,
+  uploadBlogImage,
 };

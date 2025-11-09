@@ -45,9 +45,11 @@ import { InventoryProvider } from "./admin/contexts/inventoryContext";
 import { SupplierProvider } from "./admin/contexts/supplierContext";
 import { OrderProvider as AdminOrderProvider } from "./admin/contexts/orderContext";
 import { VoucherProvider } from "./admin/contexts/voucherContext";
+import { BlogProvider as AdminBlogProvider } from "./admin/contexts/blogContext";
 import SupplierList from "./admin/pages/SupplierList";
 import ProductImagePage from "./admin/pages/ProductImagePage";
 import VoucherList from "./admin/pages/VoucherList";
+import BlogPage from "./admin/pages/BlogPage";
 import { ProductImageProvider } from "./admin/contexts/product_imageContext";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
@@ -176,30 +178,33 @@ function AdminRoutes() {
             <ProductImageProvider>
               <AdminOrderProvider>
                 <VoucherProvider>
-                  <AdminLayout onLogout={logout} adminName={user?.user_name}>
-                    <Routes>
-                      <Route path="/" element={<Dashboard />} />
-                      <Route path="/users" element={<UserList />} />
-                      <Route path="/products" element={<ProductList />} />
-                      <Route path="/categories" element={<CategoryPage />} />
-                      <Route path="/orders" element={<OrderList />} />
-                      <Route
-                        path="/orders/:orderId"
-                        element={<AdminOrderDetail />}
-                      />
-                      <Route path="/inventory" element={<InventoryList />} />
-                      <Route path="/suppliers" element={<SupplierList />} />
-                      <Route
-                        path="/product-images"
-                        element={<ProductImagePage />}
-                      />
-                      <Route path="/vouchers" element={<VoucherList />} />
-                      <Route
-                        path="*"
-                        element={<Navigate to="/admin" replace />}
-                      />
-                    </Routes>
-                  </AdminLayout>
+                  <AdminBlogProvider>
+                    <AdminLayout onLogout={logout} adminName={user?.user_name}>
+                      <Routes>
+                        <Route path="/" element={<Dashboard />} />
+                        <Route path="/users" element={<UserList />} />
+                        <Route path="/products" element={<ProductList />} />
+                        <Route path="/categories" element={<CategoryPage />} />
+                        <Route path="/orders" element={<OrderList />} />
+                        <Route
+                          path="/orders/:orderId"
+                          element={<AdminOrderDetail />}
+                        />
+                        <Route path="/inventory" element={<InventoryList />} />
+                        <Route path="/suppliers" element={<SupplierList />} />
+                        <Route
+                          path="/product-images"
+                          element={<ProductImagePage />}
+                        />
+                        <Route path="/vouchers" element={<VoucherList />} />
+                        <Route path="/blogs" element={<BlogPage />} />
+                        <Route
+                          path="*"
+                          element={<Navigate to="/admin" replace />}
+                        />
+                      </Routes>
+                    </AdminLayout>
+                  </AdminBlogProvider>
                 </VoucherProvider>
               </AdminOrderProvider>
             </ProductImageProvider>
