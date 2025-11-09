@@ -41,6 +41,7 @@ interface OrderPaymentMethodProps {
   onConfirmPayment: () => void;
   onTotalChange?: (total: number) => void;
   onOrderVoucherChange?: (voucher: Voucher | null) => void;
+  onShippingVoucherChange?: (voucher: Voucher | null) => void;
 }
 
 export default function OrderPaymentMethod({

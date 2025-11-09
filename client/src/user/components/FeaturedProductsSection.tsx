@@ -58,9 +58,10 @@ export default function FeaturedProductsSection() {
                     (product as any).average_rating ??
                       (product as any).averageRating ??
                       0
-                  ), // SỬA ĐÚNG TRƯỜNG NÀY!
+                  ),
                   description: product.product_description,
                   sport: product.Team?.Tournament?.Sport?.sport_name,
+                  is_active: product.is_active,
                 }}
                 onViewDetails={() => navigate(`/product/${product.product_id}`)}
               />

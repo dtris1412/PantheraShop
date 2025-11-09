@@ -40,7 +40,7 @@ export default function ProductCard({
   return (
     <div
       className={`group cursor-pointer relative ${
-        isInactive ? "opacity-60 pointer-events-none" : ""
+        isInactive ? "opacity-40 pointer-events-none" : ""
       }`}
       onClick={() => {
         if (!isInactive) onViewDetails(product.id);
@@ -61,8 +61,18 @@ export default function ProductCard({
 
         {/* Hiển thị chữ "Ngừng bán" nếu sản phẩm bị khóa */}
         {isInactive && (
-          <span className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 text-white text-base font-bold">
-            Ngừng bán
+          <span
+            className="absolute top-1/2 left-0 w-full h-12 flex items-center justify-center
+            bg-black text-white font-extrabold text-xl shadow-lg opacity-90"
+            style={{
+              transform: "translateY(-50%) rotate(-15deg)",
+              zIndex: 10,
+              pointerEvents: "none",
+              borderRadius: 0,
+              letterSpacing: 2,
+            }}
+          >
+            NGỪNG BÁN
           </span>
         )}
       </div>

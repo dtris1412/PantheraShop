@@ -23,7 +23,7 @@ export interface CreateVoucherData {
   start_date: string;
   end_date: string;
   usage_limit: number;
-  voucher_status: boolean;
+  voucher_status: string;
 }
 
 interface VoucherContextType {

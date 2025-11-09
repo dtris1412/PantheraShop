@@ -39,6 +39,7 @@ interface Voucher {
   voucher_status: string; // <-- luôn là string, không phải string | undefined
   discount_value: number;
   min_order_value: number;
+  discount_type: string; // <-- thêm dòng này để khớp với OrderPaymentMethod
   usage_limit?: number;
   used_count?: number;
   start_date?: string;

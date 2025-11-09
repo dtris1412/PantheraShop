@@ -32,6 +32,7 @@ export default function ProductGrid({
             average_rating: product.average_rating,
             description: product.product_description,
             sport: product.Team?.Tournament?.Sport?.sport_name,
+            is_active: product.is_active, // THÊM DÒNG NÀY
           }}
           onViewDetails={onViewDetails}
         />

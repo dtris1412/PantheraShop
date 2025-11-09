@@ -66,6 +66,7 @@ export default function RelatedProduct({
                   average_rating: Number((product as any).average_rating ?? 0),
                   description: product.product_description,
                   sport: product.Team?.Tournament?.Sport?.sport_name,
+                  is_active: product.is_active, // THÊM DÒNG NÀY
                 }}
                 onViewDetails={() => navigate(`/product/${product.product_id}`)}
               />
