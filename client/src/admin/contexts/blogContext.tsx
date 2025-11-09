@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
-
+const apiUrl = import.meta.env.VITE_API_URL;
 export interface Blog {
   blog_id: number;
   blog_title: string;
@@ -71,7 +71,7 @@ export const BlogProvider: React.FC<BlogProviderProps> = ({ children }) => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8080/api/admin/blogs", {
+      const res = await fetch(`${apiUrl}/admin/blogs`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -98,16 +98,13 @@ export const BlogProvider: React.FC<BlogProviderProps> = ({ children }) => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        `http://localhost:8080/api/admin/blogs/${blogId}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await fetch(`${apiUrl}/admin/blogs/${blogId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (!res.ok) {
         throw new Error("Failed to fetch blog");
@@ -127,7 +124,7 @@ export const BlogProvider: React.FC<BlogProviderProps> = ({ children }) => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8080/api/admin/blogs", {
+      const res = await fetch(`${apiUrl}/admin/blogs`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -155,17 +152,14 @@ export const BlogProvider: React.FC<BlogProviderProps> = ({ children }) => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        `http://localhost:8080/api/admin/blogs/${blogId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(blogData),
-        }
-      );
+      const res = await fetch(`${apiUrl}/admin/blogs/${blogId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(blogData),
+      });
 
       const data = await res.json();
       if (!data.success) {
@@ -183,16 +177,13 @@ export const BlogProvider: React.FC<BlogProviderProps> = ({ children }) => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        `http://localhost:8080/api/admin/blogs/${blogId}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await fetch(`${apiUrl}/admin/blogs/${blogId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       const data = await res.json();
       if (!data.success) {

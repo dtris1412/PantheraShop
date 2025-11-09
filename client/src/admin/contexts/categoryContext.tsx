@@ -7,7 +7,8 @@ import {
 } from "react";
 import { showToast } from "../../shared/components/Toast";
 
-const API_BASE_URL = "http://localhost:8080/api/admin";
+const apiUrl = import.meta.env.VITE_API_URL;
+// const API_BASE_URL = "http://localhost:8080/api/admin";
 
 // Type definitions
 interface Category {
@@ -185,19 +186,19 @@ export const CategoryProvider = ({ children }: CategoryProviderProps) => {
       // Gọi các API song song để lấy số lượng - KHÔNG set loading để tránh conflict
       const [categoriesRes, sportsRes, tournamentsRes, teamsRes] =
         await Promise.all([
-          fetch(`${API_BASE_URL}/categories`, {
+          fetch(`${apiUrl}/admin/categories`, {
             method: "GET",
             headers: getAuthHeaders(),
           }),
-          fetch(`${API_BASE_URL}/sports`, {
+          fetch(`${apiUrl}/admin/sports`, {
             method: "GET",
             headers: getAuthHeaders(),
           }),
-          fetch(`${API_BASE_URL}/tournaments`, {
+          fetch(`${apiUrl}/admin/tournaments`, {
             method: "GET",
             headers: getAuthHeaders(),
           }),
-          fetch(`${API_BASE_URL}/teams`, {
+          fetch(`${apiUrl}/admin/teams`, {
             method: "GET",
             headers: getAuthHeaders(),
           }),
@@ -245,7 +246,7 @@ export const CategoryProvider = ({ children }: CategoryProviderProps) => {
 
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/categories`, {
+      const response = await fetch(`${apiUrl}/admin/categories`, {
         method: "GET",
         headers: getAuthHeaders(),
       });
@@ -277,7 +278,7 @@ export const CategoryProvider = ({ children }: CategoryProviderProps) => {
   const getCategoryById = async (id: number): Promise<Category | null> => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/categories/${id}`, {
+      const response = await fetch(`${apiUrl}/admin/categories/${id}`, {
         method: "GET",
         headers: getAuthHeaders(),
       });
@@ -302,7 +303,7 @@ export const CategoryProvider = ({ children }: CategoryProviderProps) => {
   ): Promise<Category> => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/categories`, {
+      const response = await fetch(`${apiUrl}/admin/categories`, {
         method: "POST",
         headers: getAuthHeaders(),
         body: JSON.stringify(categoryData),
@@ -336,7 +337,7 @@ export const CategoryProvider = ({ children }: CategoryProviderProps) => {
   ): Promise<Category> => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/categories/${id}`, {
+      const response = await fetch(`${apiUrl}/admin/categories/${id}`, {
         method: "PUT",
         headers: getAuthHeaders(),
         body: JSON.stringify(categoryData),
@@ -360,7 +361,7 @@ export const CategoryProvider = ({ children }: CategoryProviderProps) => {
   const deleteCategory = async (id: number): Promise<boolean> => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/categories/${id}`, {
+      const response = await fetch(`${apiUrl}/admin/categories/${id}`, {
         method: "DELETE",
         headers: getAuthHeaders(),
       });
@@ -395,7 +396,7 @@ export const CategoryProvider = ({ children }: CategoryProviderProps) => {
 
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/sports`, {
+      const response = await fetch(`${apiUrl}/admin/sports`, {
         method: "GET",
         headers: getAuthHeaders(),
       });
@@ -460,7 +461,7 @@ export const CategoryProvider = ({ children }: CategoryProviderProps) => {
         body = JSON.stringify(sportData);
       }
 
-      const response = await fetch(`${API_BASE_URL}/sports`, {
+      const response = await fetch(`${apiUrl}/admin/sports`, {
         method: "POST",
         headers,
         body,
@@ -525,7 +526,7 @@ export const CategoryProvider = ({ children }: CategoryProviderProps) => {
         body = JSON.stringify(sportData);
       }
 
-      const response = await fetch(`${API_BASE_URL}/sports/${id}`, {
+      const response = await fetch(`${apiUrl}/admin/sports/${id}`, {
         method: "PUT",
         headers,
         body,
@@ -556,7 +557,7 @@ export const CategoryProvider = ({ children }: CategoryProviderProps) => {
   const deleteSport = async (id: number): Promise<boolean> => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/sports/${id}`, {
+      const response = await fetch(`${apiUrl}/admin/sports/${id}`, {
         method: "DELETE",
         headers: getAuthHeaders(),
       });
@@ -581,7 +582,7 @@ export const CategoryProvider = ({ children }: CategoryProviderProps) => {
   const getAllTournaments = async (): Promise<Tournament[]> => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/tournaments`, {
+      const response = await fetch(`${apiUrl}/admin/tournaments`, {
         method: "GET",
         headers: getAuthHeaders(),
       });
@@ -607,7 +608,7 @@ export const CategoryProvider = ({ children }: CategoryProviderProps) => {
     setLoading(true);
     try {
       const response = await fetch(
-        `${API_BASE_URL}/sports/${sportId}/tournaments`,
+        `${apiUrl}/admin/sports/${sportId}/tournaments`,
         {
           method: "GET",
           headers: getAuthHeaders(),
@@ -655,7 +656,7 @@ export const CategoryProvider = ({ children }: CategoryProviderProps) => {
         headers = getAuthHeaders();
       }
 
-      const response = await fetch(`${API_BASE_URL}/tournaments`, {
+      const response = await fetch(`${apiUrl}/admin/tournaments`, {
         method: "POST",
         headers,
         body,
@@ -703,7 +704,7 @@ export const CategoryProvider = ({ children }: CategoryProviderProps) => {
         headers = getAuthHeaders();
       }
 
-      const response = await fetch(`${API_BASE_URL}/tournaments/${id}`, {
+      const response = await fetch(`${apiUrl}/admin/tournaments/${id}`, {
         method: "PUT",
         headers,
         body,
@@ -727,7 +728,7 @@ export const CategoryProvider = ({ children }: CategoryProviderProps) => {
   const deleteTournament = async (id: number): Promise<boolean> => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/tournaments/${id}`, {
+      const response = await fetch(`${apiUrl}/admin/tournaments/${id}`, {
         method: "DELETE",
         headers: getAuthHeaders(),
       });
@@ -752,7 +753,7 @@ export const CategoryProvider = ({ children }: CategoryProviderProps) => {
   const getAllTeams = async (): Promise<Team[]> => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/teams`, {
+      const response = await fetch(`${apiUrl}/admin/teams`, {
         method: "GET",
         headers: getAuthHeaders(),
       });
@@ -778,7 +779,7 @@ export const CategoryProvider = ({ children }: CategoryProviderProps) => {
     setLoading(true);
     try {
       const response = await fetch(
-        `${API_BASE_URL}/tournaments/${tournamentId}/teams`,
+        `${apiUrl}/admin/tournaments/${tournamentId}/teams`,
         {
           method: "GET",
           headers: getAuthHeaders(),
@@ -803,7 +804,7 @@ export const CategoryProvider = ({ children }: CategoryProviderProps) => {
   const createTeam = async (teamData: Partial<Team>): Promise<Team> => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/teams`, {
+      const response = await fetch(`${apiUrl}/admin/teams`, {
         method: "POST",
         headers: getAuthHeaders(),
         body: JSON.stringify(teamData),
@@ -830,7 +831,7 @@ export const CategoryProvider = ({ children }: CategoryProviderProps) => {
   ): Promise<Team> => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/teams/${id}`, {
+      const response = await fetch(`${apiUrl}/admin/teams/${id}`, {
         method: "PUT",
         headers: getAuthHeaders(),
         body: JSON.stringify(teamData),
@@ -854,7 +855,7 @@ export const CategoryProvider = ({ children }: CategoryProviderProps) => {
   const deleteTeam = async (id: number): Promise<boolean> => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/teams/${id}`, {
+      const response = await fetch(`${apiUrl}/admin/teams/${id}`, {
         method: "DELETE",
         headers: getAuthHeaders(),
       });

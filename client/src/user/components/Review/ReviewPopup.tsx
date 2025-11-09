@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "../../../shared/contexts/authContext";
 import { showToast } from "../../../shared/components/Toast";
 
+const apiUrl = import.meta.env.VITE_API_URL;
 interface ReviewPopupProps {
   order: any;
   onClose: () => void;
@@ -17,7 +18,7 @@ export default function ReviewPopup({ order, onClose }: ReviewPopupProps) {
   const handleSubmitReview = async () => {
     try {
       for (const item of order.orderProducts || []) {
-        await fetch("http://localhost:8080/api/review", {
+        await fetch(`${apiUrl}/review`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

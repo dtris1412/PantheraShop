@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
-
+const apiUrl = import.meta.env.VITE_API_URL;
 interface VariantOption {
   variant_id: number;
   variant_size: string | null;
@@ -36,7 +36,7 @@ export default function VariantSelectModal({
 
   useEffect(() => {
     setLoading(true);
-    fetch(`http://localhost:8080/api/products/${productId}`)
+    fetch(`${apiUrl}/products/${productId}`)
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         return res.json();

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
 
+const apiUrl = import.meta.env.VITE_API_URL;
 interface Order {
   order_id: number;
   user_id: number;
@@ -37,7 +38,7 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8080/api/admin/orders", {
+      const res = await fetch(`${apiUrl}/admin/orders`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -63,16 +64,13 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        `http://localhost:8080/api/admin/orders/history/${userId}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await fetch(`${apiUrl}/admin/orders/history/${userId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (!res.ok) {
         throw new Error("Failed to fetch order history");
@@ -92,17 +90,14 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        `http://localhost:8080/api/admin/orders/${orderId}/approve`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ status }),
-        }
-      );
+      const res = await fetch(`${apiUrl}/admin/orders/${orderId}/approve`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status }),
+      });
 
       const data = await res.json();
       if (!data.success) {

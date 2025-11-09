@@ -5,7 +5,7 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
-
+const apiUrl = import.meta.env.VITE_API_URL;
 interface User {
   user_id: number;
   user_name: string;
@@ -128,7 +128,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // login (schedule logout)
   const login = async (email: string, password: string) => {
-    const res = await fetch("http://localhost:8080/api/login", {
+    const res = await fetch(`${apiUrl}/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ user_email: email, user_password: password }),
@@ -151,7 +151,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     email: string,
     password: string
   ) => {
-    const res = await fetch("http://localhost:8080/api/register", {
+    const res = await fetch(`${apiUrl}/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -175,7 +175,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const fetchProfile = async (): Promise<User | null> => {
     if (!token) return null;
 
-    const res = await fetch("http://localhost:8080/api/user/profile", {
+    const res = await fetch(`${apiUrl}/user/profile`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -199,7 +199,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user_address?: string;
   }) => {
     if (!token) return;
-    const res = await fetch("http://localhost:8080/api/user/profile", {
+    const res = await fetch(`${apiUrl}/user/profile`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -219,7 +219,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     new_password: string
   ) => {
     if (!token) return;
-    const res = await fetch("http://localhost:8080/api/user/password", {
+    const res = await fetch(`${apiUrl}/user/password`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -238,7 +238,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const formData = new FormData();
     formData.append("avatar", file);
 
-    const res = await fetch("http://localhost:8080/api/user/avatar", {
+    const res = await fetch(`${apiUrl}/user/avatar`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,

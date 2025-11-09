@@ -5,7 +5,7 @@ import VariantSelectModal from "../../user/components/VariantSelectModal"; // Im
 import { useNavigate } from "react-router-dom";
 import { useOrder } from "../../shared/contexts/orderContext";
 import { useCart } from "../../shared/contexts/cartContext";
-
+const apiUrl = import.meta.env.VITE_API_URL;
 interface CartProps {
   onNavigate: (page: string) => void;
 }
@@ -51,7 +51,7 @@ export default function Cart({ onNavigate }: CartProps) {
       }
 
       if (user_id) {
-        fetch(`http://localhost:8080/api/cart/${user_id}`, {
+        fetch(`${apiUrl}/cart/${user_id}`, {
           headers: { Authorization: `Bearer ${token}` },
         })
           .then((res) => res.json())
@@ -62,7 +62,7 @@ export default function Cart({ onNavigate }: CartProps) {
               return;
             }
             setCartId(cartData.cart_id);
-            fetch(`http://localhost:8080/api/cart/items/${cartData.cart_id}`, {
+            fetch(`${apiUrl}/cart/items/${cartData.cart_id}`, {
               headers: { Authorization: `Bearer ${token}` },
             })
               .then((res) => res.json())
@@ -106,7 +106,7 @@ export default function Cart({ onNavigate }: CartProps) {
     if (isLoggedIn && cartId) {
       const token = localStorage.getItem("token");
       try {
-        const res = await fetch(`http://localhost:8080/api/cart/update`, {
+        const res = await fetch(`${apiUrl}/cart/update`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -119,12 +119,9 @@ export default function Cart({ onNavigate }: CartProps) {
           }),
         });
         if (!res.ok) throw new Error("Cập nhật thất bại");
-        const itemsRes = await fetch(
-          `http://localhost:8080/api/cart/items/${cartId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const itemsRes = await fetch(`${apiUrl}/cart/items/${cartId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         const items = await itemsRes.json();
         const normalized = Array.isArray(items)
           ? items.map((item: any) => ({
@@ -159,22 +156,16 @@ export default function Cart({ onNavigate }: CartProps) {
     if (isLoggedIn && cartId) {
       const token = localStorage.getItem("token");
       try {
-        const res = await fetch(
-          `http://localhost:8080/api/cart/remove/${cartId}/${id}`,
-          {
-            method: "DELETE",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const res = await fetch(`${apiUrl}/cart/remove/${cartId}/${id}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         if (!res.ok) throw new Error("Xóa thất bại");
-        const itemsRes = await fetch(
-          `http://localhost:8080/api/cart/items/${cartId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const itemsRes = await fetch(`${apiUrl}/cart/items/${cartId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         const items = await itemsRes.json();
         const normalized = Array.isArray(items)
           ? items.map((item: any) => ({
@@ -215,7 +206,7 @@ export default function Cart({ onNavigate }: CartProps) {
     if (isLoggedIn && cartId) {
       const token = localStorage.getItem("token");
       try {
-        const res = await fetch(`http://localhost:8080/api/cart/update`, {
+        const res = await fetch(`${apiUrl}/cart/update`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -228,12 +219,9 @@ export default function Cart({ onNavigate }: CartProps) {
           }),
         });
         if (!res.ok) throw new Error("Cập nhật thất bại");
-        const itemsRes = await fetch(
-          `http://localhost:8080/api/cart/items/${cartId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const itemsRes = await fetch(`${apiUrl}/cart/items/${cartId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         const items = await itemsRes.json();
         const normalized = Array.isArray(items)
           ? items.map((item: any) => ({
@@ -275,30 +263,24 @@ export default function Cart({ onNavigate }: CartProps) {
       const token = localStorage.getItem("token");
       try {
         // Gọi API đổi variant (cần backend hỗ trợ endpoint này, ví dụ: /api/cart/change-variant)
-        const res = await fetch(
-          `http://localhost:8080/api/cart/change-variant`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              cart_id: cartId,
-              old_variant_id: editingItem.id,
-              new_variant_id: variant.variant_id,
-              quantity: editingItem.quantity,
-            }),
-          }
-        );
+        const res = await fetch(`${apiUrl}/cart/change-variant`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            cart_id: cartId,
+            old_variant_id: editingItem.id,
+            new_variant_id: variant.variant_id,
+            quantity: editingItem.quantity,
+          }),
+        });
         if (!res.ok) throw new Error("Cập nhật thất bại");
         // Lấy lại cart mới
-        const itemsRes = await fetch(
-          `http://localhost:8080/api/cart/items/${cartId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const itemsRes = await fetch(`${apiUrl}/cart/items/${cartId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         const items = await itemsRes.json();
         const normalized = Array.isArray(items)
           ? items.map((item: any) => ({
@@ -350,15 +332,12 @@ export default function Cart({ onNavigate }: CartProps) {
   const handleProceedOrder = async () => {
     if (isLoggedIn) {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        `http://localhost:8080/api/cart/items/${cartId}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await fetch(`${apiUrl}/cart/items/${cartId}`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
       const data = await res.json();
       setOrderItems(data);
       setOrderSource("cart");

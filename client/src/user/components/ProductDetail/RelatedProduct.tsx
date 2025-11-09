@@ -5,7 +5,7 @@ import { Navigation } from "swiper/modules";
 import { useEffect, useState } from "react";
 import "swiper/css";
 import "swiper/css/navigation";
-
+const apiUrl = import.meta.env.VITE_API_URL;
 export default function RelatedProduct({
   productId,
 }: {
@@ -17,9 +17,7 @@ export default function RelatedProduct({
   useEffect(() => {
     async function fetchRelated() {
       try {
-        const res = await fetch(
-          `http://localhost:8080/api/products/related/${productId}`
-        );
+        const res = await fetch(`${apiUrl}/products/related/${productId}`);
         const data = await res.json();
         setRelatedProducts(data.products || data);
       } catch {

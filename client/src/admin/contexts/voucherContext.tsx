@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
-
+const apiUrl = import.meta.env.VITE_API_URL;
 export interface Voucher {
   voucher_id: number;
   voucher_code: string;
@@ -53,7 +53,7 @@ export const VoucherProvider: React.FC<VoucherProviderProps> = ({
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8080/api/admin/vouchers", {
+      const res = await fetch(`${apiUrl}/admin/vouchers`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -80,7 +80,7 @@ export const VoucherProvider: React.FC<VoucherProviderProps> = ({
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8080/api/admin/vouchers", {
+      const res = await fetch(`${apiUrl}/admin/vouchers`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -108,17 +108,14 @@ export const VoucherProvider: React.FC<VoucherProviderProps> = ({
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        `http://localhost:8080/api/admin/vouchers/${voucherId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(voucherData),
-        }
-      );
+      const res = await fetch(`${apiUrl}/admin/vouchers/${voucherId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(voucherData),
+      });
 
       const data = await res.json();
       if (!data.success) {

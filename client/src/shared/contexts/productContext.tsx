@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-
+const apiUrl = import.meta.env.VITE_API_URL;
 export interface Sport {
   sport_id: number | string;
   sport_name: string;
@@ -67,7 +67,7 @@ export const ProductProvider = ({
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch("http://localhost:8080/api/products");
+      const res = await fetch(`${apiUrl}/products`);
       const data = await res.json();
       setProducts(Array.isArray(data) ? mapProductPrice(data) : []);
     } catch {
@@ -77,7 +77,7 @@ export const ProductProvider = ({
 
   const fetchTopProducts = async () => {
     try {
-      const res = await fetch("http://localhost:8080/api/products/top-rated");
+      const res = await fetch(`${apiUrl}/products/top-rated`);
       const data = await res.json();
       setTopProducts(Array.isArray(data) ? mapProductPrice(data) : []);
     } catch {
@@ -87,7 +87,7 @@ export const ProductProvider = ({
 
   const fetchSports = async () => {
     try {
-      const res = await fetch("http://localhost:8080/api/sports");
+      const res = await fetch(`${apiUrl}/sports`);
       const data = await res.json();
       setSports(Array.isArray(data) ? data : []);
     } catch {
@@ -97,7 +97,7 @@ export const ProductProvider = ({
 
   const fetchFilteredProducts = async (filters: any) => {
     try {
-      const res = await fetch("http://localhost:8080/api/products/filter", {
+      const res = await fetch(`${apiUrl}/products/filter`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -114,9 +114,7 @@ export const ProductProvider = ({
     if (!keyword) return [];
     try {
       const res = await fetch(
-        `http://localhost:8080/api/products/search?query=${encodeURIComponent(
-          keyword
-        )}`
+        `${apiUrl}/products/search?query=${encodeURIComponent(keyword)}`
       );
       const data = await res.json();
       console.log("Kết quả search:", data);

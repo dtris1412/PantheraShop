@@ -3,7 +3,7 @@ import { X, Upload, FileSpreadsheet, Download, ImagePlus } from "lucide-react";
 import { useSupplier } from "../../contexts/supplierContext";
 import { useCategory } from "../../contexts/categoryContext";
 import { showToast } from "../../../shared/components/Toast";
-
+const apiUrl = import.meta.env.VITE_API_URL;
 interface ImportExcelModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -53,21 +53,18 @@ const ImportExcelModal = ({
 
       // Gửi supplier_id và teamIds đến backend
       const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://localhost:8080/api/admin/products/excel/template`,
-        {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            supplier_id: selectedSupplierId,
-            teams: teamIds,
-          }),
-        }
-      );
+      const response = await fetch(`${apiUrl}/admin/products/excel/template`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          supplier_id: selectedSupplierId,
+          teams: teamIds,
+        }),
+      });
 
       if (!response.ok) throw new Error("Failed to download template");
 
@@ -131,7 +128,7 @@ const ImportExcelModal = ({
         });
 
         const imageResponse = await fetch(
-          "http://localhost:8080/api/admin/products/upload-excel-images",
+          `${apiUrl}/admin/products/upload-excel-images`,
           {
             method: "POST",
             credentials: "include",
@@ -160,7 +157,7 @@ const ImportExcelModal = ({
       });
 
       const response = await fetch(
-        "http://localhost:8080/api/admin/products/excel/import-with-variants",
+        `${apiUrl}/admin/products/excel/import-with-variants`,
         {
           method: "POST",
           credentials: "include",

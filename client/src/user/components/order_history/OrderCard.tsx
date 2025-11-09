@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../../shared/contexts/authContext";
 import ReviewPopup from "../Review/ReviewPopup.tsx";
-
+const apiUrl = import.meta.env.VITE_API_URL;
 interface Order {
   order_id: string;
   order_status: string;
@@ -39,7 +39,7 @@ export default function OrderCard({ order }: { order: Order }) {
       const user_id = user?.user_id;
       for (const item of order.orderProducts) {
         const res = await fetch(
-          `http://localhost:8080/api/review/check?order_id=${order.order_id}&variant_id=${item.variant_id}&user_id=${user_id}`,
+          `${apiUrl}/review/check?order_id=${order.order_id}&variant_id=${item.variant_id}&user_id=${user_id}`,
           {
             method: "GET",
             headers: {

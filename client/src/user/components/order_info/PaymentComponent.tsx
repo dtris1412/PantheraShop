@@ -3,7 +3,7 @@ import QRCode from "react-qr-code";
 import { useAuth } from "../../../shared/contexts/authContext";
 import { v4 as uuidv4 } from "uuid";
 import { ArrowLeft } from "lucide-react";
-
+const apiUrl = import.meta.env.VITE_API_URL;
 interface CartItem {
   id: string;
   product_id: number;
@@ -58,7 +58,7 @@ export default function PaymentComponent({
     async function fetchMomo() {
       setLoading(true);
       try {
-        const res = await fetch("http://localhost:8080/api/payment/momo", {
+        const res = await fetch(`${apiUrl}/payment/momo`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

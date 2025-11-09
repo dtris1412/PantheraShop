@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { X, Edit, Trash2, Star, Package, Tag } from "lucide-react";
 import { useProduct } from "../../contexts/productContext";
 import { showToast } from "../../../shared/components/Toast";
-
+const apiUrl = import.meta.env.VITE_API_URL;
 interface Product {
   product_id: number;
   product_name: string;
@@ -139,7 +139,7 @@ const ProductDetailModal = ({
       try {
         const token = localStorage.getItem("token");
         const res = await fetch(
-          `http://localhost:8080/api/admin/product-images/${currentProductId}`,
+          `${apiUrl}/admin/product-images/${currentProductId}`,
           {
             method: "GET",
             headers: {

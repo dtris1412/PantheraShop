@@ -11,7 +11,7 @@ import { useOrder } from "../../shared/contexts/orderContext";
 import { useAuth } from "../../shared/contexts/authContext";
 import { useNavigate } from "react-router-dom";
 import ProgressLoading from "../components/Loading/ProgressLoading";
-
+const apiUrl = import.meta.env.VITE_API_URL;
 interface CartItem {
   id: string;
   product_id: number;
@@ -116,7 +116,7 @@ export default function OrderInfo() {
   }, [isLoggedIn, orderItems]);
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/vouchers")
+    fetch(`${apiUrl}/vouchers`)
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data.data)) {
@@ -159,7 +159,7 @@ export default function OrderInfo() {
     setIsProcessing(true);
     try {
       // 1. Tạo đơn hàng
-      const orderRes = await fetch("http://localhost:8080/api/order", {
+      const orderRes = await fetch(`${apiUrl}/order`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -189,7 +189,7 @@ export default function OrderInfo() {
       if (!orderData.success) throw new Error(orderData.message);
 
       // 2. Tạo thanh toán
-      const paymentRes = await fetch("http://localhost:8080/api/payment", {
+      const paymentRes = await fetch(`${apiUrl}/payment`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -213,19 +213,16 @@ export default function OrderInfo() {
         if (isLoggedIn && userId) {
           const token = localStorage.getItem("token");
           // Lấy cartId từ API
-          const cartRes = await fetch(
-            `http://localhost:8080/api/cart/${userId}`,
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
+          const cartRes = await fetch(`${apiUrl}/cart/${userId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
 
           const cartData = await cartRes.json();
           console.log("cartData:", cartData);
           const cartId = cartData?.cart_id;
           console.log("cartId lấy được ở FE:", cartId);
           if (cartId) {
-            await fetch(`http://localhost:8080/api/cart/clear/${cartId}`, {
+            await fetch(`${apiUrl}/cart/clear/${cartId}`, {
               method: "DELETE",
               headers: { Authorization: `Bearer ${token}` },
             });

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
-
+const apiUrl = import.meta.env.VITE_API_URL;
 export interface ProductImage {
   product_image_id: number;
   product_id: number;
@@ -55,14 +55,11 @@ export const ProductImageProvider = ({
   const fetchAllImages = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(
-        "http://localhost:8080/api/admin/product-images",
-        {
-          method: "GET",
-          headers: getAuthHeaders(),
-          credentials: "include",
-        }
-      );
+      const res = await fetch(`${apiUrl}/admin/product-images`, {
+        method: "GET",
+        headers: getAuthHeaders(),
+        credentials: "include",
+      });
       if (!res.ok) throw new Error("Failed to fetch product images");
       const data = await res.json();
       setImages(Array.isArray(data.data) ? data.data : []);
@@ -76,14 +73,11 @@ export const ProductImageProvider = ({
 
   const fetchImagesByProductId = async (productId: number | string) => {
     // KHÔNG setLoading ở đây!
-    const res = await fetch(
-      `http://localhost:8080/api/admin/product-images/${productId}`,
-      {
-        method: "GET",
-        headers: getAuthHeaders(),
-        credentials: "include",
-      }
-    );
+    const res = await fetch(`${apiUrl}/admin/product-images/${productId}`, {
+      method: "GET",
+      headers: getAuthHeaders(),
+      credentials: "include",
+    });
     if (!res.ok)
       throw new Error("Failed to fetch product images by product id");
     const data = await res.json();
@@ -94,15 +88,12 @@ export const ProductImageProvider = ({
     const formData = new FormData();
     formData.append("image", file);
     const token = localStorage.getItem("token");
-    const res = await fetch(
-      "http://localhost:8080/api/admin/upload-gallery-image",
-      {
-        method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: formData,
-        credentials: "include",
-      }
-    );
+    const res = await fetch(`${apiUrl}/admin/upload-gallery-image`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+      credentials: "include",
+    });
     if (!res.ok) throw new Error("Upload gallery image failed");
     const data = await res.json();
     return data.url || data.imageUrl || data.data?.url; // thêm data.imageUrl
@@ -113,7 +104,7 @@ export const ProductImageProvider = ({
     image_url: string;
     order?: number;
   }) => {
-    const res = await fetch("http://localhost:8080/api/admin/product-images", {
+    const res = await fetch(`${apiUrl}/admin/product-images`, {
       method: "POST",
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
@@ -127,28 +118,22 @@ export const ProductImageProvider = ({
     id: number,
     data: Partial<ProductImage>
   ) => {
-    const res = await fetch(
-      `http://localhost:8080/api/admin/product-images/${id}`,
-      {
-        method: "PUT",
-        headers: getAuthHeaders(),
-        body: JSON.stringify(data),
-        credentials: "include",
-      }
-    );
+    const res = await fetch(`${apiUrl}/admin/product-images/${id}`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+      credentials: "include",
+    });
     if (!res.ok) throw new Error("Update product image failed");
     return res.json();
   };
 
   const deleteProductImage = async (id: number) => {
-    const res = await fetch(
-      `http://localhost:8080/api/admin/product-images/${id}`,
-      {
-        method: "DELETE",
-        headers: getAuthHeaders(),
-        credentials: "include",
-      }
-    );
+    const res = await fetch(`${apiUrl}/admin/product-images/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+      credentials: "include",
+    });
     if (!res.ok) throw new Error("Delete product image failed");
     return res.json();
   };

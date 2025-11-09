@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "../../../shared/contexts/authContext";
 import { v4 as uuidv4 } from "uuid";
 import { ArrowLeft } from "lucide-react";
-
+const apiUrl = import.meta.env.VITE_API_URL;
 const BANKS = [
   { code: "VNPAYQR", name: "VNPAY QR" },
   { code: "VISA", name: "Thẻ quốc tế (Visa/MasterCard/JCB)" },
@@ -59,7 +59,7 @@ export default function VnpayPaymentComponent({
   const handlePay = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8080/api/payment/vnpay", {
+      const res = await fetch(`${apiUrl}/payment/vnpay`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

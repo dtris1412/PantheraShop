@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
+const apiUrl = import.meta.env.VITE_API_URL;
 interface Banner {
   banner_id: number;
   title: string;
@@ -17,7 +17,7 @@ export default function HeroSection() {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/banners")
+    fetch(`${apiUrl}/banners`)
       .then((res) => res.json())
       .then((data) => setBanners(data));
   }, []);

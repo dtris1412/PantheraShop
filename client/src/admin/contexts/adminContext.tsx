@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
-
+const apiUrl = import.meta.env.VITE_API_URL;
 interface User {
   user_id: number;
   user_name: string;
@@ -45,7 +45,7 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8080/api/admin/users", {
+      const res = await fetch(`${apiUrl}/admin/users`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -79,7 +79,7 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
           userData.user_status !== undefined ? userData.user_status : true,
       };
 
-      const res = await fetch("http://localhost:8080/api/admin/register", {
+      const res = await fetch(`${apiUrl}/admin/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -103,17 +103,14 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
   const updateUser = async (userId: number, userData: Partial<User>) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        `http://localhost:8080/api/admin/users/profile/${userId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(userData),
-        }
-      );
+      const res = await fetch(`${apiUrl}/admin/users/profile/${userId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(userData),
+      });
 
       const data = await res.json();
       if (!data.success) {
@@ -129,17 +126,14 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
     // Don't set global loading for this action to avoid page reload effect
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        `http://localhost:8080/api/admin/users/status/${userId}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ shouldLock }),
-        }
-      );
+      const res = await fetch(`${apiUrl}/admin/users/status/${userId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ shouldLock }),
+      });
 
       const data = await res.json();
       if (!data.success) {
@@ -158,7 +152,7 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8080/api/admin/upload-avatar", {
+      const res = await fetch(`${apiUrl}/admin/upload-avatar`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

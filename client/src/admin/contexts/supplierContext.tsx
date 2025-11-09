@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from "react";
-
+const apiUrl = import.meta.env.VITE_API_URL;
 export interface Supplier {
   supplier_id: number | string;
   supplier_name: string;
@@ -49,7 +49,7 @@ export const SupplierProvider = ({
   const fetchSuppliers = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8080/api/admin/suppliers", {
+      const res = await fetch(`${apiUrl}/admin/suppliers`, {
         method: "GET",
         headers: getAuthHeaders(),
       });
@@ -74,7 +74,7 @@ export const SupplierProvider = ({
   const createSupplier = async (data: Partial<Supplier>) => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8080/api/admin/suppliers", {
+      const res = await fetch(`${apiUrl}/admin/suppliers`, {
         method: "POST",
         headers: getAuthHeaders(),
         body: JSON.stringify(data),
@@ -92,14 +92,11 @@ export const SupplierProvider = ({
   ) => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `http://localhost:8080/api/admin/suppliers/${id}`,
-        {
-          method: "PUT",
-          headers: getAuthHeaders(),
-          body: JSON.stringify(data),
-        }
-      );
+      const res = await fetch(`${apiUrl}/admin/suppliers/${id}`, {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(data),
+      });
       if (!res.ok) throw new Error("Failed to update supplier");
       await fetchSuppliers();
     } finally {
@@ -114,7 +111,7 @@ export const SupplierProvider = ({
     setLoading(true);
     try {
       const res = await fetch(
-        `http://localhost:8080/api/admin/suppliers/${id}/connection-status`,
+        `${apiUrl}/admin/suppliers/${id}/connection-status`,
         {
           method: "PATCH",
           headers: getAuthHeaders(),

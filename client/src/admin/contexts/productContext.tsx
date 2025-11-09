@@ -5,7 +5,7 @@ import React, {
   ReactNode,
   useCallback,
 } from "react";
-
+const apiUrl = import.meta.env.VITE_API_URL;
 interface Category {
   category_id: number;
   category_name: string;
@@ -99,7 +99,7 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
   const getAllProducts = async (): Promise<Product[]> => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8080/api/admin/products", {
+      const res = await fetch(`${apiUrl}/admin/products`, {
         method: "GET",
         headers: getAuthHeaders(),
       });
@@ -132,16 +132,13 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
     async (id: number): Promise<Product | null> => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch(
-          `http://localhost:8080/api/admin/products/${id}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const res = await fetch(`${apiUrl}/admin/products/${id}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         if (!res.ok) {
           const errorData = await res.json();
@@ -175,16 +172,13 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
         const formData = new FormData();
         formData.append("image", imageFile);
 
-        const uploadRes = await fetch(
-          "http://localhost:8080/api/admin/upload-product-image",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-            body: formData,
-          }
-        );
+        const uploadRes = await fetch(`${apiUrl}/admin/upload-product-image`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        });
 
         if (uploadRes.ok) {
           const uploadData = await uploadRes.json();
@@ -213,7 +207,7 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
           : undefined,
       };
 
-      const res = await fetch("http://localhost:8080/api/admin/products", {
+      const res = await fetch(`${apiUrl}/admin/products`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -253,16 +247,13 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
         const formData = new FormData();
         formData.append("image", imageFile);
 
-        const uploadRes = await fetch(
-          "http://localhost:8080/api/admin/upload-product-image",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-            body: formData,
-          }
-        );
+        const uploadRes = await fetch(`${apiUrl}/admin/upload-product-image`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        });
 
         if (uploadRes.ok) {
           const uploadData = await uploadRes.json();
@@ -291,17 +282,14 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
           : undefined,
       };
 
-      const res = await fetch(
-        `http://localhost:8080/api/admin/products/${id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(payload),
-        }
-      );
+      const res = await fetch(`${apiUrl}/admin/products/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
 
       if (!res.ok) {
         const errorData = await res.json();
@@ -323,16 +311,13 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        `http://localhost:8080/api/admin/products/${id}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await fetch(`${apiUrl}/admin/products/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (!res.ok) {
         const errorData = await res.json();
@@ -356,16 +341,13 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
   ): Promise<ProductVariant[]> => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        `http://localhost:8080/api/admin/variants/${productId}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await fetch(`${apiUrl}/admin/variants/${productId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (!res.ok) {
         throw new Error("Failed to fetch variants");
@@ -392,7 +374,7 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
   ) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8080/api/admin/variants", {
+      const res = await fetch(`${apiUrl}/admin/variants`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -421,17 +403,14 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
   ) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        `http://localhost:8080/api/admin/variants/${variantId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(variantData),
-        }
-      );
+      const res = await fetch(`${apiUrl}/admin/variants/${variantId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(variantData),
+      });
 
       if (!res.ok) {
         const errorData = await res.json();
@@ -450,16 +429,13 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
   const deleteVariant = async (variantId: number): Promise<boolean> => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        `http://localhost:8080/api/admin/variants/${variantId}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await fetch(`${apiUrl}/admin/variants/${variantId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (!res.ok) {
         const errorData = await res.json();
@@ -481,17 +457,14 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        `http://localhost:8080/api/admin/products/${product_id}/lock`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ is_active }),
-        }
-      );
+      const res = await fetch(`${apiUrl}/admin/products/${product_id}/lock`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ is_active }),
+      });
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.message || "Failed to update product status");

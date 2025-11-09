@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { showToast } from "../components/Toast";
 import { useAuth } from "./authContext";
-
+const apiUrl = import.meta.env.VITE_API_URL;
 interface Variant {
   wishlist_variant_id: number;
   variant_id: number;
@@ -56,7 +56,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
     } catch {}
     if (!user_id) return;
 
-    fetch(`http://localhost:8080/api/wishlist/${user_id}`, {
+    fetch(`${apiUrl}/wishlist/${user_id}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
@@ -72,12 +72,9 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
         setWishlistId(wishlist_id);
 
         // Lấy các variant trong wishlist
-        fetch(
-          `http://localhost:8080/api/wishlist/wishlist-items/${wishlist_id}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        )
+        fetch(`${apiUrl}/wishlist/wishlist-items/${wishlist_id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
           .then((res) => res.json())
           .then((itemsRes) => {
             const arr = Array.isArray(itemsRes.items) ? itemsRes.items : [];
@@ -122,7 +119,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
     }
     try {
       const res = await fetch(
-        `http://localhost:8080/api/wishlist/remove/${wishlistId}/${variant_id}`,
+        `${apiUrl}/wishlist/remove/${wishlistId}/${variant_id}`,
         {
           method: "DELETE",
           headers: {
@@ -158,7 +155,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
     if (!wishlistId) return;
     try {
       const res = await fetch(
-        `http://localhost:8080/api/wishlist/change-variant/${wishlistId}/${old_variant_id}`,
+        `${apiUrl}/wishlist/change-variant/${wishlistId}/${old_variant_id}`,
         {
           method: "PUT",
           headers: {

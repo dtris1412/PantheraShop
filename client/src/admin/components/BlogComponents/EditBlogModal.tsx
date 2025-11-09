@@ -5,6 +5,7 @@ import { useBlog, Blog } from "../../contexts/blogContext";
 import { useCategory } from "../../contexts/categoryContext";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
+const apiUrl = import.meta.env.VITE_API_URL;
 
 interface EditBlogModalProps {
   isOpen: boolean;
@@ -118,16 +119,13 @@ const EditBlogModal = ({
     formData.append("image", file);
 
     const token = localStorage.getItem("token");
-    const response = await fetch(
-      "http://localhost:8080/api/admin/upload-blog-image",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      }
-    );
+    const response = await fetch(`${apiUrl}/admin/upload-blog-image`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
 
     if (!response.ok) {
       throw new Error("Upload ảnh thất bại");

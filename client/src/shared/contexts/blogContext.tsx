@@ -5,7 +5,7 @@ import React, {
   useState,
   ReactNode,
 } from "react";
-
+const apiUrl = import.meta.env.VITE_API_URL;
 export interface Blog {
   blog_id: number;
   blog_title: string;
@@ -46,7 +46,7 @@ export function BlogProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("http://localhost:8080/api/blogs");
+      const res = await fetch(`${apiUrl}/blogs`);
       const data = await res.json();
       if (data.success && data.data && Array.isArray(data.data.blogs)) {
         setBlogs(data.data.blogs);

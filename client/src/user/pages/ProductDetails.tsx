@@ -8,7 +8,7 @@ import { useCart } from "../../shared/contexts/cartContext";
 import ReviewDropdown from "../components/ProductDetail/ReviewDropdown";
 import PolicyDropdown from "../components/ProductDetail/PolicyDropdown";
 import RelatedProduct from "../components/ProductDetail/RelatedProduct";
-
+const apiUrl = import.meta.env.VITE_API_URL;
 const formatVND = (value: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
     value
@@ -31,9 +31,7 @@ function FeaturedProduct() {
   useEffect(() => {
     async function fetchFeatured() {
       try {
-        const res = await fetch(
-          "http://localhost:8080/api/products/top?limit=4"
-        );
+        const res = await fetch(`${apiUrl}/products/top?limit=4`);
         const data = await res.json();
         setProducts(data.products || []);
       } catch {
@@ -98,7 +96,7 @@ export default function ProductDetails() {
   useEffect(() => {
     async function fetchProduct() {
       try {
-        const res = await fetch(`http://localhost:8080/api/products/${id}`);
+        const res = await fetch(`${apiUrl}/products/${id}`);
         const data = await res.json();
         setProduct(data.product || data);
       } catch (err) {
@@ -113,9 +111,7 @@ export default function ProductDetails() {
     async function fetchVariants() {
       if (!id) return;
       try {
-        const res = await fetch(
-          `http://localhost:8080/api/variants/product/${id}`
-        );
+        const res = await fetch(`${apiUrl}/variants/product/${id}`);
         const data = await res.json();
         setVariants(data.variants || []);
       } catch {
@@ -131,7 +127,7 @@ export default function ProductDetails() {
     try {
       const payload = JSON.parse(atob(token.split(".")[1]));
       const user_id = payload.user_id;
-      fetch(`http://localhost:8080/api/wishlist/wishlist-items/${user_id}`, {
+      fetch(`${apiUrl}/wishlist/wishlist-items/${user_id}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((res) => res.json())
@@ -146,9 +142,7 @@ export default function ProductDetails() {
 
   useEffect(() => {
     async function fetchReviews() {
-      const res = await fetch(
-        `http://localhost:8080/api/review/product/${product.product_id}`
-      );
+      const res = await fetch(`${apiUrl}/review/product/${product.product_id}`);
       const data = await res.json();
       setReviews(data.reviews || []);
       setAverageRating(data.average_rating || 0);
@@ -239,7 +233,7 @@ export default function ProductDetails() {
 
     if (isLoggedIn) {
       try {
-        const res = await fetch("http://localhost:8080/api/cart/add", {
+        const res = await fetch(`${apiUrl}/cart/add`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -299,32 +293,29 @@ export default function ProductDetails() {
       // Lấy wishlist_id của user
       const payload = JSON.parse(atob(token.split(".")[1]));
       const user_id = payload.user_id;
-      const res = await fetch(`http://localhost:8080/api/wishlist/${user_id}`, {
+      const res = await fetch(`${apiUrl}/wishlist/${user_id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       const wishlist_id = data.wishlist_id;
       // Gọi API thêm vào wishlist
-      const addRes = await fetch(
-        `http://localhost:8080/api/wishlist/add/${wishlist_id}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            variant_id: selectedVariant.variant_id,
-            added_at: new Date().toISOString(),
-          }),
-        }
-      );
+      const addRes = await fetch(`${apiUrl}/wishlist/add/${wishlist_id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          variant_id: selectedVariant.variant_id,
+          added_at: new Date().toISOString(),
+        }),
+      });
       const addData = await addRes.json();
       if (addData.success) {
         showToast("Đã thêm vào danh sách yêu thích!", "success");
         refresh(); // cập nhật context
         // Cập nhật lại danh sách variant_id đã có trong wishlist
-        fetch(`http://localhost:8080/api/wishlist/wishlist-items/${user_id}`, {
+        fetch(`${apiUrl}/wishlist/wishlist-items/${user_id}`, {
           headers: { Authorization: `Bearer ${token}` },
         })
           .then((res) => res.json())

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { showToast } from "../../../shared/components/Toast";
-
+const apiUrl = import.meta.env.VITE_API_URL;
 interface ImportExcelModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -18,16 +18,13 @@ const ImportExcelModal: React.FC<ImportExcelModalProps> = ({
   const handleDownloadTemplate = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(
-        "http://localhost:8080/api/admin/products/excel/template",
-        {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await fetch(`${apiUrl}/admin/products/excel/template`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (!response.ok) throw new Error("Failed to download template");
 
@@ -58,7 +55,7 @@ const ImportExcelModal: React.FC<ImportExcelModalProps> = ({
       formData.append("excel", excelFile);
 
       const response = await fetch(
-        "http://localhost:8080/api/admin/inventory/excel/import-stock",
+        `${apiUrl}/admin/inventory/excel/import-stock`,
         {
           method: "POST",
           credentials: "include",

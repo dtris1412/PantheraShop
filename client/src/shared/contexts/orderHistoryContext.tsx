@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { useAuth } from "./authContext";
+const apiUrl = import.meta.env.VITE_API_URL;
 
 export const OrderHistoryContext = createContext<any>(null);
 export const useOrderHistory = () => useContext(OrderHistoryContext);
@@ -31,12 +32,9 @@ export function OrderHistoryProvider({
         setLoading(false);
         return;
       }
-      const res = await fetch(
-        `http://localhost:8080/api/orders/user/${user_id}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const res = await fetch(`${apiUrl}/orders/user/${user_id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const data = await res.json();
       setOrders(data.data || []);
       setLoading(false);

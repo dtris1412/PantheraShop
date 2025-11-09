@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useAuth } from "./authContext";
-
+const apiUrl = import.meta.env.VITE_API_URL;
 interface CartItem {
   id: string;
   product_id: number;
@@ -35,7 +35,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         user_id = payload.user_id;
       } catch {}
       if (!user_id) return;
-      fetch(`http://localhost:8080/api/cart/${user_id}`, {
+      fetch(`${apiUrl}/cart/${user_id}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((res) => res.json())
@@ -46,7 +46,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             return;
           }
           // Lấy số lượng
-          fetch(`http://localhost:8080/api/cart/count/${cartData.cart_id}`, {
+          fetch(`${apiUrl}/cart/count/${cartData.cart_id}`, {
             headers: { Authorization: `Bearer ${token}` },
           })
             .then((res) => res.json())
@@ -54,7 +54,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
               setCartItemCount(data.count || 0);
             });
           // Lấy danh sách sản phẩm
-          fetch(`http://localhost:8080/api/cart/items/${cartData.cart_id}`, {
+          fetch(`${apiUrl}/cart/items/${cartData.cart_id}`, {
             headers: { Authorization: `Bearer ${token}` },
           })
             .then((res) => res.json())

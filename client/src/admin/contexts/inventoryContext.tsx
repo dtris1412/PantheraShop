@@ -1,5 +1,5 @@
 import { createContext, useContext, useState } from "react";
-
+const apiUrl = import.meta.env.VITE_API_URL;
 export interface Variant {
   variant_id: number | string;
   variant_size?: string;
@@ -58,7 +58,7 @@ export const InventoryProvider = ({
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8080/api/admin/inventory", {
+      const res = await fetch(`${apiUrl}/admin/inventory`, {
         method: "GET",
         headers: getAuthHeaders(),
       });
@@ -136,7 +136,7 @@ export const InventoryProvider = ({
             : variantData.product_id,
       };
 
-      const res = await fetch("http://localhost:8080/api/admin/inventory", {
+      const res = await fetch(`${apiUrl}/admin/inventory`, {
         method: "POST",
         headers: getAuthHeaders(),
         body: JSON.stringify(payload),
@@ -168,14 +168,11 @@ export const InventoryProvider = ({
         variant_stock: variantData.variant_stock,
       };
 
-      const res = await fetch(
-        `http://localhost:8080/api/admin/inventory/${variant_id}`,
-        {
-          method: "PUT",
-          headers: getAuthHeaders(),
-          body: JSON.stringify(payload),
-        }
-      );
+      const res = await fetch(`${apiUrl}/admin/inventory/${variant_id}`, {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload),
+      });
 
       if (!res.ok) {
         const errorData = await res.json();
@@ -194,13 +191,10 @@ export const InventoryProvider = ({
   const deleteVariant = async (variant_id: number | string) => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `http://localhost:8080/api/admin/inventory/${variant_id}`,
-        {
-          method: "DELETE",
-          headers: getAuthHeaders(),
-        }
-      );
+      const res = await fetch(`${apiUrl}/admin/inventory/${variant_id}`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
 
       if (!res.ok) {
         const errorData = await res.json();
