@@ -32,6 +32,8 @@ const createVariant = async (
     variant_color: variant_color || "Default",
     variant_stock: variant_stock || 0,
     product_id,
+    created_at: new Date(),
+    updated_at: new Date(),
   });
   return { success: true, variant: newVariant };
 };
@@ -66,6 +68,7 @@ const updateVariant = async (
   variant.variant_color = variant_color || variant.variant_color;
   variant.variant_stock =
     variant_stock !== undefined ? variant_stock : variant.variant_stock;
+  variant.updated_at = new Date();
 
   await variant.save();
   return { success: true, variant };

@@ -9,6 +9,7 @@ export interface Variant {
   product_name?: string; // Thêm dòng này
   product_image?: string; // Thêm dòng này
   created_at?: string;
+  updated_at?: string; // <-- Thêm dòng này
 }
 
 export interface Product {
@@ -108,6 +109,7 @@ export const InventoryProvider = ({
             product_name: variant.Product?.product_name,
             product_image: variant.Product?.product_image,
             created_at: variant.created_at,
+            updated_at: variant.updated_at,
           });
         }
       });

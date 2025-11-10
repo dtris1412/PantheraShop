@@ -10,6 +10,7 @@ import { useAdmin } from "../contexts/adminContext";
 import { useVoucher } from "../contexts/voucherContext";
 import { useBlog } from "../contexts/blogContext";
 import { useProduct } from "../contexts/productContext";
+import { useInventory } from "../contexts/inventoryContext";
 
 const ReportPage: React.FC = () => {
   const { reports, loading, error, getAllReports, createReport, deleteReport } =
@@ -19,6 +20,7 @@ const ReportPage: React.FC = () => {
   const { vouchers, getAllVouchers } = useVoucher();
   const { blogs, getAllBlogs } = useBlog();
   const { getAllProducts } = useProduct();
+  const { products: inventoryProducts, fetchProducts } = useInventory();
 
   const [reportType, setReportType] = useState<string>("revenue");
   const [fromDate, setFromDate] = useState<string>("");
@@ -273,6 +275,37 @@ const ReportPage: React.FC = () => {
       };
     }
 
+    if (reportType === "inventory") {
+      if (inventoryProducts.length === 0) {
+        await fetchProducts();
+      }
+      const from = new Date(fromDate);
+      const to = new Date(toDate);
+
+      // Gom tất cả variant từ các sản phẩm
+      const allVariants = inventoryProducts.flatMap((p) =>
+        Array.isArray(p.Variant) ? p.Variant : []
+      );
+
+      // Lọc theo updated_at (nếu không có thì bỏ qua)
+      const filteredVariants = allVariants.filter((v: any) => {
+        if (!v.updated_at) return false;
+        const updated = new Date(v.updated_at);
+        return updated >= from && updated <= to;
+      });
+
+      preview = {
+        report_type: "inventory",
+        from_date: fromDate,
+        to_date: toDate,
+        total_value: filteredVariants.length,
+        details: {
+          variants: filteredVariants,
+          total_variants: filteredVariants.length,
+        },
+      };
+    }
+
     setPreviewData(preview);
     setShowPreview(true);
   };
@@ -327,6 +360,7 @@ const ReportPage: React.FC = () => {
         <option value="users">BÁO CÁO NGƯỜI DÙNG</option>
         <option value="vouchers">BÁO CÁO VOUCHER</option>
         <option value="blogs">BÁO CÁO BLOG</option>
+        <option value="inventory">BÁO CÁO NHẬP KHO</option>
       </select>
     </div>
   );
@@ -361,6 +395,7 @@ const ReportPage: React.FC = () => {
   const renderFilters = () => {
     switch (reportType) {
       case "revenue":
+
       case "orders":
         return (
           <div className="mb-6">
@@ -586,46 +621,45 @@ const ReportPage: React.FC = () => {
             <div className="grid grid-cols-3 gap-4 mb-6">
               <div className="border-2 border-black p-4">
                 <div className="text-sm font-bold text-gray-600">
-                  SẢN PHẨM ĐÃ BÁN
+                  TỔNG SẢN PHẨM
                 </div>
                 <div className="text-2xl font-black">
-                  {details.total_products_sold}
+                  {details.products?.length ?? 0}
                 </div>
               </div>
-              <div className="border-2 border-black p-4">
-                <div className="text-sm font-bold text-gray-600">
-                  TỔNG SỐ LƯỢNG
-                </div>
-                <div className="text-2xl font-black">
-                  {details.total_quantity_sold}
-                </div>
-              </div>
-              <div className="border-2 border-black p-4">
-                <div className="text-sm font-bold text-gray-600">DOANH THU</div>
-                <div className="text-2xl font-black">
-                  {formatVND(details.total_revenue)}
-                </div>
-              </div>
+              {/* Có thể bổ sung thêm các thống kê khác nếu cần */}
             </div>
-            <div className="border-2 border-black p-4">
-              <h4 className="font-black mb-3">SẢN PHẨM BÁN CHẠY NHẤT</h4>
+            <div className="border-2 border-black p-4 mt-4">
+              <h4 className="font-black mb-3">CHI TIẾT SẢN PHẨM</h4>
               <table className="w-full">
                 <thead className="border-b-2 border-black">
                   <tr>
-                    <th className="text-left py-2 font-black">SẢN PHẨM</th>
-                    <th className="text-left py-2 font-black">DANH MỤC</th>
-                    <th className="text-right py-2 font-black">ĐÃ BÁN</th>
-                    <th className="text-right py-2 font-black">DOANH THU</th>
+                    <th className="text-left py-2 font-black">Tên sản phẩm</th>
+                    <th className="text-left py-2 font-black">Danh mục</th>
+                    <th className="text-right py-2 font-black">Giá bán</th>
+                    <th className="text-right py-2 font-black">Tồn kho</th>
+                    <th className="text-right py-2 font-black">Ngày tạo</th>
+                    <th className="text-right py-2 font-black">Trạng thái</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {details.best_sellers?.map((product: any, index: number) => (
-                    <tr key={index} className="border-b border-gray-200">
-                      <td className="py-2">{product.product_name}</td>
-                      <td className="py-2">{product.category}</td>
-                      <td className="text-right py-2">{product.total_sold}</td>
+                  {details.products?.map((p: any) => (
+                    <tr key={p.product_id} className="border-b border-gray-200">
+                      <td className="py-2">{p.product_name}</td>
+                      <td className="py-2">
+                        {p.Category?.category_name || ""}
+                      </td>
                       <td className="text-right py-2 font-bold">
-                        {formatVND(product.total_revenue)}
+                        {formatVND(p.product_price)}
+                      </td>
+                      <td className="text-right py-2">{p.stock}</td>
+                      <td className="text-right py-2">
+                        {p.created_at
+                          ? new Date(p.created_at).toLocaleDateString("vi-VN")
+                          : ""}
+                      </td>
+                      <td className="text-right py-2">
+                        {p.is_active ? "Hoạt động" : "Ngưng"}
                       </td>
                     </tr>
                   ))}
@@ -829,6 +863,53 @@ const ReportPage: React.FC = () => {
                       <td className="py-2">
                         {b.created_at
                           ? new Date(b.created_at).toLocaleDateString("vi-VN")
+                          : ""}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+
+      case "inventory":
+        return (
+          <div>
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="border-2 border-black p-4">
+                <div className="text-sm font-bold text-gray-600">
+                  TỔNG BIẾN THỂ NHẬP KHO
+                </div>
+                <div className="text-2xl font-black">
+                  {details.total_variants}
+                </div>
+              </div>
+            </div>
+            <div className="border-2 border-black p-4 mt-4">
+              <h4 className="font-black mb-3">CHI TIẾT NHẬP KHO</h4>
+              <table className="w-full">
+                <thead className="border-b-2 border-black">
+                  <tr>
+                    <th className="text-left py-2 font-black">Tên sản phẩm</th>
+                    <th className="text-left py-2 font-black">Màu</th>
+                    <th className="text-left py-2 font-black">Size</th>
+                    <th className="text-right py-2 font-black">Tồn kho</th>
+                    <th className="text-right py-2 font-black">
+                      Ngày cập nhật
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {details.variants?.map((v: any) => (
+                    <tr key={v.variant_id} className="border-b border-gray-200">
+                      <td className="py-2">{v.product_name}</td>
+                      <td className="py-2">{v.variant_color}</td>
+                      <td className="py-2">{v.variant_size}</td>
+                      <td className="text-right py-2">{v.variant_stock}</td>
+                      <td className="text-right py-2">
+                        {v.updated_at
+                          ? new Date(v.updated_at).toLocaleDateString("vi-VN")
                           : ""}
                       </td>
                     </tr>

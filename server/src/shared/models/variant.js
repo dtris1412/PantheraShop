@@ -17,6 +17,8 @@ export default (sequelize, DataTypes) => {
       variant_size: DataTypes.STRING,
       variant_color: DataTypes.STRING,
       variant_stock: DataTypes.INTEGER,
+      created_at: DataTypes.DATE,
+      updated_at: DataTypes.DATE,
       product_id: {
         type: DataTypes.INTEGER,
         references: {
