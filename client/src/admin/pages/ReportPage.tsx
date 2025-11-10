@@ -16,7 +16,7 @@ const ReportPage: React.FC = () => {
     useAdminReport();
   const { getAllOrders } = useOrder();
   const { getAllUsers } = useAdmin();
-  const { getAllVouchers } = useVoucher();
+  const { vouchers, getAllVouchers } = useVoucher();
   const { getAllBlogs } = useBlog();
   const { getAllProducts } = useProduct();
 
@@ -196,18 +196,47 @@ const ReportPage: React.FC = () => {
     }
 
     if (reportType === "vouchers") {
-      type Voucher = { voucher_status?: string; [key: string]: any };
-      const vouchers = (await getAllVouchers?.()) as Voucher[] | undefined;
-      const filteredVouchers = (vouchers ?? []).filter(
-        (v) =>
-          !filters.voucher_status || v.voucher_status === filters.voucher_status
+      if (vouchers.length === 0) {
+        await getAllVouchers();
+      }
+      const voucherList = vouchers;
+      const filteredVouchers = (voucherList ?? []).filter((v) => {
+        const createdDate = v.created_at ? new Date(v.created_at) : null;
+        const from = new Date(fromDate);
+        const to = new Date(toDate);
+        // Lọc theo khoảng thời gian created_at
+        const inRange = createdDate
+          ? createdDate >= from && createdDate <= to
+          : false;
+        // Lọc theo trạng thái nếu có
+        const statusMatch =
+          !filters.voucher_status ||
+          v.voucher_status === filters.voucher_status;
+        return inRange && statusMatch;
+      });
+      const total_vouchers = filteredVouchers.length;
+      const active_vouchers = filteredVouchers.filter(
+        (v) => v.voucher_status === "active"
+      ).length;
+      const inactive_vouchers = filteredVouchers.filter(
+        (v) => v.voucher_status === "inactive"
+      ).length;
+      const total_discount_given = filteredVouchers.reduce(
+        (sum, v) => sum + (Number(v.discount_value) || 0),
+        0
       );
       preview = {
         report_type: "vouchers",
         from_date: fromDate,
         to_date: toDate,
-        total_value: filteredVouchers.length,
-        details: { vouchers: filteredVouchers },
+        total_value: total_vouchers,
+        details: {
+          vouchers: filteredVouchers,
+          total_vouchers,
+          active_vouchers,
+          inactive_vouchers,
+          total_discount_given,
+        },
       };
     }
 
@@ -681,6 +710,57 @@ const ReportPage: React.FC = () => {
                   {formatVND(details.total_discount_given)}
                 </div>
               </div>
+            </div>
+            <div className="border-2 border-black p-4 mt-4">
+              <h4 className="font-black mb-3">CHI TIẾT VOUCHER</h4>
+              <table className="w-full">
+                <thead className="border-b-2 border-black">
+                  <tr>
+                    <th className="text-left py-2 font-black">Mã Voucher</th>
+                    <th className="text-left py-2 font-black">Loại</th>
+                    <th className="text-right py-2 font-black">Giá trị giảm</th>
+                    <th className="text-right py-2 font-black">
+                      Đơn tối thiểu
+                    </th>
+                    <th className="text-right py-2 font-black">Ngày bắt đầu</th>
+                    <th className="text-right py-2 font-black">
+                      Ngày kết thúc
+                    </th>
+                    <th className="text-right py-2 font-black">Số lượt dùng</th>
+                    <th className="text-right py-2 font-black">Giới hạn</th>
+                    <th className="text-right py-2 font-black">Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {details.vouchers?.map((v: any) => (
+                    <tr key={v.voucher_id} className="border-b border-gray-200">
+                      <td className="py-2">{v.voucher_code}</td>
+                      <td className="py-2">{v.discount_type}</td>
+                      <td className="text-right py-2 font-bold">
+                        {formatVND(v.discount_value)}
+                      </td>
+                      <td className="text-right py-2">
+                        {formatVND(v.min_order_value)}
+                      </td>
+                      <td className="text-right py-2">
+                        {v.start_date
+                          ? new Date(v.start_date).toLocaleDateString("vi-VN")
+                          : ""}
+                      </td>
+                      <td className="text-right py-2">
+                        {v.end_date
+                          ? new Date(v.end_date).toLocaleDateString("vi-VN")
+                          : ""}
+                      </td>
+                      <td className="text-right py-2">{v.used_count}</td>
+                      <td className="text-right py-2">{v.usage_limit}</td>
+                      <td className="text-right py-2">
+                        {v.voucher_status === "active" ? "Hoạt động" : "Ngưng"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         );

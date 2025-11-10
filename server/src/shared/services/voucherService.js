@@ -32,6 +32,7 @@ const createVoucher = async (
       usage_limit,
       used_count: 0,
       voucher_status,
+      created_at: new Date(),
     });
     return { success: true, voucher: newVoucher };
   } catch (err) {

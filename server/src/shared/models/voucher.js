@@ -22,6 +22,7 @@ export default (sequelize, DataTypes) => {
       usage_limit: DataTypes.INTEGER,
       used_count: DataTypes.INTEGER,
       voucher_status: DataTypes.STRING,
+      created_at: DataTypes.DATE,
     },
 
     {
