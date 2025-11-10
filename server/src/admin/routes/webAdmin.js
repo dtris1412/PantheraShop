@@ -20,6 +20,14 @@ import {
   getBlogById,
 } from "../../admin/controllers/blogController.js";
 
+//Import Report Controllers
+import {
+  createReport,
+  getAllReports,
+  getReportById,
+  deleteReport,
+} from "../../admin/controllers/reportController.js";
+
 //Import voucher Controllers
 import {
   createVoucher,
@@ -356,6 +364,13 @@ const initAdminRoutes = (app) => {
     upload.single("image"),
     uploadBlogImage
   );
+
+  // =============== REPORT MANAGEMENT ROUTES ===============
+  router.get("/api/admin/reports", verifyAdmin, getAllReports);
+  router.get("/api/admin/reports/:report_id", verifyAdmin, getReportById);
+  router.post("/api/admin/reports", verifyAdmin, createReport);
+  router.delete("/api/admin/reports/:report_id", verifyAdmin, deleteReport);
+
   return app.use("/", router);
 };
 

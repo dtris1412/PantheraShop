@@ -80,10 +80,7 @@ const AdminSidebar = () => {
       id: "reports",
       label: "Báo cáo",
       icon: <BarChart3 size={20} />,
-      subItems: [
-        { label: "Doanh thu", path: "/admin/reports/revenue" },
-        { label: "Khách hàng", path: "/admin/reports/customers" },
-      ],
+      path: "/admin/reports",
     },
     {
       id: "blogs",

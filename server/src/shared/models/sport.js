@@ -5,6 +5,7 @@ export default (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       Sport.hasMany(models.Tournament, { foreignKey: "sport_id" });
+      Sport.hasMany(models.Blog, { foreignKey: "sport_id" });
     }
   }
   Sport.init(
