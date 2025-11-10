@@ -56,27 +56,73 @@ const ReportPage: React.FC = () => {
 
     if (reportType === "revenue") {
       const orders = await getAllOrders?.();
-      // Lọc đơn hàng theo thời gian, trạng thái, phương thức thanh toán
       const filteredOrders = (orders ?? []).filter((o) => {
         const orderDate = new Date(o.order_date);
         return (
           orderDate >= new Date(fromDate) &&
           orderDate <= new Date(toDate) &&
-          o.order_status === "completed" &&
+          o.order_status === "Đã giao" &&
           (!filters.payment_method ||
-            o.payment_method === filters.payment_method)
+            o.payment_method?.toLowerCase() ===
+              filters.payment_method?.toLowerCase())
         );
       });
       const totalRevenue = filteredOrders.reduce(
-        (sum, o) => sum + (o.total_amount || 0),
+        (sum, o) => sum + (Number(o.total_amount) || 0),
         0
       );
+      const orderCount = filteredOrders.length;
+
+      // Top 10 sản phẩm bán chạy
+      const productStats: Record<
+        string,
+        { product_name: string; total_quantity: number; total_revenue: number }
+      > = {};
+      filteredOrders.forEach((o: any) => {
+        (o.orderProducts ?? []).forEach((prod: any) => {
+          const key = prod.product_id;
+          if (!productStats[key]) {
+            productStats[key] = {
+              product_name: prod.product_name,
+              total_quantity: 0,
+              total_revenue: 0,
+            };
+          }
+          productStats[key].total_quantity += prod.quantity || 0;
+          productStats[key].total_revenue += prod.total_price || 0;
+        });
+      });
+      const top_products = Object.values(productStats)
+        .sort((a, b) => b.total_quantity - a.total_quantity)
+        .slice(0, 10);
+
+      // Mapping chi tiết đơn hàng giống báo cáo đơn hàng
+      const orderDetails = filteredOrders.map((o: any) => ({
+        order_id: o.order_id,
+        user_name: o.recipient_name || o.User?.user_name || "",
+        total_amount: Number(o.total_amount) || 0,
+        order_status: o.order_status,
+        order_date: o.order_date,
+        payment_method: o.Payment?.payment_method || "",
+        payment_status: o.Payment?.payment_status || "",
+        recipient_address: o.recipient_address,
+        recipient_phone: o.recipient_phone,
+        voucher_id: o.voucher_id,
+        orderProducts: o.orderProducts ?? [],
+        notes: o.notes,
+      }));
+
       preview = {
         report_type: "revenue",
         from_date: fromDate,
         to_date: toDate,
         total_value: totalRevenue,
-        details: { orders: filteredOrders, total_revenue: totalRevenue },
+        details: {
+          orders: orderDetails, // <-- dùng orderDetails đã mapping payment
+          total_revenue: totalRevenue,
+          order_count: orderCount,
+          top_products,
+        },
       };
     }
 
@@ -380,7 +426,7 @@ const ReportPage: React.FC = () => {
       </div>
       <div>
         <label className="block text-sm font-bold text-gray-900 mb-2">
-          ĐÉN NGÀY
+          ĐẾN NGÀY
         </label>
         <input
           type="date"
@@ -518,31 +564,39 @@ const ReportPage: React.FC = () => {
               </div>
               <div className="border-2 border-black p-4">
                 <div className="text-sm font-bold text-gray-600">
-                  SỐ ĐơN HÀNG
+                  SỐ ĐƠN HÀNG
                 </div>
                 <div className="text-2xl font-black">{details.order_count}</div>
               </div>
             </div>
             <div className="border-2 border-black p-4">
-              <h4 className="font-black mb-3">TOP 10 SẢN PHẨM BÁN CHẠY</h4>
+              <h4 className="font-black mb-3">CHI TIẾT ĐƠN HÀNG</h4>
               <table className="w-full">
                 <thead className="border-b-2 border-black">
                   <tr>
-                    <th className="text-left py-2 font-black">SẢN PHẨM</th>
-                    <th className="text-right py-2 font-black">SỐ LƯỢNG</th>
-                    <th className="text-right py-2 font-black">DOANH THU</th>
+                    <th className="text-left py-2 font-black">Mã Đơn</th>
+                    <th className="text-left py-2 font-black">Khách</th>
+                    <th className="text-right py-2 font-black">Tổng Tiền</th>
+                    <th className="text-right py-2 font-black">Trạng Thái</th>
+                    <th className="text-right py-2 font-black">Ngày Tạo</th>
+                    <th className="text-right py-2 font-black">Thanh Toán</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {details.top_products?.map((product: any, index: number) => (
-                    <tr key={index} className="border-b border-gray-200">
-                      <td className="py-2">{product.product_name}</td>
-                      <td className="text-right py-2">
-                        {product.total_quantity}
-                      </td>
+                  {details.orders?.map((o: any) => (
+                    <tr key={o.order_id} className="border-b border-gray-200">
+                      <td className="py-2">{o.order_id}</td>
+                      <td className="py-2">{o.user_name}</td>
                       <td className="text-right py-2 font-bold">
-                        {formatVND(product.total_revenue)}
+                        {formatVND(o.total_amount)}
                       </td>
+                      <td className="text-right py-2">{o.order_status}</td>
+                      <td className="text-right py-2">
+                        {o.order_date
+                          ? new Date(o.order_date).toLocaleDateString("vi-VN")
+                          : ""}
+                      </td>
+                      <td className="text-right py-2">{o.payment_method}</td>
                     </tr>
                   ))}
                 </tbody>
