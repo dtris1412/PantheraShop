@@ -17,7 +17,7 @@ const ReportPage: React.FC = () => {
   const { getAllOrders } = useOrder();
   const { getAllUsers } = useAdmin();
   const { vouchers, getAllVouchers } = useVoucher();
-  const { getAllBlogs } = useBlog();
+  const { blogs, getAllBlogs } = useBlog();
   const { getAllProducts } = useProduct();
 
   const [reportType, setReportType] = useState<string>("revenue");
@@ -241,13 +241,35 @@ const ReportPage: React.FC = () => {
     }
 
     if (reportType === "blogs") {
-      const blogs = await getAllBlogs?.();
+      if (blogs.length === 0) {
+        await getAllBlogs();
+      }
+      const blogList = blogs;
+      // Lọc theo khoảng thời gian created_at
+      const filteredBlogs = (blogList ?? []).filter((b) => {
+        const createdDate = b.created_at ? new Date(b.created_at) : null;
+        const from = new Date(fromDate);
+        const to = new Date(toDate);
+        return createdDate ? createdDate >= from && createdDate <= to : false;
+      });
+
+      // Tổng hợp theo thể thao
+      const blogs_by_sport: Record<string, number> = {};
+      filteredBlogs.forEach((b) => {
+        const sportName = b.Sport?.sport_name || "Khác";
+        blogs_by_sport[sportName] = (blogs_by_sport[sportName] || 0) + 1;
+      });
+
       preview = {
         report_type: "blogs",
         from_date: fromDate,
         to_date: toDate,
-        total_value: (blogs ?? []).length,
-        details: { blogs: blogs ?? [] },
+        total_value: filteredBlogs.length,
+        details: {
+          blogs: filteredBlogs,
+          total_blogs: filteredBlogs.length,
+          blogs_by_sport,
+        },
       };
     }
 
@@ -786,6 +808,33 @@ const ReportPage: React.FC = () => {
                   )
                 )}
               </div>
+            </div>
+            <div className="border-2 border-black p-4 mt-4">
+              <h4 className="font-black mb-3">CHI TIẾT BLOG</h4>
+              <table className="w-full">
+                <thead className="border-b-2 border-black">
+                  <tr>
+                    <th className="text-left py-2 font-black">Tiêu đề</th>
+                    <th className="text-left py-2 font-black">Người viết</th>
+                    <th className="text-left py-2 font-black">Thể thao</th>
+                    <th className="text-left py-2 font-black">Ngày tạo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {details.blogs?.map((b: any) => (
+                    <tr key={b.blog_id} className="border-b border-gray-200">
+                      <td className="py-2">{b.blog_title}</td>
+                      <td className="py-2">{b.User?.user_name || ""}</td>
+                      <td className="py-2">{b.Sport?.sport_name || "Khác"}</td>
+                      <td className="py-2">
+                        {b.created_at
+                          ? new Date(b.created_at).toLocaleDateString("vi-VN")
+                          : ""}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         );
