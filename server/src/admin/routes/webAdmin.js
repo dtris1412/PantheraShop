@@ -11,6 +11,8 @@ import {
 
 const upload = multer({ dest: "uploads/" });
 
+//Import Payment Controllers
+import { getMethodByOrderId } from "../../admin/controllers/paymentController.js";
 //Import Blog Controllers
 import {
   getAllBlogs,
@@ -371,6 +373,12 @@ const initAdminRoutes = (app) => {
   router.post("/api/admin/reports", verifyAdmin, createReport);
   router.delete("/api/admin/reports/:report_id", verifyAdmin, deleteReport);
 
+  // =============== PAYMENT MANAGEMENT ROUTES ===============
+  router.get(
+    "/api/admin/payments/method/:order_id",
+    verifyAdmin,
+    getMethodByOrderId
+  );
   return app.use("/", router);
 };
 

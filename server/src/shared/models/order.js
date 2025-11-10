@@ -8,6 +8,7 @@ export default (sequelize, DataTypes) => {
       Order.belongsTo(models.User, { foreignKey: "user_id" });
       Order.belongsTo(models.Voucher, { foreignKey: "voucher_id" });
       Order.hasMany(models.OrderProduct, { foreignKey: "order_id" });
+      Order.hasOne(models.Payment, { foreignKey: "order_id" });
     }
   }
   Order.init(

@@ -74,6 +74,11 @@ const getAllOrders = async () => {
     const orders = await db.Order.findAll({
       include: [
         {
+          model: db.Payment,
+          attributes: ["payment_method", "payment_status"],
+        },
+
+        {
           model: db.User,
           attributes: ["user_id", "user_name", "user_email"],
         },

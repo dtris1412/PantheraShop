@@ -178,10 +178,23 @@ const createVnpayPayment = ({ amount, orderId, orderInfo }) => {
   return `${vnpayConfig.vnp_Url}?${qs.stringify(sorted, { encode: false })}`;
 };
 
+const getMethodByOrderId = async (order_id) => {
+  try {
+    const payment = await db.Payment.findOne({ where: { order_id } });
+    if (!payment) {
+      return { success: false, message: "Payment not found" };
+    }
+    return { success: true, payment };
+  } catch (err) {
+    console.error("==> [getStatusByOrderId] Error:", err);
+    return { success: false, message: err.message };
+  }
+};
 export {
   createMomoPayment,
   createPayment,
   createVnpayPayment,
   updatePaymentStatusByIpn,
   handleMomoIpn,
+  getMethodByOrderId,
 };

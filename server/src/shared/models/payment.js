@@ -4,7 +4,9 @@ export default (sequelize, DataTypes) => {
   class Payment extends Model {
     static associate(models) {
       // define association here
-      Payment.belongsTo(models.Variant, { foreignKey: "product_id" });
+      Payment.belongsTo(models.Order, { foreignKey: "order_id" });
+      Payment.belongsTo(models.User, { foreignKey: "user_id" });
+      Payment.belongsTo(models.Voucher, { foreignKey: "voucher_id" });
     }
   }
   Payment.init(

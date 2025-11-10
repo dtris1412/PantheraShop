@@ -80,22 +80,58 @@ const ReportPage: React.FC = () => {
 
     if (reportType === "orders") {
       const orders = await getAllOrders?.();
-      const filteredOrders = (orders ?? []).filter((o) => {
+      // ép kiểu nếu cần: as any[]
+      const filteredOrders = (orders ?? []).filter((o: any) => {
         const orderDate = new Date(o.order_date);
+        // Lọc theo payment_method từ o.Payment.payment_method
         return (
           orderDate >= new Date(fromDate) &&
           orderDate <= new Date(toDate) &&
           (!filters.order_status || o.order_status === filters.order_status) &&
           (!filters.payment_method ||
-            o.payment_method === filters.payment_method)
+            o.Payment?.payment_method?.toLowerCase() ===
+              filters.payment_method.toLowerCase())
         );
       });
+
+      // Tổng hợp breakdown theo trạng thái
+      const status_breakdown: Record<string, { count: number; total: number }> =
+        {};
+      filteredOrders.forEach((o: any) => {
+        const status = o.order_status || "Khác";
+        if (!status_breakdown[status]) {
+          status_breakdown[status] = { count: 0, total: 0 };
+        }
+        status_breakdown[status].count += 1;
+        status_breakdown[status].total += Number(o.total_amount) || 0;
+      });
+
+      // Chi tiết từng đơn hàng
+      const orderDetails = filteredOrders.map((o: any) => ({
+        order_id: o.order_id,
+        user_name: o.recipient_name || o.User?.user_name || "",
+        total_amount: Number(o.total_amount) || 0,
+        order_status: o.order_status,
+        order_date: o.order_date,
+        payment_method: o.Payment?.payment_method || "",
+        payment_status: o.Payment?.payment_status || "",
+        recipient_address: o.recipient_address,
+        recipient_phone: o.recipient_phone,
+        voucher_id: o.voucher_id,
+        orderProducts: o.orderProducts ?? [],
+        notes: o.notes,
+      }));
+
       preview = {
         report_type: "orders",
         from_date: fromDate,
         to_date: toDate,
         total_value: filteredOrders.length,
-        details: { orders: filteredOrders },
+        details: {
+          total_orders: filteredOrders.length,
+          status_breakdown,
+          orders: orderDetails,
+        },
       };
     }
 
@@ -292,7 +328,7 @@ const ReportPage: React.FC = () => {
             >
               <option value="">TẤT CẢ</option>
               <option value="COD">COD</option>
-              <option value="banking">CHUYỂN KHOẢN</option>
+              <option value="banking">MOMO</option>
             </select>
           </div>
         );
@@ -449,11 +485,46 @@ const ReportPage: React.FC = () => {
                   ([status, data]: [string, any]) => (
                     <div key={status} className="flex justify-between text-sm">
                       <span className="font-bold uppercase">{status}:</span>
-                      <span>{data.count}</span>
+                      <span>
+                        {data.count} ({formatVND(data.total)})
+                      </span>
                     </div>
                   )
                 )}
               </div>
+            </div>
+            <div className="border-2 border-black p-4 mt-4">
+              <h4 className="font-black mb-3">CHI TIẾT ĐƠN HÀNG</h4>
+              <table className="w-full">
+                <thead className="border-b-2 border-black">
+                  <tr>
+                    <th className="text-left py-2 font-black">Mã Đơn</th>
+                    <th className="text-left py-2 font-black">Khách</th>
+                    <th className="text-right py-2 font-black">Tổng Tiền</th>
+                    <th className="text-right py-2 font-black">Trạng Thái</th>
+                    <th className="text-right py-2 font-black">Ngày Tạo</th>
+                    <th className="text-right py-2 font-black">Thanh Toán</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {details.orders?.map((o: any) => (
+                    <tr key={o.order_id} className="border-b border-gray-200">
+                      <td className="py-2">{o.order_id}</td>
+                      <td className="py-2">{o.user_name}</td>
+                      <td className="text-right py-2 font-bold">
+                        {formatVND(o.total_amount)}
+                      </td>
+                      <td className="text-right py-2">{o.order_status}</td>
+                      <td className="text-right py-2">
+                        {o.order_date
+                          ? new Date(o.order_date).toLocaleDateString("vi-VN")
+                          : ""}
+                      </td>
+                      <td className="text-right py-2">{o.payment_method}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         );
