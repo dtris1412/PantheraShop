@@ -3,6 +3,7 @@ import {
   useAdminReport,
   ReportFilters,
   PreviewReportData,
+  Report, // <-- add this import
 } from "../contexts/reportContext";
 import { formatVND } from "../../utils/format";
 import { useOrder } from "../contexts/orderContext";
@@ -13,8 +14,15 @@ import { useProduct } from "../contexts/productContext";
 import { useInventory } from "../contexts/inventoryContext";
 
 const ReportPage: React.FC = () => {
-  const { reports, loading, error, getAllReports, createReport, deleteReport } =
-    useAdminReport();
+  const {
+    reports,
+    loading,
+    error,
+    getAllReports,
+    createReport,
+    deleteReport,
+    getReportById, // <-- thêm dòng này
+  } = useAdminReport();
   const { getAllOrders } = useOrder();
   const { getAllUsers } = useAdmin();
   const { vouchers, getAllVouchers } = useVoucher();
@@ -30,6 +38,7 @@ const ReportPage: React.FC = () => {
     null
   );
   const [showPreview, setShowPreview] = useState<boolean>(false);
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
 
   useEffect(() => {
     getAllReports();
@@ -333,7 +342,6 @@ const ReportPage: React.FC = () => {
         Array.isArray(p.Variant) ? p.Variant : []
       );
 
-      // Lọc theo updated_at (nếu không có thì bỏ qua)
       const filteredVariants = allVariants.filter((v: any) => {
         if (!v.updated_at) return false;
         const updated = new Date(v.updated_at);
@@ -506,6 +514,98 @@ const ReportPage: React.FC = () => {
   const handleExportPDF = (_report_id: number) => {
     // TODO: Implement PDF export
     alert("Tính năng xuất PDF đang được phát triển");
+  };
+
+  const handleViewReport = async (report_id: number) => {
+    const report = await getReportById(report_id);
+    console.log("Report details received:", report); // <-- Add this line for debugging
+    if (report) {
+      setSelectedReport(report);
+    }
+  };
+
+  const handleCloseReportDetail = () => {
+    setSelectedReport(null);
+  };
+
+  const renderReportDetail = () => {
+    if (!selectedReport) return null;
+    let details: any = selectedReport.details;
+    // Parse nhiều lần nếu cần
+    let parseCount = 0;
+    while (typeof details === "string" && parseCount < 5) {
+      try {
+        details = JSON.parse(details);
+        parseCount++;
+      } catch {
+        break;
+      }
+    }
+    // Log để kiểm tra dữ liệu thực tế
+    console.log("Parsed details for report:", details);
+
+    // Nếu là báo cáo kho xuất, kiểm tra exported_variants
+    if (
+      selectedReport.report_type?.toLowerCase().includes("xuất") &&
+      (!details.exported_variants || !Array.isArray(details.exported_variants))
+    ) {
+      return (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white border-4 border-black p-8 max-w-5xl w-full relative">
+            <button
+              onClick={handleCloseReportDetail}
+              className="absolute top-4 right-4 px-4 py-2 border-2 border-black font-bold hover:bg-gray-100"
+            >
+              ĐÓNG
+            </button>
+            <h2 className="text-2xl font-black uppercase mb-6">
+              CHI TIẾT BÁO CÁO
+            </h2>
+            <div className="mb-4">Không có dữ liệu chi tiết xuất kho.</div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+        <div
+          className="bg-white border-4 border-black p-8 max-w-5xl w-full relative"
+          style={{ maxHeight: "90vh", overflow: "auto" }} // Sửa ở đây
+        >
+          <button
+            onClick={handleCloseReportDetail}
+            className="absolute top-4 right-4 px-4 py-2 border-2 border-black font-bold hover:bg-gray-100"
+          >
+            ĐÓNG
+          </button>
+          <h2 className="text-2xl font-black uppercase mb-6">
+            CHI TIẾT BÁO CÁO
+          </h2>
+          <div className="mb-4">
+            <div className="font-bold">Loại báo cáo:</div>
+            <div>{selectedReport.report_type}</div>
+          </div>
+          <div className="mb-4">
+            <div className="font-bold">Thời gian:</div>
+            <div>
+              {selectedReport.from_date} - {selectedReport.to_date}
+            </div>
+          </div>
+          <div className="mb-4">
+            <div className="font-bold">Giá trị tổng:</div>
+            <div>{selectedReport.total_value}</div>
+          </div>
+          <div
+            className="border-2 border-black p-4"
+            style={{ maxHeight: "60vh", overflowY: "auto" }} // Tăng chiều cao chi tiết
+          >
+            <h3 className="font-black mb-3">Chi tiết</h3>
+            {renderPreviewDetails(details, selectedReport.report_type)}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const renderReportTypeSelector = () => (
@@ -688,8 +788,34 @@ const ReportPage: React.FC = () => {
     );
   };
 
-  const renderPreviewDetails = (details: any) => {
-    switch (reportType) {
+  const normalizeReportType = (type: string) => {
+    switch (type) {
+      case "Doanh thu":
+        return "revenue";
+      case "Đơn hàng":
+        return "orders";
+      case "Sản phẩm":
+        return "products";
+      case "Người dùng":
+        return "users";
+      case "Voucher":
+        return "vouchers";
+      case "Blog":
+        return "blogs";
+      case "Nhập kho":
+        return "inventory";
+      case "Kho - Nhập":
+        return "warehouse";
+      case "Kho - Xuất":
+        return "warehouse";
+      default:
+        return type;
+    }
+  };
+
+  const renderPreviewDetails = (details: any, type?: string) => {
+    const currentType = normalizeReportType(type || reportType);
+    switch (currentType) {
       case "revenue":
         return (
           <div>
@@ -1261,6 +1387,12 @@ const ReportPage: React.FC = () => {
                     >
                       XÓA
                     </button>
+                    <button
+                      onClick={() => handleViewReport(report.report_id)}
+                      className="px-4 py-2 bg-blue-600 text-white text-sm font-bold hover:bg-blue-700"
+                    >
+                      XEM CHI TIẾT
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1268,6 +1400,8 @@ const ReportPage: React.FC = () => {
           ))}
         </div>
       )}
+      {/* Đưa modal ra ngoài vòng lặp, chỉ render một lần */}
+      {renderReportDetail()}
     </div>
   );
 
