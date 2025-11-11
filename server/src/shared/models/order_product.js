@@ -6,6 +6,7 @@ export default (sequelize, DataTypes) => {
       // define association here
       // OrderProduct.belongsTo(models.Variant, { foreignKey: "product_id" });
       OrderProduct.belongsTo(models.Variant, { foreignKey: "variant_id" });
+      OrderProduct.belongsTo(models.Order, { foreignKey: "order_id" });
     }
   }
   OrderProduct.init(

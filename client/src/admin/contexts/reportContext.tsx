@@ -29,6 +29,7 @@ export interface ReportFilters {
   voucher_status?: string;
   sport_id?: number;
   registration_date?: boolean;
+  warehouse_type?: "import" | "export";
 }
 
 export interface PreviewReportData {

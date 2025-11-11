@@ -352,20 +352,138 @@ const ReportPage: React.FC = () => {
       };
     }
 
+    if (reportType === "warehouse") {
+      // Nhập kho
+      if (inventoryProducts.length === 0) {
+        await fetchProducts();
+      }
+      const allVariants = inventoryProducts.flatMap((p) =>
+        Array.isArray(p.Variant) ? p.Variant : []
+      );
+
+      // Xuất kho
+      const orders = await getAllOrders?.();
+      const exportedProducts: Record<
+        string,
+        {
+          product_name: string;
+          variant_id: number | string;
+          variant_size?: string;
+          variant_color?: string;
+          total_exported: number;
+          last_exported_at?: string;
+        }
+      > = {};
+
+      (orders ?? []).forEach((order: any) => {
+        (order.orderProducts ?? []).forEach((op: any) => {
+          const v = op.Variant;
+          const key = `${v.variant_id}`;
+          if (!exportedProducts[key]) {
+            exportedProducts[key] = {
+              product_name: v.Product?.product_name || v.product_name || "",
+              variant_id: v.variant_id,
+              variant_size: v.variant_size,
+              variant_color: v.variant_color,
+              total_exported: 0,
+              last_exported_at: order.order_date,
+            };
+          }
+          exportedProducts[key].total_exported += Number(op.quantity) || 0;
+          // Cập nhật ngày xuất gần nhất
+          if (
+            !exportedProducts[key].last_exported_at ||
+            new Date(order.order_date) >
+              new Date(exportedProducts[key].last_exported_at)
+          ) {
+            exportedProducts[key].last_exported_at = order.order_date;
+          }
+        });
+      });
+
+      // Tính tổng số lượng xuất kho
+      const total_exported_quantity = Object.values(exportedProducts).reduce(
+        (sum, v: any) => sum + (Number(v.total_exported) || 0),
+        0
+      );
+
+      preview = {
+        report_type: "warehouse",
+        from_date: fromDate,
+        to_date: toDate,
+        total_value:
+          filters.warehouse_type === "export"
+            ? total_exported_quantity
+            : allVariants.length,
+        details: {
+          imported_variants: allVariants,
+          exported_variants: Object.values(exportedProducts),
+          total_exported_quantity, // <-- thêm vào details để dùng ở UI
+          warehouse_type: filters.warehouse_type || "import",
+        },
+      };
+    }
+
     setPreviewData(preview);
     setShowPreview(true);
+  };
+
+  const getReportTypeLabel = (type: string, warehouseType?: string) => {
+    switch (type) {
+      case "revenue":
+        return "Doanh thu";
+      case "orders":
+        return "Đơn hàng";
+      case "products":
+        return "Sản phẩm";
+      case "users":
+        return "Người dùng";
+      case "vouchers":
+        return "Voucher";
+      case "blogs":
+        return "Blog";
+      case "inventory":
+        return "Nhập kho";
+      case "warehouse":
+        if (warehouseType === "import") return "Kho - Nhập";
+        if (warehouseType === "export") return "Kho - Xuất";
+        return "Kho";
+      default:
+        return type;
+    }
   };
 
   // Khi lưu báo cáo, truyền previewData vào createReport
   const handleSaveReport = async () => {
     if (!previewData) return;
-    const success = await createReport(
+    let detailsToSave = previewData.details;
+    let reportTypeLabel = getReportTypeLabel(
       previewData.report_type,
+      detailsToSave.warehouse_type
+    );
+    // Nếu là báo cáo warehouse thì chỉ lưu đúng loại chi tiết
+    if (previewData.report_type === "warehouse") {
+      if (detailsToSave.warehouse_type === "import") {
+        detailsToSave = {
+          warehouse_type: "import",
+          imported_variants: detailsToSave.imported_variants,
+          total_imported: detailsToSave.imported_variants?.length || 0,
+        };
+      } else if (detailsToSave.warehouse_type === "export") {
+        detailsToSave = {
+          warehouse_type: "export",
+          exported_variants: detailsToSave.exported_variants,
+          total_exported_quantity: detailsToSave.total_exported_quantity || 0,
+        };
+      }
+    }
+    const success = await createReport(
+      reportTypeLabel, // <-- dùng tên tiếng Việt
       previewData.from_date,
       previewData.to_date,
       filters,
       previewData.total_value,
-      previewData.details
+      detailsToSave
     );
     if (success) {
       alert("Lưu báo cáo thành công!");
@@ -407,6 +525,7 @@ const ReportPage: React.FC = () => {
         <option value="vouchers">BÁO CÁO VOUCHER</option>
         <option value="blogs">BÁO CÁO BLOG</option>
         <option value="inventory">BÁO CÁO NHẬP KHO</option>
+        <option value="warehouse">BÁO CÁO XUẤT NHẬP KHO</option>
       </select>
     </div>
   );
@@ -483,6 +602,27 @@ const ReportPage: React.FC = () => {
               <option value="">TẤT CẢ</option>
               <option value="active">HOẠT ĐỘNG</option>
               <option value="inactive">NGƯNG HOẠT ĐỘNG</option>
+            </select>
+          </div>
+        );
+      case "warehouse":
+        return (
+          <div className="mb-6">
+            <label className="block text-sm font-bold text-gray-900 mb-2">
+              CHỌN LOẠI XUẤT/NHẬP KHO
+            </label>
+            <select
+              value={filters.warehouse_type || "import"}
+              onChange={(e) =>
+                setFilters({
+                  ...filters,
+                  warehouse_type: e.target.value as "import" | "export",
+                })
+              }
+              className="w-full px-4 py-3 border-2 border-black bg-white text-black font-medium focus:outline-none focus:ring-2 focus:ring-black"
+            >
+              <option value="import">NHẬP KHO</option>
+              <option value="export">XUẤT KHO</option>
             </select>
           </div>
         );
@@ -971,6 +1111,91 @@ const ReportPage: React.FC = () => {
                 </tbody>
               </table>
             </div>
+          </div>
+        );
+
+      case "warehouse":
+        return (
+          <div>
+            {details.warehouse_type === "export" && (
+              <div className="border-2 border-black p-4 mt-4">
+                <h4 className="font-black mb-3">CHI TIẾT XUẤT KHO</h4>
+                <table className="w-full">
+                  <thead className="border-b-2 border-black">
+                    <tr>
+                      <th className="text-left py-2 font-black">
+                        Tên sản phẩm
+                      </th>
+                      <th className="text-left py-2 font-black">Màu</th>
+                      <th className="text-left py-2 font-black">Size</th>
+                      <th className="text-right py-2 font-black">Tổng xuất</th>
+                      <th className="text-right py-2 font-black">
+                        Ngày xuất gần nhất
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {details.exported_variants?.map((v: any) => (
+                      <tr
+                        key={v.variant_id}
+                        className="border-b border-gray-200"
+                      >
+                        <td className="py-2">{v.product_name}</td>
+                        <td className="py-2">{v.variant_color}</td>
+                        <td className="py-2">{v.variant_size}</td>
+                        <td className="text-right py-2">{v.total_exported}</td>
+                        <td className="text-right py-2">
+                          {v.last_exported_at
+                            ? new Date(v.last_exported_at).toLocaleDateString(
+                                "vi-VN"
+                              )
+                            : ""}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {(details.warehouse_type === "import" ||
+              !details.warehouse_type) && (
+              <div className="border-2 border-black p-4 mt-4">
+                <h4 className="font-black mb-3">CHI TIẾT NHẬP KHO</h4>
+                <table className="w-full">
+                  <thead className="border-b-2 border-black">
+                    <tr>
+                      <th className="text-left py-2 font-black">
+                        Tên sản phẩm
+                      </th>
+                      <th className="text-left py-2 font-black">Màu</th>
+                      <th className="text-left py-2 font-black">Size</th>
+                      <th className="text-right py-2 font-black">Tồn kho</th>
+                      <th className="text-right py-2 font-black">Ngày nhập</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {details.imported_variants?.map((v: any) => (
+                      <tr
+                        key={v.variant_id}
+                        className="border-b border-gray-200"
+                      >
+                        <td className="py-2">
+                          {v.Product?.product_name || v.product_name || ""}
+                        </td>
+                        <td className="py-2">{v.variant_color}</td>
+                        <td className="py-2">{v.variant_size}</td>
+                        <td className="text-right py-2">{v.variant_stock}</td>
+                        <td className="text-right py-2">
+                          {v.created_at
+                            ? new Date(v.created_at).toLocaleDateString("vi-VN")
+                            : ""}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         );
 
