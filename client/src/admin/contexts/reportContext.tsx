@@ -55,6 +55,7 @@ interface AdminReportContextType {
     details: any
   ) => Promise<boolean>;
   deleteReport: (report_id: number) => Promise<boolean>;
+  exportReportToExcel: (report_id: number) => Promise<void>; // <-- thêm dòng này
 }
 
 const AdminReportContext = createContext<AdminReportContextType | undefined>(
@@ -231,6 +232,36 @@ export const AdminReportProvider: React.FC<AdminReportProviderProps> = ({
     }
   };
 
+  // Export report to Excel
+  const exportReportToExcel = async (report_id: number): Promise<void> => {
+    try {
+      const token = getToken();
+      const response = await fetch(
+        `${API_URL}/admin/reports/${report_id}/export-excel`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Không thể xuất file Excel");
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `report_${report_id}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      setError(err.message || "Lỗi xuất file Excel");
+    }
+  };
+
   const value: AdminReportContextType = {
     reports,
     loading,
@@ -239,6 +270,7 @@ export const AdminReportProvider: React.FC<AdminReportProviderProps> = ({
     getReportById,
     createReport,
     deleteReport,
+    exportReportToExcel, // <-- thêm vào value
   };
 
   return (

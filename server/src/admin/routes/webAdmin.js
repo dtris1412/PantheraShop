@@ -28,6 +28,7 @@ import {
   getAllReports,
   getReportById,
   deleteReport,
+  exportReportToExcel,
 } from "../../admin/controllers/reportController.js";
 
 //Import voucher Controllers
@@ -372,7 +373,11 @@ const initAdminRoutes = (app) => {
   router.get("/api/admin/reports/:report_id", verifyAdmin, getReportById);
   router.post("/api/admin/reports", verifyAdmin, createReport);
   router.delete("/api/admin/reports/:report_id", verifyAdmin, deleteReport);
-
+  router.get(
+    "/api/admin/reports/:report_id/export-excel",
+    verifyAdmin,
+    exportReportToExcel
+  );
   // =============== PAYMENT MANAGEMENT ROUTES ===============
   router.get(
     "/api/admin/payments/method/:order_id",

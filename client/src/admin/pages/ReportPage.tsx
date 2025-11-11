@@ -21,7 +21,8 @@ const ReportPage: React.FC = () => {
     getAllReports,
     createReport,
     deleteReport,
-    getReportById, // <-- thêm dòng này
+    getReportById,
+    exportReportToExcel, // <-- thêm dòng này
   } = useAdminReport();
   const { getAllOrders } = useOrder();
   const { getAllUsers } = useAdmin();
@@ -506,9 +507,8 @@ const ReportPage: React.FC = () => {
     }
   };
 
-  const handleExportExcel = (_report_id: number) => {
-    // TODO: Implement Excel export
-    alert("Tính năng xuất Excel đang được phát triển");
+  const handleExportExcel = async (report_id: number) => {
+    await exportReportToExcel(report_id);
   };
 
   const handleExportPDF = (_report_id: number) => {
@@ -1374,12 +1374,6 @@ const ReportPage: React.FC = () => {
                       className="px-4 py-2 bg-green-600 text-white text-sm font-bold hover:bg-green-700"
                     >
                       EXCEL
-                    </button>
-                    <button
-                      onClick={() => handleExportPDF(report.report_id)}
-                      className="px-4 py-2 bg-red-600 text-white text-sm font-bold hover:bg-red-700"
-                    >
-                      PDF
                     </button>
                     <button
                       onClick={() => handleDeleteReport(report.report_id)}

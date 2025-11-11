@@ -3,7 +3,32 @@ import {
   getAllReports as getAllReportsService,
   getReportById as getReportByIdService,
   deleteReport as deleteReportService,
+  exportReportToExcel as exportReportToExcelService,
 } from "../../shared/services/reportService.js";
+
+const exportReportToExcel = async (req, res) => {
+  try {
+    const { report_id } = req.params;
+    const buffer = await exportReportToExcelService(report_id);
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=report_${report_id}.xlsx`
+    );
+    res.send(buffer);
+  } catch (err) {
+    console.error("Error in exportReportToExcel controller:", err);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: err.message,
+    });
+  }
+};
 
 // Tạo báo cáo (nhận dữ liệu đã tổng hợp từ frontend)
 const createReport = async (req, res) => {
@@ -98,4 +123,10 @@ const deleteReport = async (req, res) => {
   }
 };
 
-export { createReport, getAllReports, getReportById, deleteReport };
+export {
+  createReport,
+  getAllReports,
+  getReportById,
+  deleteReport,
+  exportReportToExcel,
+};
