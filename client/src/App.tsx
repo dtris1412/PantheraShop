@@ -53,6 +53,7 @@ import VoucherList from "./admin/pages/VoucherList";
 import BlogPage from "./admin/pages/BlogPage";
 import ReportPage from "./admin/pages/ReportPage";
 import { ProductImageProvider } from "./admin/contexts/product_imageContext";
+import { DashboardProvider } from "./admin/contexts/dashboardContext";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { isAuthenticated, loading } = useAuth();
@@ -187,7 +188,14 @@ function AdminRoutes() {
                         adminName={user?.user_name}
                       >
                         <Routes>
-                          <Route path="/" element={<Dashboard />} />
+                          <Route
+                            path="/"
+                            element={
+                              <DashboardProvider>
+                                <Dashboard />
+                              </DashboardProvider>
+                            }
+                          />
                           <Route path="/users" element={<UserList />} />
                           <Route path="/products" element={<ProductList />} />
                           <Route

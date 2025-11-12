@@ -11,6 +11,17 @@ import {
 
 const upload = multer({ dest: "uploads/" });
 
+//Import Dashboard Controllers
+import {
+  getDashboardStats,
+  getUserStatsByMonth,
+  getOrderStatsByMonth,
+  getProductStatsByMonth,
+  getRevenueStatsByMonth,
+  getMonthlySales,
+  getRecentOrders,
+} from "../../admin/controllers/dashboardController.js";
+
 //Import Payment Controllers
 import { getMethodByOrderId } from "../../admin/controllers/paymentController.js";
 //Import Blog Controllers
@@ -384,6 +395,32 @@ const initAdminRoutes = (app) => {
     verifyAdmin,
     getMethodByOrderId
   );
+
+  // =============== DASHBOARD ROUTES ===============
+  router.get("/api/admin/dashboard/stats", verifyAdmin, getDashboardStats);
+  router.get("/api/admin/dashboard/users", verifyAdmin, getUserStatsByMonth);
+  router.get("/api/admin/dashboard/orders", verifyAdmin, getOrderStatsByMonth);
+  router.get(
+    "/api/admin/dashboard/products",
+    verifyAdmin,
+    getProductStatsByMonth
+  );
+  router.get(
+    "/api/admin/dashboard/monthly-sales",
+    verifyAdmin,
+    getMonthlySales
+  );
+  router.get(
+    "/api/admin/dashboard/revenue",
+    verifyAdmin,
+    getRevenueStatsByMonth
+  );
+  router.get(
+    "/api/admin/dashboard/recent-orders",
+    verifyAdmin,
+    getRecentOrders
+  );
+
   return app.use("/", router);
 };
 
