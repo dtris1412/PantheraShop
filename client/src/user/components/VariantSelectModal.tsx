@@ -36,23 +36,39 @@ export default function VariantSelectModal({
 
   useEffect(() => {
     setLoading(true);
+    // Lấy thông tin sản phẩm
     fetch(`${apiUrl}/products/${productId}`)
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         return res.json();
       })
       .then((data) => {
-        // Nếu data.product không tồn tại, dùng luôn data
         const prod = data.product ? data.product : data;
-        console.log("API DATA:", prod);
         setProduct(prod);
-        setVariants(prod.Variants || []);
-        setLoading(false);
+        // Sau khi có product, lấy variants
+        fetch(`${apiUrl}/variants/product/${productId}`)
+          .then((res) => {
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            return res.json();
+          })
+          .then((variantData) => {
+            // Sửa ở đây: lấy đúng mảng variants
+            setVariants(
+              Array.isArray(variantData.variants) ? variantData.variants : []
+            );
+            setLoading(false);
+          })
+          .catch((err) => {
+            console.error("Lỗi khi fetch variants:", err);
+            setVariants([]);
+            setLoading(false);
+          });
       })
       .catch((err) => {
         console.error("Lỗi khi fetch sản phẩm:", err);
-        setLoading(false);
         setProduct(null);
+        setVariants([]);
+        setLoading(false);
       });
   }, [productId]);
 
