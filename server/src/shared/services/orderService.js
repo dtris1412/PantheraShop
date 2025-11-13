@@ -1,4 +1,5 @@
 import db from "../../shared/models/index.js";
+import { Op } from "sequelize";
 
 const createOrder = async (
   order_id,
@@ -204,11 +205,99 @@ const approveOrder = async (order_id, status) => {
     return { success: false, message: "Error updating order status" };
   }
 };
+
+// Get orders with pagination
+const getOrdersPaginated = async (search, order_status, limit, page) => {
+  try {
+    const offset = (page - 1) * limit;
+    const where = {};
+
+    // Search by order_id, recipient_name, or recipient_phone
+    if (search) {
+      where[Op.or] = [
+        { order_id: { [Op.substring]: search } },
+        { recipient_name: { [Op.substring]: search } },
+        { recipient_phone: { [Op.substring]: search } },
+      ];
+    }
+
+    // Filter by order_status
+    if (order_status && order_status !== "Tất cả") {
+      where.order_status = order_status;
+    }
+
+    // Get total count
+    const total = await db.Order.count({ where });
+
+    // Get paginated results
+    const orders = await db.Order.findAll({
+      where,
+      include: [
+        {
+          model: db.Payment,
+          attributes: ["payment_method", "payment_status"],
+        },
+        {
+          model: db.User,
+          attributes: ["user_id", "user_name", "user_email"],
+        },
+      ],
+      limit,
+      offset,
+      order: [["order_date", "DESC"]],
+    });
+
+    // Get order products for each order
+    const orderDetails = await Promise.all(
+      orders.map(async (order) => {
+        const orderProducts = await db.OrderProduct.findAll({
+          where: { order_id: order.order_id },
+          include: [
+            {
+              model: db.Variant,
+              include: [
+                {
+                  model: db.Product,
+                  attributes: [
+                    "product_name",
+                    "product_image",
+                    "product_description",
+                    "category_id",
+                  ],
+                  include: [
+                    {
+                      model: db.Category,
+                      attributes: ["category_name"],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        });
+        return { ...order.toJSON(), orderProducts };
+      })
+    );
+
+    return {
+      success: true,
+      data: orderDetails,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  } catch (error) {
+    console.error("Error getting paginated orders:", error);
+    return { success: false, message: error.message };
+  }
+};
+
 export {
   createOrder,
   createOrderProduct,
   getStatusOrder,
   getOrderHistoryByUserId,
   getAllOrders,
+  getOrdersPaginated,
   approveOrder,
 };

@@ -58,6 +58,7 @@ import {
   getAllOrders,
   getStatusOrder,
   getOrderHistoryByUserId,
+  getOrdersPaginated,
   approveOrder,
 } from "../../admin/controllers/orderController.js";
 
@@ -364,6 +365,7 @@ const initAdminRoutes = (app) => {
   router.delete("/api/admin/teams/:id", verifyAdmin, deleteTeam);
 
   // =============== ORDER MANAGEMENT ROUTES ===============
+  router.get("/api/admin/orders/paginated", verifyAdmin, getOrdersPaginated);
   router.get("/api/admin/orders", verifyAdmin, getAllOrders);
   router.get("/api/admin/orders/status", verifyAdmin, getStatusOrder);
   router.get(

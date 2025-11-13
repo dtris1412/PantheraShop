@@ -21,6 +21,17 @@ interface Order {
 interface OrderContextType {
   getAllOrders: () => Promise<Order[]>;
   getOrderHistoryByUserId: (userId: number) => Promise<Order[]>;
+  getOrdersPaginated: (
+    search: string,
+    order_status: string,
+    limit: number,
+    page: number
+  ) => Promise<{
+    data: Order[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }>;
   approveOrder: (orderId: number, status: string) => Promise<any>;
   loading: boolean;
 }
@@ -86,6 +97,48 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
     }
   };
 
+  const getOrdersPaginated = async (
+    search: string,
+    order_status: string,
+    limit: number,
+    page: number
+  ) => {
+    try {
+      const token = localStorage.getItem("token");
+      const params = new URLSearchParams();
+      if (search) params.append("search", search);
+      if (order_status) params.append("order_status", order_status);
+      params.append("limit", limit.toString());
+      params.append("page", page.toString());
+
+      const response = await fetch(
+        `${apiUrl}/admin/orders/paginated?${params.toString()}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const result = await response.json();
+      if (result.success) {
+        return {
+          data: result.data,
+          total: result.total,
+          page: result.page,
+          totalPages: result.totalPages,
+        };
+      } else {
+        throw new Error(result.message || "Failed to fetch paginated orders");
+      }
+    } catch (err: any) {
+      console.error("Error fetching paginated orders:", err);
+      throw err;
+    }
+  };
+
   const approveOrder = async (orderId: number, status: string) => {
     setLoading(true);
     try {
@@ -116,6 +169,7 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
       value={{
         getAllOrders,
         getOrderHistoryByUserId,
+        getOrdersPaginated,
         approveOrder,
         loading,
       }}

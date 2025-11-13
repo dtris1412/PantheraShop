@@ -2,6 +2,7 @@ import {
   getAllOrders as getAllOrdersService,
   getStatusOrder as getStatusOrderService,
   getOrderHistoryByUserId as getOrderHistoryByUserIdService,
+  getOrdersPaginated as getOrdersPaginatedService,
   approveOrder as approveOrderService,
 } from "../../shared/services/orderService.js";
 
@@ -86,4 +87,33 @@ const approveOrder = async (req, res) => {
   }
 };
 
-export { getAllOrders, getStatusOrder, getOrderHistoryByUserId, approveOrder };
+const getOrdersPaginated = async (req, res) => {
+  try {
+    const { search, order_status, limit = 10, page = 1 } = req.query;
+    const result = await getOrdersPaginatedService(
+      search,
+      order_status,
+      parseInt(limit),
+      parseInt(page)
+    );
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error in getOrdersPaginated controller:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+export {
+  getAllOrders,
+  getStatusOrder,
+  getOrderHistoryByUserId,
+  getOrdersPaginated,
+  approveOrder,
+};

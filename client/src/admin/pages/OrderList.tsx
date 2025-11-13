@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOrder } from "../contexts/orderContext";
-import { showToast } from "../../shared/components/Toast";
 
 interface User {
   user_id: number;
@@ -57,53 +56,81 @@ function formatVND(value: number | string) {
 
 const OrderList = () => {
   const navigate = useNavigate();
-  const { getAllOrders, loading } = useOrder();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [statusFilter, setStatusFilter] = useState("Tất cả");
+  const { getOrdersPaginated } = useOrder();
+
+  // Pagination state
+  const [paginatedOrders, setPaginatedOrders] = useState<Order[]>([]);
+  const [totalOrders, setTotalOrders] = useState<number>(0);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [loadingPaginated, setLoadingPaginated] = useState<boolean>(false);
+  const itemsPerPage = 10;
+
+  // Search and filter state
   const [searchQuery, setSearchQuery] = useState("");
-  const [dateSort, setDateSort] = useState<"" | "desc" | "asc">("desc");
-
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("Tất cả");
   useEffect(() => {
-    fetchOrders();
-  }, []);
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setCurrentPage(1);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
-  const fetchOrders = async () => {
+  // Reset to page 1 when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter]);
+
+  // Fetch paginated orders
+  const fetchOrdersPaginatedData = async () => {
+    setLoadingPaginated(true);
     try {
-      const data = await getAllOrders();
-      setOrders(data);
+      const result = await getOrdersPaginated(
+        debouncedSearch,
+        statusFilter,
+        itemsPerPage,
+        currentPage
+      );
+      setPaginatedOrders(result.data);
+      setTotalOrders(result.total);
     } catch (error) {
-      console.error("Error fetching orders:", error);
-      showToast("Không thể tải danh sách đơn hàng", "error");
+      console.error("Error fetching paginated orders:", error);
+    } finally {
+      setLoadingPaginated(false);
     }
   };
 
-  // Lọc và tìm kiếm
-  let filtered = orders;
+  useEffect(() => {
+    fetchOrdersPaginatedData();
+  }, [debouncedSearch, statusFilter, currentPage]);
 
-  // Lọc theo trạng thái
-  if (statusFilter !== "Tất cả") {
-    filtered = filtered.filter((o) => o.order_status === statusFilter);
-  }
+  // Pagination logic
+  const totalPages = Math.ceil(totalOrders / itemsPerPage);
 
-  // Tìm kiếm theo mã đơn, tên người nhận, SĐT
-  if (searchQuery) {
-    const query = searchQuery.toLowerCase();
-    filtered = filtered.filter(
-      (o) =>
-        o.order_id.toString().includes(query) ||
-        o.recipient_name?.toLowerCase().includes(query) ||
-        o.recipient_phone?.includes(query)
-    );
-  }
+  const renderPageNumbers = () => {
+    const pages: (number | string)[] = [];
 
-  // Sắp xếp theo ngày
-  if (dateSort) {
-    filtered = [...filtered].sort((a, b) => {
-      return dateSort === "desc"
-        ? new Date(b.order_date).getTime() - new Date(a.order_date).getTime()
-        : new Date(a.order_date).getTime() - new Date(b.order_date).getTime();
-    });
-  }
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1, 2);
+
+      if (currentPage > 3 && currentPage < totalPages - 2) {
+        pages.push("...", currentPage - 1, currentPage, currentPage + 1, "...");
+      } else if (currentPage <= 3) {
+        pages.push(3, "...");
+      } else {
+        pages.push("...", totalPages - 2);
+      }
+
+      pages.push(totalPages - 1, totalPages);
+    }
+
+    return pages;
+  };
 
   const handleViewDetail = (order: Order) => {
     navigate(`/admin/orders/${order.order_id}`, { state: { order } });
@@ -142,36 +169,25 @@ const OrderList = () => {
               ))}
             </select>
           </div>
-
-          {/* Date Sort */}
-          <div>
-            <select
-              value={dateSort}
-              onChange={(e) =>
-                setDateSort(e.target.value as "desc" | "asc" | "")
-              }
-              className="border px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-black"
-            >
-              <option value="">-- Sắp xếp --</option>
-              <option value="desc">Mới nhất</option>
-              <option value="asc">Cũ nhất</option>
-            </select>
-          </div>
         </div>
 
         {/* Orders List */}
-        {loading ? (
+        {loadingPaginated ? (
           <div className="text-center py-16">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
             <p className="mt-4 text-gray-600">Đang tải...</p>
           </div>
-        ) : filtered.length === 0 ? (
+        ) : paginatedOrders.length === 0 ? (
           <div className="text-center py-16 bg-white border rounded-lg">
-            <p className="text-gray-600">Không tìm thấy đơn hàng nào.</p>
+            <p className="text-gray-600">
+              {searchQuery || statusFilter !== "Tất cả"
+                ? "Không tìm thấy đơn hàng nào phù hợp."
+                : "Chưa có đơn hàng nào."}
+            </p>
           </div>
         ) : (
           <div className="space-y-6">
-            {filtered.map((order) => (
+            {paginatedOrders.map((order) => (
               <div
                 key={order.order_id}
                 className="bg-white border rounded-lg shadow-sm hover:shadow-md transition-shadow"
@@ -294,6 +310,44 @@ const OrderList = () => {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {!loadingPaginated && totalPages > 0 && (
+          <div className="flex justify-center items-center gap-2 mt-8">
+            <button
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="px-4 py-2 text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+            >
+              Trước
+            </button>
+            {renderPageNumbers().map((page, index) => (
+              <button
+                key={index}
+                onClick={() => typeof page === "number" && setCurrentPage(page)}
+                disabled={page === "..."}
+                className={`px-3 py-2 text-sm font-bold ${
+                  currentPage === page
+                    ? "bg-black text-white"
+                    : page === "..."
+                    ? "cursor-default"
+                    : "hover:bg-gray-100"
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+            <button
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              }
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+            >
+              Sau
+            </button>
           </div>
         )}
       </div>
