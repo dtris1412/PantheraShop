@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
   ChevronDown,
   ChevronRight,
@@ -16,11 +16,16 @@ import EditProductGalleryModal from "../components/GalleryComponents/EditProduct
 import { ProductImage } from "../contexts/product_imageContext";
 
 const ProductImagePage: React.FC = () => {
-  const { images, loading, fetchAllImages, deleteProductImage } =
+  const { getProductImagesPaginated, deleteProductImage } =
     useProductImageContext();
   const [expanded, setExpanded] = useState<number | null>(null);
   const [menuOpen, setMenuOpen] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [images, setImages] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editGalleryModalOpen, setEditGalleryModalOpen] = useState(false);
@@ -29,11 +34,39 @@ const ProductImagePage: React.FC = () => {
   );
   const [selectedImage, setSelectedImage] = useState<ProductImage | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const itemsPerPage = 10;
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setCurrentPage(1);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Fetch images with pagination
+  const fetchImages = useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await getProductImagesPaginated(
+        debouncedSearch,
+        itemsPerPage,
+        currentPage
+      );
+      setImages(result.data || []);
+      setTotalPages(result.totalPages || 1);
+    } catch (error) {
+      console.error("Error fetching images:", error);
+      setImages([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [debouncedSearch, currentPage, getProductImagesPaginated, itemsPerPage]);
 
   useEffect(() => {
-    fetchAllImages();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    fetchImages();
+  }, [fetchImages]);
 
   // Đóng menu khi click ra ngoài
   useEffect(() => {
@@ -97,8 +130,36 @@ const ProductImagePage: React.FC = () => {
   const handleDeleteImage = async (img: ProductImage) => {
     if (window.confirm("Bạn có chắc muốn xóa ảnh này?")) {
       await deleteProductImage(img.product_image_id);
-      fetchAllImages();
+      fetchImages();
     }
+  };
+
+  // Generate page numbers
+  const getPageNumbers = () => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+
+    const pages: (number | string)[] = [1];
+
+    if (currentPage > 3) {
+      pages.push("...");
+    }
+
+    const start = Math.max(2, currentPage - 1);
+    const end = Math.min(totalPages - 1, currentPage + 1);
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+
+    if (currentPage < totalPages - 2) {
+      pages.push("...");
+    }
+
+    pages.push(totalPages);
+
+    return pages;
   };
 
   return (
@@ -139,7 +200,16 @@ const ProductImagePage: React.FC = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {filteredProducts.length === 0 ? (
+            {loading ? (
+              <tr>
+                <td
+                  colSpan={4}
+                  className="text-center py-10 text-gray-400 text-lg"
+                >
+                  Đang tải...
+                </td>
+              </tr>
+            ) : filteredProducts.length === 0 ? (
               <tr>
                 <td
                   colSpan={4}
@@ -312,12 +382,53 @@ const ProductImagePage: React.FC = () => {
         </table>
       </div>
 
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 py-6">
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1 border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+          >
+            ←
+          </button>
+
+          {getPageNumbers().map((pageNum, idx) =>
+            pageNum === "..." ? (
+              <span key={`ellipsis-${idx}`} className="px-2 text-gray-400">
+                ...
+              </span>
+            ) : (
+              <button
+                key={pageNum}
+                onClick={() => setCurrentPage(pageNum as number)}
+                className={`px-3 py-1 border ${
+                  currentPage === pageNum
+                    ? "bg-black text-white border-black"
+                    : "border-gray-300 hover:bg-gray-50"
+                }`}
+              >
+                {pageNum}
+              </button>
+            )
+          )}
+
+          <button
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1 border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+          >
+            →
+          </button>
+        </div>
+      )}
+
       {/* Modal thêm ảnh */}
       <AddImagesModal
         productId={selectedProductId || 0}
         open={addModalOpen}
         onClose={() => setAddModalOpen(false)}
-        onSuccess={fetchAllImages}
+        onSuccess={fetchImages}
       />
 
       {/* Modal sửa ảnh */}
@@ -325,7 +436,7 @@ const ProductImagePage: React.FC = () => {
         image={selectedImage}
         open={editModalOpen}
         onClose={() => setEditModalOpen(false)}
-        onSuccess={fetchAllImages}
+        onSuccess={fetchImages}
       />
 
       {/* Modal chỉnh sửa toàn bộ gallery */}
@@ -333,7 +444,7 @@ const ProductImagePage: React.FC = () => {
         productId={selectedProductId}
         open={editGalleryModalOpen}
         onClose={() => setEditGalleryModalOpen(false)}
-        onSuccess={fetchAllImages}
+        onSuccess={fetchImages}
       />
     </div>
   );

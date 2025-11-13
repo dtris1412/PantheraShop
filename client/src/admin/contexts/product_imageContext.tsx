@@ -12,6 +12,13 @@ export interface ProductImage {
   };
 }
 
+interface PaginatedProductImagesResponse {
+  data: ProductImage[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
 interface ProductImageContextType {
   images: ProductImage[];
   loading: boolean;
@@ -19,6 +26,11 @@ interface ProductImageContextType {
   fetchImagesByProductId: (
     productId: number | string
   ) => Promise<ProductImage[]>;
+  getProductImagesPaginated: (
+    search: string,
+    limit: number,
+    page: number
+  ) => Promise<PaginatedProductImagesResponse>;
   uploadGalleryImage: (file: File) => Promise<string>; // trả về url
   createProductImage: (data: {
     product_id: number;
@@ -84,6 +96,34 @@ export const ProductImageProvider = ({
     return Array.isArray(data.data) ? data.data : [];
   };
 
+  const getProductImagesPaginated = async (
+    search: string,
+    limit: number,
+    page: number
+  ): Promise<PaginatedProductImagesResponse> => {
+    const params = new URLSearchParams();
+    if (search) params.append("search", search);
+    params.append("limit", limit.toString());
+    params.append("page", page.toString());
+
+    const res = await fetch(
+      `${apiUrl}/admin/product-images/paginated?${params}`,
+      {
+        method: "GET",
+        headers: getAuthHeaders(),
+        credentials: "include",
+      }
+    );
+    if (!res.ok) throw new Error("Failed to fetch paginated product images");
+    const json = await res.json();
+    return {
+      data: json.data || [],
+      total: json.total || 0,
+      page: json.page || 1,
+      totalPages: json.totalPages || 1,
+    };
+  };
+
   const uploadGalleryImage = async (file: File) => {
     const formData = new FormData();
     formData.append("image", file);
@@ -145,6 +185,7 @@ export const ProductImageProvider = ({
         loading,
         fetchAllImages,
         fetchImagesByProductId,
+        getProductImagesPaginated,
         uploadGalleryImage,
         createProductImage,
         updateProductImage,

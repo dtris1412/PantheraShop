@@ -1,6 +1,7 @@
 import {
   getAllProductImages as getAllProductImagesService,
   getProductImageById as getProductImageByIdService,
+  getProductImagesPaginated as getProductImagesPaginatedService,
   createProductImage as createProductImageService,
   updateProductImage as updateProductImageService,
   deleteProductImage as deleteProductImageService,
@@ -33,6 +34,28 @@ const getProductImageById = async (req, res) => {
     res.status(200).json(image);
   } catch (err) {
     console.error("Error in getProductImageById: ", err);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: err.message,
+    });
+  }
+};
+
+const getProductImagesPaginated = async (req, res) => {
+  try {
+    const { search, limit = 10, page = 1 } = req.query;
+    const result = await getProductImagesPaginatedService(
+      search,
+      parseInt(limit),
+      parseInt(page)
+    );
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+    res.status(200).json(result);
+  } catch (err) {
+    console.error("Error in getProductImagesPaginated: ", err);
     res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -97,6 +120,7 @@ const deleteProductImage = async (req, res) => {
 export {
   getAllProductImages,
   getProductImageById,
+  getProductImagesPaginated,
   createProductImage,
   updateProductImage,
   deleteProductImage,

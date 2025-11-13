@@ -1,4 +1,63 @@
 import db from "../../shared/models/index.js";
+import { Op } from "sequelize";
+
+const getProductImagesPaginated = async (search, limit, page) => {
+  try {
+    const offset = (page - 1) * limit;
+
+    // Build where for Product
+    const productWhere = search
+      ? { product_name: { [Op.substring]: search } }
+      : {};
+
+    // Get total products count
+    const totalProducts = await db.Product.count({
+      where: productWhere,
+    });
+
+    // Get paginated products
+    const products = await db.Product.findAll({
+      where: productWhere,
+      attributes: ["product_id", "product_name", "product_image"],
+      limit,
+      offset,
+      order: [["product_id", "DESC"]],
+    });
+
+    // Get all product_ids
+    const productIds = products.map((p) => p.product_id);
+
+    // Get all images for these products
+    const productImages = await db.Product_Image.findAll({
+      where: {
+        product_id: productIds,
+      },
+      include: [
+        {
+          model: db.Product,
+          attributes: ["product_id", "product_name", "product_image"],
+        },
+      ],
+      order: [["product_image_id", "DESC"]],
+    });
+
+    const data = productImages.map((img) => ({
+      ...img.toJSON(),
+      image_url: img.image_url,
+    }));
+
+    return {
+      success: true,
+      data,
+      total: totalProducts,
+      page,
+      totalPages: Math.ceil(totalProducts / limit),
+    };
+  } catch (error) {
+    console.error("Error getting paginated product images:", error);
+    return { success: false, message: error.message };
+  }
+};
 
 const getAllProductImages = async () => {
   const productImages = await db.Product_Image.findAll({
@@ -128,6 +187,7 @@ const deleteProductImage = async (product_image_id) => {
 export {
   getAllProductImages,
   getProductImageById,
+  getProductImagesPaginated,
   createProductImage,
   updateProductImage,
   deleteProductImage,

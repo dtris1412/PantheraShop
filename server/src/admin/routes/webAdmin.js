@@ -152,6 +152,7 @@ import {
 import {
   getAllProductImages,
   getProductImageById,
+  getProductImagesPaginated,
   createProductImage,
   updateProductImage,
   deleteProductImage,
@@ -285,6 +286,11 @@ const initAdminRoutes = (app) => {
     setSupplierConnectionStatus
   );
   // =============== PRODUCT IMAGES ROUTES ===============
+  router.get(
+    "/api/admin/product-images/paginated",
+    verifyAdmin,
+    getProductImagesPaginated
+  );
   router.get("/api/admin/product-images", verifyAdmin, getAllProductImages);
   router.get(
     "/api/admin/product-images/:product_id",
