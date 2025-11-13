@@ -52,6 +52,96 @@ const getAllItemsInWishlist = async (wishlist_id) => {
   return { success: true, items };
 };
 
+const getWishlistItemsPaginated = async ({
+  wishlist_id,
+  search = "",
+  limit = 5,
+  page = 1,
+  size,
+  color,
+  sortOrder = "desc",
+}) => {
+  if (!wishlist_id) throw new Error("Wishlist ID is required");
+
+  const Op = db.Sequelize.Op;
+  const offset = (Number(page) - 1) * Number(limit);
+
+  // Xây dựng điều kiện where cho Product (search)
+  const productWhere = {};
+  if (search) {
+    productWhere.product_name = { [Op.substring]: search };
+  }
+
+  // Xây dựng điều kiện where cho Variant (size, color)
+  const variantWhere = {};
+  if (size) {
+    variantWhere.variant_size = size;
+  }
+  if (color) {
+    variantWhere.variant_color = color;
+  }
+
+  // Include cho count
+  const includeForCount = [
+    {
+      model: db.Variant,
+      where: Object.keys(variantWhere).length > 0 ? variantWhere : undefined,
+      required: true,
+      include: [
+        {
+          model: db.Product,
+          where:
+            Object.keys(productWhere).length > 0 ? productWhere : undefined,
+          required: true,
+        },
+      ],
+    },
+  ];
+
+  // Include cho findAll
+  const includeForFindAll = [
+    {
+      model: db.Variant,
+      where: Object.keys(variantWhere).length > 0 ? variantWhere : undefined,
+      required: true,
+      include: [
+        {
+          model: db.Product,
+          where:
+            Object.keys(productWhere).length > 0 ? productWhere : undefined,
+          required: true,
+        },
+      ],
+    },
+  ];
+
+  // Đếm tổng số items
+  const totalItems = await db.WishlistVariant.count({
+    where: { wishlist_id },
+    include: includeForCount,
+    distinct: true,
+  });
+
+  // Sắp xếp theo added_at
+  const order =
+    sortOrder === "asc" ? [["added_at", "ASC"]] : [["added_at", "DESC"]];
+
+  // Lấy danh sách items
+  const items = await db.WishlistVariant.findAll({
+    where: { wishlist_id },
+    include: includeForFindAll,
+    limit: Number(limit),
+    offset,
+    order,
+  });
+
+  return {
+    success: true,
+    items,
+    total: totalItems,
+  };
+};
+
 const removeItemFromWishlist = async (wishlist_id, variant_id) => {
   if (!wishlist_id || !variant_id)
     throw new Error("Wishlist ID and Variant ID are required");
@@ -96,4 +186,5 @@ export {
   removeItemFromWishlist,
   changeVariantInWishlist,
   getWishlistCount,
+  getWishlistItemsPaginated,
 };

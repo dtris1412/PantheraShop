@@ -5,6 +5,7 @@ import {
   removeItemFromWishlist as removeItemFromWishlistService,
   changeVariantInWishlist as changeVariantInWishlistService,
   getWishlistCount as getWishlistCountService,
+  getWishlistItemsPaginated as getWishlistItemsPaginatedService,
 } from "../../shared/services/wishlistService.js";
 
 const addItemToWishList = async (req, res) => {
@@ -102,6 +103,40 @@ const getWishlistCount = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+const getWishlistItemsPaginated = async (req, res) => {
+  try {
+    const { wishlist_id } = req.params;
+    const {
+      search = "",
+      limit = 10,
+      page = 1,
+      size,
+      color,
+      sortOrder = "desc",
+    } = req.query;
+
+    const result = await getWishlistItemsPaginatedService({
+      wishlist_id,
+      search,
+      limit,
+      page,
+      size,
+      color,
+      sortOrder,
+    });
+
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+
+    res.status(200).json(result);
+  } catch (err) {
+    console.error("Error in getting paginated wishlist items: ", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 export {
   addItemToWishList,
   getAllItemsInWishlist,
@@ -109,4 +144,5 @@ export {
   removeItemFromWishlist,
   changeVariantInWishlist,
   getWishlistCount,
+  getWishlistItemsPaginated,
 };

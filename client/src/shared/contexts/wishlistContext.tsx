@@ -33,6 +33,14 @@ interface WishlistContextType {
       variant_color?: string;
     }
   ) => Promise<void>;
+  fetchWishlistItemsPaginated: (params: {
+    search?: string;
+    page?: number;
+    limit?: number;
+    size?: string;
+    color?: string;
+    sortOrder?: string;
+  }) => Promise<{ items: Variant[]; total: number }>;
 }
 
 const WishlistContext = createContext<WishlistContextType | undefined>(
@@ -188,6 +196,60 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  // Lấy wishlist items theo phân trang, filter, sort
+  const fetchWishlistItemsPaginated = async ({
+    search = "",
+    page = 1,
+    limit = 15,
+    size,
+    color,
+    sortOrder,
+  }: {
+    search?: string;
+    page?: number;
+    limit?: number;
+    size?: string;
+    color?: string;
+    sortOrder?: string;
+  }): Promise<{ items: Variant[]; total: number }> => {
+    if (!wishlistId) return { items: [], total: 0 };
+    try {
+      const params = new URLSearchParams({
+        search: search || "",
+        page: String(page),
+        limit: String(limit),
+        ...(size ? { size } : {}),
+        ...(color ? { color } : {}),
+        ...(sortOrder ? { sortOrder } : {}),
+      });
+      const res = await fetch(
+        `${apiUrl}/wishlist/paginated/${wishlistId}?${params.toString()}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      const data = await res.json();
+      const arr = Array.isArray(data.items) ? data.items : [];
+      const normalized = arr.map((item: any) => ({
+        wishlist_variant_id: item.wishlist_variant_id,
+        variant_id: item.variant_id,
+        product_id: item.Variant?.Product?.product_id,
+        product_name: item.Variant?.Product?.product_name || "",
+        product_image: item.Variant?.Product?.product_image || "",
+        product_price: item.Variant?.Product?.product_price || 0,
+        product_rating: item.Variant?.Product?.product_rating || 0,
+        product_description: item.Variant?.Product?.product_description || "",
+        sport: item.Variant?.Product?.sport_name || "",
+        variant_size: item.Variant?.variant_size || "",
+        variant_color: item.Variant?.variant_color || "",
+        added_at: item.added_at,
+      }));
+      return { items: normalized, total: data.total || 0 };
+    } catch {
+      return { items: [], total: 0 };
+    }
+  };
+
   return (
     <WishlistContext.Provider
       value={{
@@ -198,6 +260,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
         refresh,
         remove,
         changeVariant,
+        fetchWishlistItemsPaginated,
       }}
     >
       {children}

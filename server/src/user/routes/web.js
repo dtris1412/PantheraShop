@@ -79,6 +79,7 @@ import {
   removeItemFromWishlist,
   changeVariantInWishlist,
   getWishlistCount,
+  getWishlistItemsPaginated,
 } from "../controllers/wishlistController.js";
 
 import {
@@ -174,6 +175,11 @@ const initWebRoutes = (app) => {
     "/api/wishlist/wishlist-items/:wishlist_id",
     verifyToken,
     getAllItemsInWishlist
+  );
+  router.get(
+    "/api/wishlist/paginated/:wishlist_id",
+    verifyToken,
+    getWishlistItemsPaginated
   );
   router.delete(
     "/api/wishlist/remove/:wishlist_id/:variant_id",
