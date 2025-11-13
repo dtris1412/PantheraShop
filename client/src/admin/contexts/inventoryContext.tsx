@@ -23,10 +23,23 @@ export interface Product {
   Variant?: Variant[] | Variant | null;
 }
 
+interface PaginatedInventoryResponse {
+  products: any[];
+  total: number;
+  totalVariants: number;
+  page: number;
+  totalPages: number;
+}
+
 interface InventoryContextType {
   products: Product[];
   loading: boolean;
   fetchProducts: () => Promise<void>;
+  getInventoryPaginated: (
+    search: string,
+    limit: number,
+    page: number
+  ) => Promise<PaginatedInventoryResponse>;
   createVariant: (variant: Partial<Variant>) => Promise<void>;
   updateVariant: (
     variant_id: number | string,
@@ -52,6 +65,33 @@ export const InventoryProvider = ({
     return {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
+    };
+  };
+
+  // Lấy sản phẩm với phân trang
+  const getInventoryPaginated = async (
+    search: string,
+    limit: number,
+    page: number
+  ): Promise<PaginatedInventoryResponse> => {
+    const params = new URLSearchParams();
+    if (search) params.append("search", search);
+    params.append("limit", limit.toString());
+    params.append("page", page.toString());
+
+    const res = await fetch(`${apiUrl}/admin/inventory/paginated?${params}`, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+
+    if (!res.ok) throw new Error("Failed to fetch paginated inventory");
+    const json = await res.json();
+    return {
+      products: json.products || [],
+      total: json.total || 0,
+      totalVariants: json.totalVariants || 0,
+      page: json.page || 1,
+      totalPages: json.totalPages || 1,
     };
   };
 
@@ -217,6 +257,7 @@ export const InventoryProvider = ({
         products,
         loading,
         fetchProducts,
+        getInventoryPaginated,
         createVariant,
         updateVariant,
         deleteVariant,

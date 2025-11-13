@@ -1,4 +1,4 @@
-import React, {
+import {
   createContext,
   useContext,
   useEffect,
@@ -18,7 +18,16 @@ export interface Blog {
   team_id?: number;
   category_id?: number;
   tournament_id?: number;
-  // ...thêm các trường khác nếu cần
+}
+
+interface PaginatedBlogsResponse {
+  blogs: Blog[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 interface BlogContextType {
@@ -26,6 +35,15 @@ interface BlogContextType {
   loading: boolean;
   error: string | null;
   refetch: () => void;
+  getBlogsPaginated: (
+    search: string,
+    sport_id: string,
+    category_id: string,
+    team_id: string,
+    tournament_id: string,
+    limit: number,
+    page: number
+  ) => Promise<PaginatedBlogsResponse>;
 }
 
 const BlogContext = createContext<BlogContextType>({
@@ -33,6 +51,10 @@ const BlogContext = createContext<BlogContextType>({
   loading: false,
   error: null,
   refetch: () => {},
+  getBlogsPaginated: async () => ({
+    blogs: [],
+    pagination: { total: 0, page: 1, limit: 10, totalPages: 1 },
+  }),
 });
 
 export const useBlogContext = () => useContext(BlogContext);
@@ -59,6 +81,38 @@ export function BlogProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   };
 
+  const getBlogsPaginated = async (
+    search: string,
+    sport_id: string,
+    category_id: string,
+    team_id: string,
+    tournament_id: string,
+    limit: number,
+    page: number
+  ): Promise<PaginatedBlogsResponse> => {
+    const params = new URLSearchParams();
+    if (search) params.append("search", search);
+    if (sport_id) params.append("sport_id", sport_id);
+    if (category_id) params.append("category_id", category_id);
+    if (team_id) params.append("team_id", team_id);
+    if (tournament_id) params.append("tournament_id", tournament_id);
+    params.append("limit", limit.toString());
+    params.append("page", page.toString());
+
+    const res = await fetch(`${apiUrl}/blogs/paginated?${params}`);
+    if (!res.ok) throw new Error("Failed to fetch paginated blogs");
+    const json = await res.json();
+    return {
+      blogs: json.blogs || [],
+      pagination: json.pagination || {
+        total: 0,
+        page: 1,
+        limit: 10,
+        totalPages: 1,
+      },
+    };
+  };
+
   useEffect(() => {
     fetchBlogs();
   }, []);
@@ -70,6 +124,7 @@ export function BlogProvider({ children }: { children: ReactNode }) {
         loading,
         error,
         refetch: fetchBlogs,
+        getBlogsPaginated,
       }}
     >
       {children}
