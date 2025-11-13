@@ -6,6 +6,152 @@ function parseIdFromString(str) {
   return parseInt(parts[0].trim(), 10);
 }
 
+const getProductsPaginated = async ({
+  search = "",
+  limit = 15,
+  page = 1,
+  category,
+  sport,
+  tournament,
+  team,
+  minPrice,
+  maxPrice,
+}) => {
+  console.log("[Service] Received params RAW:", {
+    search,
+    limit,
+    page,
+    category,
+    sport,
+    tournament,
+    team,
+    minPrice,
+    maxPrice,
+  });
+
+  const Op = db.Sequelize.Op;
+  const offset = (Number(page) - 1) * Number(limit);
+
+  // Xây dựng điều kiện where cho Product
+  const where = {};
+  if (search) {
+    where.product_name = { [Op.substring]: search };
+  }
+  if (minPrice !== undefined) {
+    where.product_price = {
+      ...(where.product_price || {}),
+      [Op.gte]: minPrice,
+    };
+  }
+  if (maxPrice !== undefined) {
+    where.product_price = {
+      ...(where.product_price || {}),
+      [Op.lte]: maxPrice,
+    };
+  }
+
+  // Xây dựng include cho filter liên quan (để count)
+  const includeForCount = [
+    {
+      model: db.Category,
+      attributes: ["category_id", "category_name"],
+      ...(category
+        ? { where: { category_name: category }, required: true }
+        : {}),
+    },
+    {
+      model: db.Team,
+      ...(team ? { where: { team_name: team }, required: true } : {}),
+      required: !!(sport || tournament || team), // Required nếu filter sport/tournament/team
+      include: [
+        {
+          model: db.Tournament,
+          ...(tournament
+            ? { where: { tournament_name: tournament }, required: true }
+            : {}),
+          required: !!(sport || tournament), // Required nếu filter sport/tournament
+          include: [
+            {
+              model: db.Sport,
+              ...(sport
+                ? { where: { sport_name: sport }, required: true }
+                : {}),
+              attributes: ["sport_id", "sport_name"],
+              required: !!sport, // Required nếu filter sport
+            },
+          ],
+        },
+      ],
+    },
+  ];
+
+  // Xây dựng include đầy đủ cho findAll (bao gồm images)
+  const includeForFindAll = [
+    {
+      model: db.Category,
+      attributes: ["category_id", "category_name"],
+      ...(category
+        ? { where: { category_name: category }, required: true }
+        : {}),
+    },
+    {
+      model: db.Product_Image,
+      attributes: ["product_image_id", "image_url", "order"],
+    },
+    {
+      model: db.Team,
+      ...(team ? { where: { team_name: team }, required: true } : {}),
+      required: !!(sport || tournament || team), // Required nếu filter sport/tournament/team
+      include: [
+        {
+          model: db.Tournament,
+          ...(tournament
+            ? { where: { tournament_name: tournament }, required: true }
+            : {}),
+          required: !!(sport || tournament), // Required nếu filter sport/tournament
+          include: [
+            {
+              model: db.Sport,
+              ...(sport
+                ? { where: { sport_name: sport }, required: true }
+                : {}),
+              attributes: ["sport_id", "sport_name"],
+              required: !!sport, // Required nếu filter sport
+            },
+          ],
+        },
+      ],
+    },
+  ];
+
+  // Đếm tổng số sản phẩm khớp điều kiện (không include Product_Image để tránh duplicate)
+  const totalProducts = await db.Product.count({
+    where,
+    include: includeForCount,
+    distinct: true,
+    col: "product_id",
+  });
+
+  // Lấy danh sách sản phẩm theo phân trang
+  const products = await db.Product.findAll({
+    where,
+    include: includeForFindAll,
+    limit: Number(limit),
+    offset,
+  });
+
+  console.log("[Service] getProductsPaginated result:", {
+    totalProducts,
+    productsLength: products.length,
+    filters: { search, category, sport, tournament, team, minPrice, maxPrice },
+  });
+
+  return {
+    totalProducts,
+    products,
+  };
+};
+
 const getAllProducts = async () => {
   const products = await db.Product.findAll({
     include: [
@@ -1424,4 +1570,5 @@ export {
   importProductsFromExcel,
   importProductsWithVariants,
   importInventoryStock,
+  getProductsPaginated,
 };

@@ -46,6 +46,17 @@ interface ProductContextType {
   fetchSports: () => Promise<void>;
   fetchFilteredProducts: (filters: any) => Promise<void>;
   searchProducts: (keyword: string) => Promise<Product[]>;
+  fetchProductsPaginated: (params: {
+    search?: string;
+    page?: number;
+    limit?: number;
+    category?: string;
+    sport?: string;
+    tournament?: string;
+    team?: string;
+    minPrice?: number;
+    maxPrice?: number;
+  }) => Promise<{ products: Product[]; total: number }>;
 }
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined);
@@ -124,6 +135,55 @@ export const ProductProvider = ({
     }
   };
 
+  const fetchProductsPaginated = async ({
+    search = "",
+    page = 1,
+    limit = 15,
+    category,
+    sport,
+    tournament,
+    team,
+    minPrice,
+    maxPrice,
+  }: {
+    search?: string;
+    page?: number;
+    limit?: number;
+    category?: string;
+    sport?: string;
+    tournament?: string;
+    team?: string;
+    minPrice?: number;
+    maxPrice?: number;
+  }) => {
+    try {
+      const params = new URLSearchParams({
+        search: search || "",
+        page: String(page),
+        limit: String(limit),
+        ...(category ? { category } : {}),
+        ...(sport ? { sport } : {}),
+        ...(tournament ? { tournament } : {}),
+        ...(team ? { team } : {}),
+        ...(minPrice !== undefined ? { minPrice: String(minPrice) } : {}),
+        ...(maxPrice !== undefined ? { maxPrice: String(maxPrice) } : {}),
+      });
+      const res = await fetch(
+        `${apiUrl}/products/paginated?${params.toString()}`
+      );
+      const data = await res.json();
+      // data: { products, total }
+      return {
+        products: Array.isArray(data.products)
+          ? mapProductPrice(data.products)
+          : [],
+        total: data.total || 0, // SỬA ở đây
+      };
+    } catch {
+      return { products: [], total: 0 };
+    }
+  };
+
   useEffect(() => {
     fetchProducts();
     fetchTopProducts();
@@ -141,6 +201,7 @@ export const ProductProvider = ({
         fetchSports,
         fetchFilteredProducts,
         searchProducts,
+        fetchProductsPaginated, // thêm vào context
       }}
     >
       {children}

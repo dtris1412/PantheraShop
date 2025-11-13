@@ -5,10 +5,11 @@ import ProductGrid from "../components/ProductGrid";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams, useParams } from "react-router-dom";
 import { useProduct } from "../../shared/contexts/productContext";
+import type { Product } from "../../shared/contexts/productContext";
 
 export default function Products() {
   const navigate = useNavigate();
-  const { products, sports } = useProduct();
+  const { products, sports, fetchProductsPaginated } = useProduct();
   const topRef = useRef<HTMLDivElement>(null);
   const [searchParams] = useSearchParams();
   const { id } = useParams<{ id: string }>();
@@ -40,6 +41,21 @@ export default function Products() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 15;
+  const [paginatedProducts, setPaginatedProducts] = useState<Product[]>([]);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [minPrice, setMinPrice] = useState();
+  const [maxPrice, setMaxPrice] = useState();
+
+  // Debounce searchQuery 3s
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 500); // 3s
+
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
   // Lọc sản phẩm theo category
   const filteredProducts = useMemo(() => {
@@ -91,14 +107,36 @@ export default function Products() {
     selectedSort,
   ]);
 
-  // Tính tổng số trang
-  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+  useEffect(() => {
+    setLoading(true);
+    fetchProductsPaginated({
+      search: debouncedSearch,
+      page: currentPage,
+      limit: productsPerPage,
+      category: selectedCategory !== "Tất cả" ? selectedCategory : undefined,
+      sport: selectedSport || undefined,
+      tournament: selectedTournament || undefined,
+      team: selectedTeam || undefined,
+      minPrice,
+      maxPrice,
+    }).then(({ products, total }) => {
+      setPaginatedProducts(products);
+      setTotalProducts(total);
+      setLoading(false);
+    });
+  }, [
+    debouncedSearch,
+    currentPage,
+    selectedCategory,
+    selectedSport,
+    selectedTournament,
+    selectedTeam,
+    minPrice,
+    maxPrice,
+  ]);
 
-  // Lấy sản phẩm cho trang hiện tại
-  const paginatedProducts = useMemo(() => {
-    const start = (currentPage - 1) * productsPerPage;
-    return filteredProducts.slice(start, start + productsPerPage);
-  }, [filteredProducts, currentPage]);
+  // Tính tổng số trang
+  const totalPages = Math.ceil(totalProducts / productsPerPage);
 
   // Khi filter/search/sort thay đổi, reset về trang 1 và scroll lên đầu grid
   useEffect(() => {
@@ -130,6 +168,8 @@ export default function Products() {
       if (sport) setSelectedSport(sport.sport_name);
     }
   }, [searchParams, sports]);
+
+  console.log("totalPages:", totalPages);
 
   return (
     <div className="min-h-screen pt-24 pb-12 bg-white">
@@ -179,42 +219,110 @@ export default function Products() {
               products={paginatedProducts}
               onViewDetails={(id) => navigate(`/product/${id}`)}
             />
-
+            {loading && (
+              <div className="flex justify-center py-4">
+                <span className="loader"></span>
+              </div>
+            )}
             {totalPages > 1 && (
-              <div className="flex justify-center mt-12 gap-2 select-none">
+              <div className="flex justify-center mt-12 gap-1 select-none">
                 <button
-                  className="w-10 h-10 flex items-center justify-center rounded-full border border-gray-300 bg-white shadow transition hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-2 text-gray-500 hover:text-black transition disabled:opacity-40 disabled:cursor-not-allowed bg-transparent border-none rounded-none"
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
                   aria-label="Trang trước"
+                  style={{
+                    background: "none",
+                    border: "none",
+                    borderRadius: 0,
+                  }}
                 >
-                  <span className="text-xl">&lt;</span>
+                  <span className="text-base">&lt;</span>
                 </button>
-                {Array.from({ length: totalPages }, (_, i) => (
-                  <button
-                    key={i + 1}
-                    className={`w-10 h-10 flex items-center justify-center rounded-full border transition font-semibold shadow
-                    ${
-                      currentPage === i + 1
-                        ? "bg-black text-white border-black scale-110"
-                        : "bg-white text-gray-800 border-gray-300 hover:bg-gray-100"
+                {/* Hiển thị toàn bộ nếu số trang <= 5, rút gọn nếu lớn hơn */}
+                {(() => {
+                  let pages: (number | string)[] = [];
+                  if (totalPages <= 5) {
+                    for (let i = 1; i <= totalPages; i++) pages.push(i);
+                  } else {
+                    // Luôn hiển thị 1, 2
+                    pages.push(1, 2);
+
+                    // Nếu currentPage > 3 thì hiển thị ...
+                    if (currentPage > 3) pages.push("...");
+
+                    // Hiển thị các trang gần currentPage (trừ đầu/cuối)
+                    for (
+                      let i = Math.max(3, currentPage - 1);
+                      i <= Math.min(totalPages - 2, currentPage + 1);
+                      i++
+                    ) {
+                      if (i !== 1 && i !== totalPages) pages.push(i);
                     }
-                  `}
-                    onClick={() => setCurrentPage(i + 1)}
-                    aria-current={currentPage === i + 1 ? "page" : undefined}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
+
+                    // Nếu currentPage < totalPages - 2 thì hiển thị ...
+                    if (currentPage < totalPages - 2) pages.push("...");
+
+                    // Luôn hiển thị trang cuối và áp chót
+                    pages.push(totalPages - 1, totalPages);
+
+                    // Loại bỏ trùng lặp, ngoài phạm vi, giữ thứ tự
+                    pages = pages.filter(
+                      (p, idx, arr) =>
+                        typeof p === "string" ||
+                        (p >= 1 && p <= totalPages && arr.indexOf(p) === idx)
+                    );
+                  }
+                  return pages.map((p, idx) =>
+                    typeof p === "number" ? (
+                      <button
+                        key={p}
+                        className={`px-2 text-lg transition bg-transparent border-none rounded-none
+              ${
+                currentPage === p
+                  ? "text-black font-bold"
+                  : "text-gray-700 hover:text-black"
+              }
+            `}
+                        onClick={() => setCurrentPage(p)}
+                        aria-current={currentPage === p ? "page" : undefined}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          borderRadius: 0,
+                        }}
+                      >
+                        {p}
+                      </button>
+                    ) : (
+                      <span
+                        key={`ellipsis-${idx}`}
+                        className="px-2 text-gray-400"
+                        style={{
+                          background: "none",
+                          border: "none",
+                          borderRadius: 0,
+                        }}
+                      >
+                        ...
+                      </span>
+                    )
+                  );
+                })()}
                 <button
-                  className="w-10 h-10 flex items-center justify-center rounded-full border border-gray-300 bg-white shadow transition hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-2 text-gray-500 hover:text-black transition disabled:opacity-40 disabled:cursor-not-allowed bg-transparent border-none rounded-none"
                   onClick={() =>
                     setCurrentPage((p) => Math.min(totalPages, p + 1))
                   }
                   disabled={currentPage === totalPages}
                   aria-label="Trang sau"
+                  style={{
+                    background: "none",
+                    border: "none",
+                    borderRadius: 0,
+                  }}
                 >
-                  <span className="text-xl">&gt;</span>
+                  <span className="text-base">&gt;</span>
                 </button>
               </div>
             )}

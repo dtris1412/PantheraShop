@@ -9,8 +9,59 @@ import {
   importProductsFromExcel as importProductsFromExcelService,
   importProductsWithVariants as importProductsWithVariantsService,
   importInventoryStock as importInventoryStockService,
+  getProductsPaginated as getProductsPaginatedService,
 } from "../../shared/services/productService.js";
 import db from "../../shared/models/index.js";
+
+const getProductsPaginated = async (req, res) => {
+  try {
+    const {
+      search = "",
+      limit = 15,
+      page = 1,
+      category,
+      sport,
+      tournament,
+      team,
+      minPrice,
+      maxPrice,
+    } = req.query;
+
+    console.log("[Controller] getProductsPaginated query params:", {
+      search,
+      limit,
+      page,
+      category,
+      sport,
+      tournament,
+      team,
+      minPrice,
+      maxPrice,
+    });
+
+    const result = await getProductsPaginatedService({
+      search,
+      limit,
+      page,
+      category,
+      sport,
+      tournament,
+      team,
+      minPrice,
+      maxPrice,
+    });
+
+    console.log("[Controller] Result total:", result.totalProducts);
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: err.message,
+    });
+  }
+};
 
 const getAllProducts = async (req, res) => {
   try {
@@ -320,4 +371,5 @@ export {
   importProductsFromExcel,
   importProductsWithVariants,
   importInventoryStock,
+  getProductsPaginated,
 };

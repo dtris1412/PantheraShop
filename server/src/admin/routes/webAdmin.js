@@ -86,6 +86,7 @@ import {
   importProductsFromExcel,
   importProductsWithVariants,
   importInventoryStock,
+  getProductsPaginated,
 } from "../../admin/controllers/productController.js";
 import {
   register as adminRegister,

@@ -23,6 +23,7 @@ import {
   getProductById,
   searchProducts,
   getRelatedProducts,
+  getProductsPaginated,
 } from "../controllers/productController.js";
 import { getAllSports } from "../controllers/sportController.js";
 
@@ -109,12 +110,12 @@ const initWebRoutes = (app) => {
   //product APIs
   router.get("/api/products", getAllProducts);
   router.get("/api/products/top-rated", getTopRatedProducts);
+  router.get("/api/products/paginated", getProductsPaginated);
+  router.get("/api/products/search", searchProducts);
   router.post("/api/products/filter", getFilteredProducts);
   router.get("/api/products/:product_id", getProductById);
   router.get("/api/products/related/:product_id", getRelatedProducts);
   router.get("/api/products/sport/:sport_id", getProductBySport);
-
-  router.get("/api/products/search", searchProducts);
 
   //sport APIs
 

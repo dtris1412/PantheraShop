@@ -6,8 +6,50 @@ import {
   getProductById as getProductByIdService,
   searchProducts as searchProductsService,
   getRelatedProducts as getRelatedProductsService,
+  getProductsPaginated as getProductsPaginatedService,
 } from "../../shared/services/productService.js";
 
+const getProductsPaginated = async (req, res) => {
+  try {
+    console.log("[Controller] getProductsPaginated called", req.query);
+    const {
+      search = "",
+      limit = 15,
+      page = 1,
+      category,
+      sport,
+      tournament,
+      team,
+      minPrice,
+      maxPrice,
+    } = req.query;
+
+    const result = await getProductsPaginatedService({
+      search,
+      limit,
+      page,
+      category,
+      sport,
+      tournament,
+      team,
+      minPrice,
+      maxPrice,
+    });
+
+    console.log("[Controller] Paginated result:", {
+      productsLength: result.products.length,
+      total: result.totalProducts,
+    });
+
+    res.status(200).json({
+      products: result.products,
+      total: result.totalProducts,
+    });
+  } catch (err) {
+    console.error("[Controller] Error in getProductsPaginated: ", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
 const getAllProducts = async (req, res) => {
   try {
     const products = await getAllProductsService();
@@ -109,4 +151,5 @@ export {
   getProductById,
   searchProducts,
   getRelatedProducts,
+  getProductsPaginated,
 };
