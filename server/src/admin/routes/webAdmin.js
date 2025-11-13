@@ -95,6 +95,7 @@ import {
 import {
   getAllUsers,
   updateProfile,
+  getUsersPaginated,
 } from "../../admin/controllers/userController.js";
 
 //import variant controllers
@@ -153,6 +154,7 @@ const initAdminRoutes = (app) => {
   router.post("/api/admin/register", verifyAdmin, adminRegister);
 
   //User Management
+  router.get("/api/admin/users/paginated", verifyAdmin, getUsersPaginated);
   router.get("/api/admin/users", verifyAdmin, getAllUsers);
   router.patch(
     "/api/admin/users/status/:user_id",

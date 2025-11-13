@@ -131,6 +131,60 @@ const getNameById = async (user_id) => {
   if (!user) return;
   return user.user_name;
 };
+
+const getUsersPaginated = async ({
+  search = "",
+  limit = 10,
+  page = 1,
+  role_id,
+  user_status,
+}) => {
+  const Op = db.Sequelize.Op;
+  const offset = (Number(page) - 1) * Number(limit);
+
+  // Xây dựng điều kiện where
+  const where = {};
+
+  // Search theo name, email, phone
+  if (search) {
+    where[Op.or] = [
+      { user_name: { [Op.substring]: search } },
+      { user_email: { [Op.substring]: search } },
+      { user_phone: { [Op.substring]: search } },
+    ];
+  }
+
+  // Filter theo role_id
+  if (role_id !== undefined && role_id !== "") {
+    where.role_id = Number(role_id);
+  }
+
+  // Filter theo user_status
+  if (user_status !== undefined && user_status !== "") {
+    where.user_status = user_status === "true" || user_status === true;
+  }
+
+  // Đếm tổng số users
+  const totalUsers = await db.User.count({ where });
+
+  // Lấy danh sách users
+  const users = await db.User.findAll({
+    where,
+    limit: Number(limit),
+    offset,
+    order: [
+      ["role_id", "ASC"],
+      ["user_id", "ASC"],
+    ],
+  });
+
+  return {
+    success: true,
+    users,
+    total: totalUsers,
+  };
+};
+
 export {
   getAllUsers,
   getUserById,
@@ -139,4 +193,5 @@ export {
   updatePassword,
   updateAvatar,
   getNameById,
+  getUsersPaginated,
 };

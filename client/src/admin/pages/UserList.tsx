@@ -33,7 +33,10 @@ interface User {
 
 const UserList = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [users, setUsers] = useState<User[]>([]);
+  const [paginatedUsers, setPaginatedUsers] = useState<User[]>([]);
+  const [totalUsers, setTotalUsers] = useState(0);
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -56,8 +59,57 @@ const UserList = () => {
   const { getAllUsers, updateUserStatus, loading } = useAdmin();
   const itemsPerPage = 10;
   const [statusLoading, setStatusLoading] = useState<number | null>(null);
+  const [loadingPaginated, setLoadingPaginated] = useState(false);
 
-  // Fetch users on mount ONLY ONCE
+  // Debounce search 500ms
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
+
+  // Fetch paginated users khi filter/search/page thay đổi
+  useEffect(() => {
+    const fetchPaginatedUsers = async () => {
+      setLoadingPaginated(true);
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL;
+        const params = new URLSearchParams({
+          search: debouncedSearch || "",
+          page: String(currentPage),
+          limit: String(itemsPerPage),
+          ...(roleFilter ? { role: roleFilter } : {}),
+          ...(statusFilter ? { status: statusFilter } : {}),
+        });
+        const res = await fetch(
+          `${apiUrl}/admin/users/paginated?${params.toString()}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        const data = await res.json();
+        setPaginatedUsers(data.users || []);
+        setTotalUsers(data.total || 0);
+      } catch (error) {
+        console.error("Failed to fetch paginated users:", error);
+        showToast("Không thể tải danh sách người dùng", "error");
+      } finally {
+        setLoadingPaginated(false);
+      }
+    };
+
+    fetchPaginatedUsers();
+  }, [debouncedSearch, currentPage, roleFilter, statusFilter]);
+
+  // Reset về trang 1 khi filter/search thay đổi
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, roleFilter, statusFilter]);
+
+  // Fetch users on mount ONLY ONCE (để lấy toàn bộ users cho các mục đích khác nếu cần)
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -66,7 +118,6 @@ const UserList = () => {
         setUsers(sortedData);
       } catch (error) {
         console.error("Failed to fetch users:", error);
-        showToast("Không thể tải danh sách người dùng", "error");
       }
     };
 
@@ -185,25 +236,8 @@ const UserList = () => {
       : { name: "Tạm khóa", color: "bg-red-100 text-red-800" };
   };
 
-  const filteredUsers = users.filter((user) => {
-    const matchSearch =
-      user.user_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.user_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (user.user_phone && user.user_phone.includes(searchTerm));
-
-    const matchRole =
-      roleFilter === "" || user.role_id.toString() === roleFilter;
-
-    const matchStatus =
-      statusFilter === "" || user.user_status.toString() === statusFilter;
-
-    return matchSearch && matchRole && matchStatus;
-  });
-
-  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentUsers = filteredUsers.slice(startIndex, endIndex);
+  // Không cần filter client-side nữa, API xử lý hết
+  const totalPages = Math.ceil(totalUsers / itemsPerPage);
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "N/A";
@@ -329,7 +363,7 @@ const UserList = () => {
         </div>
       </div>
 
-      {filteredUsers.length === 0 ? (
+      {!loadingPaginated && totalUsers === 0 ? (
         <div className="bg-white border border-gray-200 p-12 text-center">
           <div className="text-gray-400 mb-2 text-lg font-medium">
             Không tìm thấy người dùng
@@ -353,180 +387,201 @@ const UserList = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {currentUsers.map((user) => (
-                  <tr
-                    key={user.user_id}
-                    className="hover:bg-gray-50 transition-colors duration-200"
-                  >
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        {user.avatar ? (
-                          <img
-                            src={user.avatar}
-                            alt={user.user_name}
-                            className="w-10 h-10 object-cover"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 bg-black text-white flex items-center justify-center font-medium">
-                            {user.user_name.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                        <div>
-                          <p className="text-sm font-medium text-black">
-                            {user.user_name}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            ID: #{user.user_id}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Mail size={14} />
-                          <span>{user.user_email}</span>
-                        </div>
-                        {user.user_phone && (
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <Phone size={14} />
-                            <span>{user.user_phone}</span>
-                          </div>
-                        )}
-                        {user.user_address && (
-                          <div className="flex items-center gap-2 text-sm text-gray-500">
-                            <MapPin size={14} />
-                            <span className="truncate max-w-xs">
-                              {user.user_address}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`px-3 py-1 text-xs font-medium ${
-                          user.role_id === 0
-                            ? "bg-black text-white"
-                            : user.role_id === 1
-                            ? "bg-blue-100 text-blue-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {getRoleName(user.role_id)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <span
-                          className={`px-3 py-1 text-xs font-medium ${
-                            getStatusInfo(user.user_status).color
-                          }`}
-                        >
-                          {getStatusInfo(user.user_status).name}
-                        </span>
-
-                        <button
-                          type="button"
-                          onClick={(e) =>
-                            handleToggleClick(
-                              e,
-                              user.user_id,
-                              user.user_name,
-                              user.user_status
-                            )
-                          }
-                          className={`p-1 hover:bg-gray-100 transition-colors duration-200 ${
-                            user.role_id === 0
-                              ? "opacity-50 cursor-not-allowed"
-                              : ""
-                          }`}
-                          disabled={
-                            user.role_id === 0 || statusLoading === user.user_id
-                          }
-                          title={
-                            user.role_id === 0
-                              ? "Không thể thay đổi trạng thái Admin"
-                              : user.user_status
-                              ? "Click để khóa tài khoản"
-                              : "Click để mở khóa tài khoản"
-                          }
-                        >
-                          {statusLoading === user.user_id ? (
-                            <span className="animate-spin w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full inline-block"></span>
-                          ) : user.user_status ? (
-                            <ToggleRight className="w-5 h-5 text-green-600" />
-                          ) : (
-                            <ToggleLeft className="w-5 h-5 text-gray-400" />
-                          )}
-                        </button>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
-                      {formatDate(user.created_at)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setShowDetailModal(true);
-                          }}
-                          className="p-2 hover:bg-blue-50 transition-colors duration-200"
-                          title="Xem chi tiết"
-                        >
-                          <Eye size={16} className="text-blue-600" />
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setShowEditForm(true);
-                          }}
-                          className="p-2 hover:bg-gray-100 transition-colors duration-200"
-                          title="Chỉnh sửa người dùng"
-                        >
-                          <Edit size={16} className="text-gray-600" />
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={(e) =>
-                            handleLockClick(
-                              e,
-                              user.user_id,
-                              user.user_name,
-                              user.user_status
-                            )
-                          }
-                          className={`p-2 transition-colors duration-200 ${
-                            user.role_id === 0
-                              ? "opacity-50 cursor-not-allowed"
-                              : user.user_status
-                              ? "hover:bg-red-50"
-                              : "hover:bg-green-50"
-                          }`}
-                          disabled={user.role_id === 0}
-                          title={
-                            user.role_id === 0
-                              ? "Không thể thay đổi trạng thái Admin"
-                              : user.user_status
-                              ? "Khóa tài khoản"
-                              : "Mở khóa tài khoản"
-                          }
-                        >
-                          {user.user_status ? (
-                            <Lock size={16} className="text-red-600" />
-                          ) : (
-                            <Unlock size={16} className="text-green-600" />
-                          )}
-                        </button>
-                      </div>
+                {loadingPaginated ? (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-6 py-8 text-center text-gray-500"
+                    >
+                      Đang tải...
                     </td>
                   </tr>
-                ))}
+                ) : paginatedUsers.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-6 py-8 text-center text-gray-500"
+                    >
+                      Không tìm thấy người dùng nào
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedUsers.map((user) => (
+                    <tr
+                      key={user.user_id}
+                      className="hover:bg-gray-50 transition-colors duration-200"
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          {user.avatar ? (
+                            <img
+                              src={user.avatar}
+                              alt={user.user_name}
+                              className="w-10 h-10 object-cover"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 bg-black text-white flex items-center justify-center font-medium">
+                              {user.user_name.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <div>
+                            <p className="text-sm font-medium text-black">
+                              {user.user_name}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              ID: #{user.user_id}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <Mail size={14} />
+                            <span>{user.user_email}</span>
+                          </div>
+                          {user.user_phone && (
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <Phone size={14} />
+                              <span>{user.user_phone}</span>
+                            </div>
+                          )}
+                          {user.user_address && (
+                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                              <MapPin size={14} />
+                              <span className="truncate max-w-xs">
+                                {user.user_address}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`px-3 py-1 text-xs font-medium ${
+                            user.role_id === 0
+                              ? "bg-black text-white"
+                              : user.role_id === 1
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {getRoleName(user.role_id)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={`px-3 py-1 text-xs font-medium ${
+                              getStatusInfo(user.user_status).color
+                            }`}
+                          >
+                            {getStatusInfo(user.user_status).name}
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={(e) =>
+                              handleToggleClick(
+                                e,
+                                user.user_id,
+                                user.user_name,
+                                user.user_status
+                              )
+                            }
+                            className={`p-1 hover:bg-gray-100 transition-colors duration-200 ${
+                              user.role_id === 0
+                                ? "opacity-50 cursor-not-allowed"
+                                : ""
+                            }`}
+                            disabled={
+                              user.role_id === 0 ||
+                              statusLoading === user.user_id
+                            }
+                            title={
+                              user.role_id === 0
+                                ? "Không thể thay đổi trạng thái Admin"
+                                : user.user_status
+                                ? "Click để khóa tài khoản"
+                                : "Click để mở khóa tài khoản"
+                            }
+                          >
+                            {statusLoading === user.user_id ? (
+                              <span className="animate-spin w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full inline-block"></span>
+                            ) : user.user_status ? (
+                              <ToggleRight className="w-5 h-5 text-green-600" />
+                            ) : (
+                              <ToggleLeft className="w-5 h-5 text-gray-400" />
+                            )}
+                          </button>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {formatDate(user.created_at)}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setShowDetailModal(true);
+                            }}
+                            className="p-2 hover:bg-blue-50 transition-colors duration-200"
+                            title="Xem chi tiết"
+                          >
+                            <Eye size={16} className="text-blue-600" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setShowEditForm(true);
+                            }}
+                            className="p-2 hover:bg-gray-100 transition-colors duration-200"
+                            title="Chỉnh sửa người dùng"
+                          >
+                            <Edit size={16} className="text-gray-600" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={(e) =>
+                              handleLockClick(
+                                e,
+                                user.user_id,
+                                user.user_name,
+                                user.user_status
+                              )
+                            }
+                            className={`p-2 transition-colors duration-200 ${
+                              user.role_id === 0
+                                ? "opacity-50 cursor-not-allowed"
+                                : user.user_status
+                                ? "hover:bg-red-50"
+                                : "hover:bg-green-50"
+                            }`}
+                            disabled={user.role_id === 0}
+                            title={
+                              user.role_id === 0
+                                ? "Không thể thay đổi trạng thái Admin"
+                                : user.user_status
+                                ? "Khóa tài khoản"
+                                : "Mở khóa tài khoản"
+                            }
+                          >
+                            {user.user_status ? (
+                              <Lock size={16} className="text-red-600" />
+                            ) : (
+                              <Unlock size={16} className="text-green-600" />
+                            )}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -536,43 +591,100 @@ const UserList = () => {
               <p className="text-sm text-gray-600">
                 Hiển thị{" "}
                 <span className="font-medium">
-                  {startIndex + 1}-{Math.min(endIndex, filteredUsers.length)}
+                  {(currentPage - 1) * itemsPerPage + 1}-
+                  {Math.min(currentPage * itemsPerPage, totalUsers)}
                 </span>{" "}
-                của <span className="font-medium">{filteredUsers.length}</span>{" "}
-                người dùng
+                của <span className="font-medium">{totalUsers}</span> người dùng
               </p>
-              <div className="flex gap-2">
+              <div className="flex gap-1 select-none">
                 <button
                   type="button"
-                  onClick={() => setCurrentPage(currentPage - 1)}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="px-4 py-2 border border-gray-300 text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                  className="px-2 text-gray-500 hover:text-black transition disabled:opacity-40 disabled:cursor-not-allowed bg-transparent border-none rounded-none"
+                  aria-label="Trang trước"
+                  style={{
+                    background: "none",
+                    border: "none",
+                    borderRadius: 0,
+                  }}
                 >
-                  Trước
+                  <span className="text-base">&lt;</span>
                 </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                  (page) => (
-                    <button
-                      type="button"
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`px-4 py-2 text-sm font-medium transition-colors duration-200 ${
-                        currentPage === page
-                          ? "bg-black text-white"
-                          : "border border-gray-300 hover:bg-gray-50"
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  )
-                )}
+                {(() => {
+                  let pages: (number | string)[] = [];
+                  if (totalPages <= 5) {
+                    for (let i = 1; i <= totalPages; i++) pages.push(i);
+                  } else {
+                    pages.push(1, 2);
+                    if (currentPage > 3) pages.push("...");
+                    for (
+                      let i = Math.max(3, currentPage - 1);
+                      i <= Math.min(totalPages - 2, currentPage + 1);
+                      i++
+                    ) {
+                      if (i !== 1 && i !== totalPages) pages.push(i);
+                    }
+                    if (currentPage < totalPages - 2) pages.push("...");
+                    pages.push(totalPages - 1, totalPages);
+                    pages = pages.filter(
+                      (p, idx, arr) =>
+                        typeof p === "string" ||
+                        (p >= 1 && p <= totalPages && arr.indexOf(p) === idx)
+                    );
+                  }
+                  return pages.map((p, idx) =>
+                    typeof p === "number" ? (
+                      <button
+                        type="button"
+                        key={p}
+                        className={`px-2 text-lg transition bg-transparent border-none rounded-none
+                          ${
+                            currentPage === p
+                              ? "text-black font-bold"
+                              : "text-gray-700 hover:text-black"
+                          }
+                        `}
+                        onClick={() => setCurrentPage(p)}
+                        aria-current={currentPage === p ? "page" : undefined}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          borderRadius: 0,
+                        }}
+                      >
+                        {p}
+                      </button>
+                    ) : (
+                      <span
+                        key={`ellipsis-${idx}`}
+                        className="px-2 text-gray-400"
+                        style={{
+                          background: "none",
+                          border: "none",
+                          borderRadius: 0,
+                        }}
+                      >
+                        ...
+                      </span>
+                    )
+                  );
+                })()}
                 <button
                   type="button"
-                  onClick={() => setCurrentPage(currentPage + 1)}
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  }
                   disabled={currentPage === totalPages}
-                  className="px-4 py-2 border border-gray-300 text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                  className="px-2 text-gray-500 hover:text-black transition disabled:opacity-40 disabled:cursor-not-allowed bg-transparent border-none rounded-none"
+                  aria-label="Trang sau"
+                  style={{
+                    background: "none",
+                    border: "none",
+                    borderRadius: 0,
+                  }}
                 >
-                  Sau
+                  <span className="text-base">&gt;</span>
                 </button>
               </div>
             </div>

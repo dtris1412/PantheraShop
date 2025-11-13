@@ -1,6 +1,7 @@
 import {
   getAllUsers as getAllUsersService,
   updateProfile as updateProfileService,
+  getUsersPaginated as getUsersPaginatedService,
 } from "../../shared/services/userService.js";
 
 const getAllUsers = async (req, res) => {
@@ -54,4 +55,33 @@ const updateProfile = async (req, res) => {
   }
 };
 
-export { getAllUsers, updateProfile };
+const getUsersPaginated = async (req, res) => {
+  try {
+    const {
+      search = "",
+      limit = 10,
+      page = 1,
+      role_id,
+      user_status,
+    } = req.query;
+
+    const result = await getUsersPaginatedService({
+      search,
+      limit,
+      page,
+      role_id,
+      user_status,
+    });
+
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+
+    res.status(200).json(result);
+  } catch (err) {
+    console.error("Error in getUsersPaginated: ", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export { getAllUsers, updateProfile, getUsersPaginated };
