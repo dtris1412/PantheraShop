@@ -1,4 +1,5 @@
 import db from "../../shared/models/index.js";
+import { Op } from "sequelize";
 
 const getAllBlogs = async () => {
   const blogs = await db.Blog.findAll({
@@ -26,6 +27,105 @@ const getAllBlogs = async () => {
     ],
   });
   return { success: true, blogs };
+};
+
+const getBlogsPaginated = async ({
+  search = "",
+  sport_id = "",
+  category_id = "",
+  team_id = "",
+  tournament_id = "",
+  limit = 9,
+  page = 1,
+}) => {
+  try {
+    const offset = (page - 1) * limit;
+
+    // Build where conditions
+    const where = {};
+
+    // Search across blog_title and blog_content
+    if (search) {
+      where[Op.or] = [
+        { blog_title: { [Op.substring]: search } },
+        { blog_content: { [Op.substring]: search } },
+      ];
+    }
+
+    // Filter by sport
+    if (sport_id) {
+      where.sport_id = sport_id;
+    }
+
+    // Filter by category
+    if (category_id) {
+      where.category_id = category_id;
+    }
+
+    // Filter by team
+    if (team_id) {
+      where.team_id = team_id;
+    }
+
+    // Filter by tournament
+    if (tournament_id) {
+      where.tournament_id = tournament_id;
+    }
+
+    // Common includes for both count and findAll
+    const includes = [
+      {
+        model: db.User,
+        attributes: ["user_id", "user_name"],
+      },
+      {
+        model: db.Sport,
+        attributes: ["sport_id", "sport_name"],
+      },
+      {
+        model: db.Team,
+        attributes: ["team_id", "team_name"],
+      },
+      {
+        model: db.Category,
+        attributes: ["category_id", "category_name"],
+      },
+      {
+        model: db.Tournament,
+        attributes: ["tournament_id", "tournament_name"],
+      },
+    ];
+
+    // Get total count
+    const totalCount = await db.Blog.count({
+      where,
+      include: includes,
+      distinct: true,
+    });
+
+    // Get paginated blogs
+    const blogs = await db.Blog.findAll({
+      where,
+      include: includes,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      order: [["created_at", "DESC"]],
+    });
+
+    return {
+      success: true,
+      blogs,
+      pagination: {
+        total: totalCount,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(totalCount / limit),
+      },
+    };
+  } catch (err) {
+    console.error("Error in getBlogsPaginated:", err);
+    return { success: false, message: "Internal server error" };
+  }
 };
 
 const createBlog = async (
@@ -170,4 +270,11 @@ const deleteBlog = async (blog_id) => {
   }
 };
 
-export { getAllBlogs, createBlog, updateBlog, getBlogById, deleteBlog };
+export {
+  getAllBlogs,
+  getBlogsPaginated,
+  createBlog,
+  updateBlog,
+  getBlogById,
+  deleteBlog,
+};

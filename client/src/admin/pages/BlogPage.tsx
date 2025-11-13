@@ -8,7 +8,7 @@ import EditBlogModal from "../components/BlogComponents/EditBlogModal";
 import ViewBlogModal from "../components/BlogComponents/ViewBlogModal";
 
 const BlogPage = () => {
-  const { blogs, getAllBlogs, deleteBlog, loading } = useBlog();
+  const { getBlogsPaginated, deleteBlog } = useBlog();
   const { getAllSports } = useCategory();
   const [searchTerm, setSearchTerm] = useState("");
   const [sportFilter, setSportFilter] = useState<string>("all");
@@ -18,18 +18,58 @@ const BlogPage = () => {
   const [viewBlog, setViewBlog] = useState<Blog | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<Blog | null>(null);
 
-  useEffect(() => {
-    loadBlogs();
-    loadSports();
-  }, []);
+  // Pagination state
+  const [paginatedBlogs, setPaginatedBlogs] = useState<Blog[]>([]);
+  const [totalBlogs, setTotalBlogs] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loadingPaginated, setLoadingPaginated] = useState(false);
+  const itemsPerPage = 9;
 
-  const loadBlogs = async () => {
+  // Debounced search
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setCurrentPage(1); // Reset to page 1 on search
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [sportFilter]);
+
+  // Fetch paginated blogs
+  useEffect(() => {
+    fetchBlogsPaginatedData();
+  }, [currentPage, debouncedSearch, sportFilter]);
+
+  const fetchBlogsPaginatedData = async () => {
+    setLoadingPaginated(true);
     try {
-      await getAllBlogs();
+      const result = await getBlogsPaginated({
+        search: debouncedSearch,
+        sport_id: sportFilter === "all" ? "" : sportFilter,
+        limit: itemsPerPage,
+        page: currentPage,
+      });
+      if (result.success) {
+        setPaginatedBlogs(result.blogs);
+        setTotalBlogs(result.pagination.total);
+      }
     } catch (error) {
-      console.error("Error loading blogs:", error);
+      console.error("Error fetching paginated blogs:", error);
+    } finally {
+      setLoadingPaginated(false);
     }
   };
+
+  useEffect(() => {
+    loadSports();
+  }, []);
 
   const loadSports = async () => {
     try {
@@ -41,12 +81,12 @@ const BlogPage = () => {
   };
 
   const handleCreateSuccess = () => {
-    loadBlogs();
+    fetchBlogsPaginatedData(); // Refresh paginated list
     setIsCreateModalOpen(false);
   };
 
   const handleEditSuccess = () => {
-    loadBlogs();
+    fetchBlogsPaginatedData(); // Refresh paginated list
     setEditBlog(null);
   };
 
@@ -54,7 +94,7 @@ const BlogPage = () => {
     try {
       await deleteBlog(blogId);
       showToast("Xóa blog thành công!", "success");
-      loadBlogs();
+      fetchBlogsPaginatedData(); // Refresh paginated list
       setDeleteConfirm(null);
     } catch (error: any) {
       console.error("Error deleting blog:", error);
@@ -62,16 +102,41 @@ const BlogPage = () => {
     }
   };
 
-  // Filter blogs
-  const filteredBlogs = (blogs || []).filter((blog) => {
-    const matchesSearch = blog.blog_title
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    const matchesSport =
-      sportFilter === "all" ||
-      (blog.sport_id && String(blog.sport_id) === sportFilter);
-    return matchesSearch && matchesSport;
-  });
+  // Pagination logic
+  const totalPages = Math.ceil(totalBlogs / itemsPerPage);
+
+  const renderPageNumbers = () => {
+    const pages = [];
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        pages.push(1, 2, 3, 4, "...", totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(
+          1,
+          "...",
+          totalPages - 3,
+          totalPages - 2,
+          totalPages - 1,
+          totalPages
+        );
+      } else {
+        pages.push(
+          1,
+          "...",
+          currentPage - 1,
+          currentPage,
+          currentPage + 1,
+          "...",
+          totalPages
+        );
+      }
+    }
+    return pages;
+  };
 
   // Format date
   const formatDate = (dateString: string) => {
@@ -141,7 +206,7 @@ const BlogPage = () => {
       </div>
 
       {/* Loading State */}
-      {loading && (
+      {loadingPaginated && (
         <div className="text-center py-12">
           <div className="inline-block w-8 h-8 border-4 border-gray-300 border-t-black rounded-full animate-spin"></div>
           <p className="mt-4 text-gray-600">Đang tải blogs...</p>
@@ -149,9 +214,9 @@ const BlogPage = () => {
       )}
 
       {/* Blogs Grid */}
-      {!loading && filteredBlogs.length > 0 && (
+      {!loadingPaginated && paginatedBlogs.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredBlogs.map((blog) => (
+          {paginatedBlogs.map((blog) => (
             <div
               key={blog.blog_id}
               className="bg-white border-2 border-gray-200 hover:border-black transition-all duration-300 overflow-hidden group"
@@ -243,7 +308,7 @@ const BlogPage = () => {
       )}
 
       {/* Empty State */}
-      {!loading && filteredBlogs.length === 0 && (
+      {!loadingPaginated && paginatedBlogs.length === 0 && (
         <div className="text-center py-16 bg-white border-2 border-dashed border-gray-300">
           <FileText className="mx-auto mb-4 text-gray-400" size={48} />
           <h3 className="text-xl font-bold text-gray-700 mb-2">
@@ -262,6 +327,52 @@ const BlogPage = () => {
               Tạo Blog Đầu Tiên
             </button>
           )}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 mt-8">
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-4 py-2 text-sm text-gray-700 disabled:text-gray-300 hover:text-black disabled:cursor-not-allowed"
+          >
+            Trước
+          </button>
+
+          {renderPageNumbers().map((page, index) => {
+            if (page === "...") {
+              return (
+                <span key={`ellipsis-${index}`} className="px-2 text-gray-400">
+                  ...
+                </span>
+              );
+            }
+            return (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page as number)}
+                className={`px-4 py-2 text-sm ${
+                  currentPage === page
+                    ? "text-black font-bold underline"
+                    : "text-gray-600 hover:text-black"
+                }`}
+              >
+                {page}
+              </button>
+            );
+          })}
+
+          <button
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+            }
+            disabled={currentPage === totalPages}
+            className="px-4 py-2 text-sm text-gray-700 disabled:text-gray-300 hover:text-black disabled:cursor-not-allowed"
+          >
+            Sau
+          </button>
         </div>
       )}
 

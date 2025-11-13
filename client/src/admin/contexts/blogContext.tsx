@@ -47,6 +47,15 @@ export interface CreateBlogData {
 interface BlogContextType {
   blogs: Blog[];
   getAllBlogs: () => Promise<void>;
+  getBlogsPaginated: (params: {
+    search?: string;
+    sport_id?: string;
+    category_id?: string;
+    team_id?: string;
+    tournament_id?: string;
+    limit?: number;
+    page?: number;
+  }) => Promise<any>;
   getBlogById: (blogId: number) => Promise<Blog | null>;
   createBlog: (blogData: CreateBlogData) => Promise<any>;
   updateBlog: (
@@ -88,6 +97,54 @@ export const BlogProvider: React.FC<BlogProviderProps> = ({ children }) => {
     } catch (error) {
       console.error("Error fetching blogs:", error);
       setBlogs([]);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getBlogsPaginated = async (params: {
+    search?: string;
+    sport_id?: string;
+    category_id?: string;
+    team_id?: string;
+    tournament_id?: string;
+    limit?: number;
+    page?: number;
+  }) => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const queryParams = new URLSearchParams();
+      if (params.search) queryParams.append("search", params.search);
+      if (params.sport_id) queryParams.append("sport_id", params.sport_id);
+      if (params.category_id)
+        queryParams.append("category_id", params.category_id);
+      if (params.team_id) queryParams.append("team_id", params.team_id);
+      if (params.tournament_id)
+        queryParams.append("tournament_id", params.tournament_id);
+      if (params.limit) queryParams.append("limit", params.limit.toString());
+      if (params.page) queryParams.append("page", params.page.toString());
+
+      const res = await fetch(
+        `${apiUrl}/admin/blogs/paginated?${queryParams.toString()}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch paginated blogs");
+      }
+
+      const data = await res.json();
+      return data;
+    } catch (error) {
+      console.error("Error fetching paginated blogs:", error);
       throw error;
     } finally {
       setLoading(false);
@@ -202,6 +259,7 @@ export const BlogProvider: React.FC<BlogProviderProps> = ({ children }) => {
       value={{
         blogs,
         getAllBlogs,
+        getBlogsPaginated,
         getBlogById,
         createBlog,
         updateBlog,

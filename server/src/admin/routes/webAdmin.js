@@ -27,6 +27,7 @@ import { getMethodByOrderId } from "../../admin/controllers/paymentController.js
 //Import Blog Controllers
 import {
   getAllBlogs,
+  getBlogsPaginated,
   createBlog,
   updateBlog,
   deleteBlog,
@@ -376,6 +377,7 @@ const initAdminRoutes = (app) => {
   router.put("/api/admin/vouchers/:voucher_id", verifyAdmin, updateVoucher);
 
   // =============== BLOG MANAGEMENT ROUTES ===============
+  router.get("/api/admin/blogs/paginated", verifyAdmin, getBlogsPaginated);
   router.get("/api/admin/blogs", verifyAdmin, getAllBlogs);
   router.get("/api/admin/blogs/:blog_id", verifyAdmin, getBlogById);
   router.post("/api/admin/blogs", verifyAdmin, createBlog);

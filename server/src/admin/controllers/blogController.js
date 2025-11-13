@@ -1,5 +1,6 @@
 import {
   getAllBlogs as getAllBlogsService,
+  getBlogsPaginated as getBlogsPaginatedService,
   getBlogById as getBlogByIdService,
   createBlog as createBlogService,
   updateBlog as updateBlogService,
@@ -16,6 +17,41 @@ const getAllBlogs = async (req, res) => {
     res.status(200).json(result);
   } catch (err) {
     console.error("Error in getAllBlogs: ", err);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: err.message,
+    });
+  }
+};
+
+const getBlogsPaginated = async (req, res) => {
+  try {
+    const {
+      search,
+      sport_id,
+      category_id,
+      team_id,
+      tournament_id,
+      limit,
+      page,
+    } = req.query;
+    const result = await getBlogsPaginatedService({
+      search,
+      sport_id,
+      category_id,
+      team_id,
+      tournament_id,
+      limit,
+      page,
+    });
+
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+    res.status(200).json(result);
+  } catch (err) {
+    console.error("Error in getBlogsPaginated:", err);
     res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -133,4 +169,11 @@ const deleteBlog = async (req, res) => {
     });
   }
 };
-export { getAllBlogs, getBlogById, createBlog, updateBlog, deleteBlog };
+export {
+  getAllBlogs,
+  getBlogsPaginated,
+  getBlogById,
+  createBlog,
+  updateBlog,
+  deleteBlog,
+};
