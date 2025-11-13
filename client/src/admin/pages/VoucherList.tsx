@@ -6,48 +6,108 @@ import EditVoucherForm from "../components/voucherComponents/EditVoucherForm";
 import { formatVND } from "../../utils/format";
 
 const VoucherList = () => {
-  const { vouchers, getAllVouchers, loading } = useVoucher();
+  const { getVouchersPaginated } = useVoucher();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editVoucher, setEditVoucher] = useState<Voucher | null>(null);
 
-  useEffect(() => {
-    loadVouchers();
-  }, []);
+  // Pagination state
+  const [paginatedVouchers, setPaginatedVouchers] = useState<Voucher[]>([]);
+  const [totalVouchers, setTotalVouchers] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loadingPaginated, setLoadingPaginated] = useState(false);
+  const itemsPerPage = 9;
 
-  const loadVouchers = async () => {
+  // Debounced search
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setCurrentPage(1); // Reset to page 1 on search
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, typeFilter]);
+
+  // Fetch paginated vouchers
+  useEffect(() => {
+    fetchVouchersPaginatedData();
+  }, [currentPage, debouncedSearch, statusFilter, typeFilter]);
+
+  const fetchVouchersPaginatedData = async () => {
+    setLoadingPaginated(true);
     try {
-      await getAllVouchers();
-      // Sau đó lấy dữ liệu từ vouchers trong context
+      const result = await getVouchersPaginated({
+        search: debouncedSearch,
+        discount_type: typeFilter === "all" ? "" : typeFilter,
+        voucher_status: statusFilter === "all" ? "" : statusFilter,
+        limit: itemsPerPage,
+        page: currentPage,
+      });
+      if (result.success) {
+        setPaginatedVouchers(result.vouchers);
+        setTotalVouchers(result.pagination.total);
+      }
     } catch (error) {
-      console.error("Error loading vouchers:", error);
+      console.error("Error fetching paginated vouchers:", error);
+    } finally {
+      setLoadingPaginated(false);
     }
   };
 
   const handleCreateSuccess = () => {
-    loadVouchers();
+    fetchVouchersPaginatedData(); // Refresh paginated list
     setIsCreateModalOpen(false);
   };
 
   const handleEditSuccess = () => {
-    loadVouchers();
+    fetchVouchersPaginatedData(); // Refresh paginated list
     setEditVoucher(null);
   };
 
-  // Filter vouchers
-  const filteredVouchers = (vouchers || []).filter((voucher) => {
-    const matchesSearch = voucher.voucher_code
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
+  // Pagination logic
+  const totalPages = Math.ceil(totalVouchers / itemsPerPage);
 
-    const matchesStatus =
-      statusFilter === "all" ||
-      (statusFilter === "active" && voucher.voucher_status) ||
-      (statusFilter === "inactive" && !voucher.voucher_status);
-
-    return matchesSearch && matchesStatus;
-  });
+  const renderPageNumbers = () => {
+    const pages = [];
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        pages.push(1, 2, 3, 4, "...", totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(
+          1,
+          "...",
+          totalPages - 3,
+          totalPages - 2,
+          totalPages - 1,
+          totalPages
+        );
+      } else {
+        pages.push(
+          1,
+          "...",
+          currentPage - 1,
+          currentPage,
+          currentPage + 1,
+          "...",
+          totalPages
+        );
+      }
+    }
+    return pages;
+  };
 
   // Format date
   const formatDate = (dateString: string) => {
@@ -101,7 +161,7 @@ const VoucherList = () => {
 
         {/* Filters */}
         <div className="bg-white p-6 border border-gray-200 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Search */}
             <div className="relative">
               <Search
@@ -115,6 +175,19 @@ const VoucherList = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-12 pr-4 py-3 border-b-2 border-gray-300 focus:border-black focus:outline-none transition-colors duration-200"
               />
+            </div>
+
+            {/* Type Filter */}
+            <div>
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 focus:border-black focus:outline-none transition-colors duration-200 bg-white"
+              >
+                <option value="all">Tất cả loại</option>
+                <option value="percentage">Phần trăm (%)</option>
+                <option value="fixed">Số tiền cố định</option>
+              </select>
             </div>
 
             {/* Status Filter */}
@@ -134,7 +207,7 @@ const VoucherList = () => {
       </div>
 
       {/* Loading State */}
-      {loading && (
+      {loadingPaginated && (
         <div className="text-center py-12">
           <div className="inline-block w-8 h-8 border-4 border-gray-300 border-t-black rounded-full animate-spin"></div>
           <p className="mt-4 text-gray-600">Đang tải vouchers...</p>
@@ -142,9 +215,9 @@ const VoucherList = () => {
       )}
 
       {/* Vouchers Grid */}
-      {!loading && filteredVouchers.length > 0 && (
+      {!loadingPaginated && paginatedVouchers.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredVouchers.map((voucher) => {
+          {paginatedVouchers.map((voucher) => {
             const expired = isExpired(voucher.end_date);
             const notStarted = isNotStarted(voucher.start_date);
             const usagePercent = getUsagePercentage(
@@ -278,18 +351,18 @@ const VoucherList = () => {
       )}
 
       {/* Empty State */}
-      {!loading && filteredVouchers.length === 0 && (
+      {!loadingPaginated && paginatedVouchers.length === 0 && (
         <div className="text-center py-16 bg-white border-2 border-dashed border-gray-300">
           <Tag className="mx-auto mb-4 text-gray-400" size={48} />
           <h3 className="text-xl font-bold text-gray-700 mb-2">
             Không tìm thấy voucher
           </h3>
           <p className="text-gray-500 mb-6">
-            {searchTerm || statusFilter !== "all"
+            {searchTerm || statusFilter !== "all" || typeFilter !== "all"
               ? "Thử thay đổi bộ lọc hoặc tạo voucher mới"
               : "Chưa có voucher nào. Tạo voucher đầu tiên ngay!"}
           </p>
-          {!searchTerm && statusFilter === "all" && (
+          {!searchTerm && statusFilter === "all" && typeFilter === "all" && (
             <button
               onClick={() => setIsCreateModalOpen(true)}
               className="px-6 py-3 bg-black text-white hover:bg-gray-800 transition-all duration-200 font-semibold uppercase tracking-wider"
@@ -297,6 +370,52 @@ const VoucherList = () => {
               Tạo Voucher Đầu Tiên
             </button>
           )}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 mt-8">
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-4 py-2 text-sm text-gray-700 disabled:text-gray-300 hover:text-black disabled:cursor-not-allowed"
+          >
+            Trước
+          </button>
+
+          {renderPageNumbers().map((page, index) => {
+            if (page === "...") {
+              return (
+                <span key={`ellipsis-${index}`} className="px-2 text-gray-400">
+                  ...
+                </span>
+              );
+            }
+            return (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page as number)}
+                className={`px-4 py-2 text-sm ${
+                  currentPage === page
+                    ? "text-black font-bold underline"
+                    : "text-gray-600 hover:text-black"
+                }`}
+              >
+                {page}
+              </button>
+            );
+          })}
+
+          <button
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+            }
+            disabled={currentPage === totalPages}
+            className="px-4 py-2 text-sm text-gray-700 disabled:text-gray-300 hover:text-black disabled:cursor-not-allowed"
+          >
+            Sau
+          </button>
         </div>
       )}
 

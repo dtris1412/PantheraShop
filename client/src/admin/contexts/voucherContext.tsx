@@ -29,6 +29,13 @@ export interface CreateVoucherData {
 interface VoucherContextType {
   vouchers: Voucher[];
   getAllVouchers: () => Promise<void>;
+  getVouchersPaginated: (params: {
+    search?: string;
+    discount_type?: string;
+    voucher_status?: string;
+    limit?: number;
+    page?: number;
+  }) => Promise<any>;
   createVoucher: (voucherData: CreateVoucherData) => Promise<any>;
   updateVoucher: (
     voucherId: number,
@@ -70,6 +77,50 @@ export const VoucherProvider: React.FC<VoucherProviderProps> = ({
     } catch (error) {
       console.error("Error fetching vouchers:", error);
       setVouchers([]);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getVouchersPaginated = async (params: {
+    search?: string;
+    discount_type?: string;
+    voucher_status?: string;
+    limit?: number;
+    page?: number;
+  }) => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const queryParams = new URLSearchParams();
+      if (params.search) queryParams.append("search", params.search);
+      if (params.discount_type)
+        queryParams.append("discount_type", params.discount_type);
+      if (params.voucher_status)
+        queryParams.append("voucher_status", params.voucher_status);
+      if (params.limit) queryParams.append("limit", params.limit.toString());
+      if (params.page) queryParams.append("page", params.page.toString());
+
+      const res = await fetch(
+        `${apiUrl}/admin/vouchers/paginated?${queryParams.toString()}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch paginated vouchers");
+      }
+
+      const data = await res.json();
+      return data;
+    } catch (error) {
+      console.error("Error fetching paginated vouchers:", error);
       throw error;
     } finally {
       setLoading(false);
@@ -134,6 +185,7 @@ export const VoucherProvider: React.FC<VoucherProviderProps> = ({
       value={{
         vouchers,
         getAllVouchers,
+        getVouchersPaginated,
         createVoucher,
         updateVoucher,
         loading,

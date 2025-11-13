@@ -2,6 +2,7 @@ import {
   createVoucher as createVoucherService,
   updateVoucher as updateVoucherService,
   getAllVouchers as getAllVouchersService,
+  getVouchersPaginated as getVouchersPaginatedService,
 } from "../../shared/services/voucherService.js";
 
 const getAllVouchers = async (req, res) => {
@@ -17,6 +18,31 @@ const getAllVouchers = async (req, res) => {
       success: false,
       message: "Internal Server Error",
       err,
+    });
+  }
+};
+
+const getVouchersPaginated = async (req, res) => {
+  try {
+    const { search, discount_type, voucher_status, limit, page } = req.query;
+    const result = await getVouchersPaginatedService({
+      search,
+      discount_type,
+      voucher_status,
+      limit,
+      page,
+    });
+
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+    res.status(200).json(result);
+  } catch (err) {
+    console.error("Error in getVouchersPaginated:", err);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: err.message,
     });
   }
 };
@@ -96,4 +122,4 @@ const updateVoucher = async (req, res) => {
   }
 };
 
-export { createVoucher, updateVoucher, getAllVouchers };
+export { createVoucher, updateVoucher, getAllVouchers, getVouchersPaginated };

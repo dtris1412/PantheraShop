@@ -48,6 +48,7 @@ import {
   createVoucher,
   updateVoucher,
   getAllVouchers,
+  getVouchersPaginated,
 } from "../../admin/controllers/voucherController.js";
 
 //Import order Controllers
@@ -372,6 +373,11 @@ const initAdminRoutes = (app) => {
   router.post("/api/admin/orders/:order_id/approve", verifyAdmin, approveOrder);
 
   // =============== VOUCHER MANAGEMENT ROUTES ===============
+  router.get(
+    "/api/admin/vouchers/paginated",
+    verifyAdmin,
+    getVouchersPaginated
+  );
   router.get("/api/admin/vouchers", verifyAdmin, getAllVouchers);
   router.post("/api/admin/vouchers", verifyAdmin, createVoucher);
   router.put("/api/admin/vouchers/:voucher_id", verifyAdmin, updateVoucher);

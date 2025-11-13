@@ -1,4 +1,5 @@
 import db from "../../shared/models/index.js";
+import { Op } from "sequelize";
 
 const createVoucher = async (
   voucher_code,
@@ -89,6 +90,61 @@ const getAllVouchers = async () => {
   return { success: true, data: vouchers };
 };
 
+const getVouchersPaginated = async ({
+  search = "",
+  discount_type = "",
+  voucher_status = "",
+  limit = 9,
+  page = 1,
+}) => {
+  try {
+    const offset = (page - 1) * limit;
+
+    // Build where conditions
+    const where = {};
+
+    // Search by voucher code
+    if (search) {
+      where.voucher_code = { [Op.substring]: search };
+    }
+
+    // Filter by discount type
+    if (discount_type) {
+      where.discount_type = discount_type;
+    }
+
+    // Filter by voucher status
+    if (voucher_status) {
+      where.voucher_status = voucher_status;
+    }
+
+    // Get total count
+    const totalCount = await db.Voucher.count({ where });
+
+    // Get paginated vouchers
+    const vouchers = await db.Voucher.findAll({
+      where,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      order: [["created_at", "DESC"]],
+    });
+
+    return {
+      success: true,
+      vouchers,
+      pagination: {
+        total: totalCount,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(totalCount / limit),
+      },
+    };
+  } catch (err) {
+    console.error("Error in getVouchersPaginated:", err);
+    return { success: false, message: "Internal server error" };
+  }
+};
+
 const decreaseVoucherStock = async (voucher_id) => {
   if (!voucher_id) {
     return { success: false, message: "Missing voucher_id" };
@@ -115,4 +171,10 @@ const decreaseVoucherStock = async (voucher_id) => {
     usage_status: voucher.voucher_status,
   };
 };
-export { getAllVouchers, decreaseVoucherStock, createVoucher, updateVoucher };
+export {
+  getAllVouchers,
+  getVouchersPaginated,
+  decreaseVoucherStock,
+  createVoucher,
+  updateVoucher,
+};
