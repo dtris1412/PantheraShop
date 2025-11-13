@@ -2,6 +2,7 @@ import {
   createReport as createReportService,
   getAllReports as getAllReportsService,
   getReportById as getReportByIdService,
+  getReportsPaginated as getReportsPaginatedService,
   deleteReport as deleteReportService,
   exportReportToExcel as exportReportToExcelService,
 } from "../../shared/services/reportService.js";
@@ -87,6 +88,29 @@ const getAllReports = async (req, res) => {
   }
 };
 
+const getReportsPaginated = async (req, res) => {
+  try {
+    const { search, report_type, limit = 5, page = 1 } = req.query;
+    const result = await getReportsPaginatedService(
+      search,
+      report_type,
+      parseInt(limit),
+      parseInt(page)
+    );
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error in getReportsPaginated controller:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
 const getReportById = async (req, res) => {
   try {
     const { report_id } = req.params;
@@ -127,6 +151,7 @@ export {
   createReport,
   getAllReports,
   getReportById,
+  getReportsPaginated,
   deleteReport,
   exportReportToExcel,
 };

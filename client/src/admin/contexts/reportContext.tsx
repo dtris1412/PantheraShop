@@ -46,6 +46,17 @@ interface AdminReportContextType {
   error: string | null;
   getAllReports: () => Promise<void>;
   getReportById: (report_id: number) => Promise<Report | null>;
+  getReportsPaginated: (
+    search: string,
+    report_type: string,
+    limit: number,
+    page: number
+  ) => Promise<{
+    data: Report[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }>;
   createReport: (
     report_type: string,
     from_date: string,
@@ -55,7 +66,7 @@ interface AdminReportContextType {
     details: any
   ) => Promise<boolean>;
   deleteReport: (report_id: number) => Promise<boolean>;
-  exportReportToExcel: (report_id: number) => Promise<void>; // <-- thêm dòng này
+  exportReportToExcel: (report_id: number) => Promise<void>;
 }
 
 const AdminReportContext = createContext<AdminReportContextType | undefined>(
@@ -117,6 +128,49 @@ export const AdminReportProvider: React.FC<AdminReportProviderProps> = ({
       setError(err.message || "Error fetching reports");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Get reports with pagination
+  const getReportsPaginated = async (
+    search: string,
+    report_type: string,
+    limit: number,
+    page: number
+  ) => {
+    try {
+      const token = getToken();
+      const params = new URLSearchParams();
+      if (search) params.append("search", search);
+      if (report_type) params.append("report_type", report_type);
+      params.append("limit", limit.toString());
+      params.append("page", page.toString());
+
+      const response = await fetch(
+        `${API_URL}/admin/reports/paginated?${params.toString()}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const result = await response.json();
+      if (result.success) {
+        return {
+          data: result.data,
+          total: result.total,
+          page: result.page,
+          totalPages: result.totalPages,
+        };
+      } else {
+        throw new Error(result.message || "Failed to fetch paginated reports");
+      }
+    } catch (err: any) {
+      console.error("Error fetching paginated reports:", err);
+      throw err;
     }
   };
 
@@ -268,9 +322,10 @@ export const AdminReportProvider: React.FC<AdminReportProviderProps> = ({
     error,
     getAllReports,
     getReportById,
+    getReportsPaginated,
     createReport,
     deleteReport,
-    exportReportToExcel, // <-- thêm vào value
+    exportReportToExcel,
   };
 
   return (

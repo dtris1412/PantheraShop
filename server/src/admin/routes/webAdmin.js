@@ -39,6 +39,7 @@ import {
   createReport,
   getAllReports,
   getReportById,
+  getReportsPaginated,
   deleteReport,
   exportReportToExcel,
 } from "../../admin/controllers/reportController.js";
@@ -397,6 +398,7 @@ const initAdminRoutes = (app) => {
   );
 
   // =============== REPORT MANAGEMENT ROUTES ===============
+  router.get("/api/admin/reports/paginated", verifyAdmin, getReportsPaginated);
   router.get("/api/admin/reports", verifyAdmin, getAllReports);
   router.get("/api/admin/reports/:report_id", verifyAdmin, getReportById);
   router.post("/api/admin/reports", verifyAdmin, createReport);

@@ -1,7 +1,52 @@
 import db from "../models/index.js";
 import ExcelJS from "exceljs";
+import { Op } from "sequelize";
 
 const { Report } = db;
+
+// Get reports with pagination
+const getReportsPaginated = async (search, reportType, limit, page) => {
+  try {
+    const offset = (page - 1) * limit;
+    const where = {};
+
+    // Search by report_type, description, or created_by
+    if (search) {
+      where[Op.or] = [
+        { report_type: { [Op.substring]: search } },
+        { description: { [Op.substring]: search } },
+        { created_by: { [Op.substring]: search } },
+      ];
+    }
+
+    // Filter by report_type
+    if (reportType) {
+      where.report_type = reportType;
+    }
+
+    // Get total count
+    const total = await Report.count({ where });
+
+    // Get paginated results
+    const reports = await Report.findAll({
+      where,
+      limit,
+      offset,
+      order: [["created_at", "DESC"]],
+    });
+
+    return {
+      success: true,
+      data: reports,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  } catch (error) {
+    console.error("Error getting paginated reports:", error);
+    return { success: false, message: error.message };
+  }
+};
 
 // Create report with pre-computed data from frontend
 const createReport = async (
@@ -342,6 +387,7 @@ export {
   createReport,
   getAllReports,
   getReportById,
+  getReportsPaginated,
   deleteReport,
   exportReportToExcel,
 };

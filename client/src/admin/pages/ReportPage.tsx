@@ -15,14 +15,13 @@ import { useInventory } from "../contexts/inventoryContext";
 
 const ReportPage: React.FC = () => {
   const {
-    reports,
     loading,
     error,
-    getAllReports,
     createReport,
     deleteReport,
     getReportById,
-    exportReportToExcel, // <-- thêm dòng này
+    getReportsPaginated,
+    exportReportToExcel,
   } = useAdminReport();
   const { getAllOrders } = useOrder();
   const { getAllUsers } = useAdmin();
@@ -30,6 +29,18 @@ const ReportPage: React.FC = () => {
   const { blogs, getAllBlogs } = useBlog();
   const { getAllProducts } = useProduct();
   const { products: inventoryProducts, fetchProducts } = useInventory();
+
+  // Pagination state
+  const [paginatedReports, setPaginatedReports] = useState<Report[]>([]);
+  const [totalReports, setTotalReports] = useState<number>(0);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [loadingPaginated, setLoadingPaginated] = useState<boolean>(false);
+  const itemsPerPage = 5;
+
+  // Search and filter state
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [debouncedSearch, setDebouncedSearch] = useState<string>("");
+  const [reportTypeFilter, setReportTypeFilter] = useState<string>("");
 
   const [reportType, setReportType] = useState<string>("revenue");
   const [fromDate, setFromDate] = useState<string>("");
@@ -41,9 +52,37 @@ const ReportPage: React.FC = () => {
   const [showPreview, setShowPreview] = useState<boolean>(false);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
 
+  // Debounce search term
   useEffect(() => {
-    getAllReports();
-  }, []);
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setCurrentPage(1);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Fetch paginated reports
+  const fetchReportsPaginatedData = async () => {
+    setLoadingPaginated(true);
+    try {
+      const result = await getReportsPaginated(
+        debouncedSearch,
+        reportTypeFilter,
+        itemsPerPage,
+        currentPage
+      );
+      setPaginatedReports(result.data);
+      setTotalReports(result.total);
+    } catch (error) {
+      console.error("Error fetching paginated reports:", error);
+    } finally {
+      setLoadingPaginated(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchReportsPaginatedData();
+  }, [debouncedSearch, reportTypeFilter, currentPage]);
 
   // Set default date range (last 30 days)
   useEffect(() => {
@@ -498,12 +537,16 @@ const ReportPage: React.FC = () => {
       alert("Lưu báo cáo thành công!");
       setShowPreview(false);
       setPreviewData(null);
+      fetchReportsPaginatedData();
     }
   };
 
   const handleDeleteReport = async (report_id: number) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa báo cáo này?")) {
-      await deleteReport(report_id);
+      const success = await deleteReport(report_id);
+      if (success) {
+        fetchReportsPaginatedData();
+      }
     }
   };
 
@@ -1330,18 +1373,85 @@ const ReportPage: React.FC = () => {
     }
   };
 
+  // Pagination logic
+  const totalPages = Math.ceil(totalReports / itemsPerPage);
+
+  const renderPageNumbers = () => {
+    const pages = [];
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        pages.push(1, 2, 3, "...", totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1, "...", totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        pages.push(
+          1,
+          "...",
+          currentPage - 1,
+          currentPage,
+          currentPage + 1,
+          "...",
+          totalPages
+        );
+      }
+    }
+    return pages;
+  };
+
   const renderSavedReports = () => (
     <div className="bg-white border-4 border-black p-8">
       <h2 className="text-2xl font-black mb-6 uppercase">BÁO CÁO ĐÃ LƯU</h2>
-      {loading ? (
+
+      {/* Search and Filter */}
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <div>
+          <label className="block text-sm font-bold mb-2">TÌM KIẾM</label>
+          <input
+            type="text"
+            placeholder="Tìm theo loại báo cáo, mô tả, người tạo..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full border-2 border-black p-3 focus:outline-none focus:ring-2 focus:ring-black"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-bold mb-2">LOẠI BÁO CÁO</label>
+          <select
+            value={reportTypeFilter}
+            onChange={(e) => {
+              setReportTypeFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="w-full border-2 border-black p-3 focus:outline-none focus:ring-2 focus:ring-black"
+          >
+            <option value="">Tất cả</option>
+            <option value="Doanh thu">Doanh thu</option>
+            <option value="Đơn hàng">Đơn hàng</option>
+            <option value="Sản phẩm">Sản phẩm</option>
+            <option value="Người dùng">Người dùng</option>
+            <option value="Voucher">Voucher</option>
+            <option value="Blog">Blog</option>
+            <option value="Kho - Nhập">Kho - Nhập</option>
+            <option value="Kho - Xuất">Kho - Xuất</option>
+          </select>
+        </div>
+      </div>
+
+      {loadingPaginated ? (
         <div className="text-center py-8">Đang tải...</div>
-      ) : reports.length === 0 ? (
+      ) : paginatedReports.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
-          Chưa có báo cáo nào được lưu
+          {searchTerm || reportTypeFilter
+            ? "Không tìm thấy báo cáo nào"
+            : "Chưa có báo cáo nào được lưu"}
         </div>
       ) : (
         <div className="grid gap-4">
-          {reports.map((report) => (
+          {paginatedReports.map((report) => (
             <div
               key={report.report_id}
               className="border-2 border-black p-6 hover:bg-gray-50 transition-colors"
@@ -1394,6 +1504,45 @@ const ReportPage: React.FC = () => {
           ))}
         </div>
       )}
+
+      {/* Pagination */}
+      {!loadingPaginated && totalPages > 0 && (
+        <div className="flex justify-center items-center gap-2 mt-6">
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-4 py-2 text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+          >
+            Trước
+          </button>
+          {renderPageNumbers().map((page, index) => (
+            <button
+              key={index}
+              onClick={() => typeof page === "number" && setCurrentPage(page)}
+              disabled={page === "..."}
+              className={`px-3 py-2 text-sm font-bold ${
+                currentPage === page
+                  ? "bg-black text-white"
+                  : page === "..."
+                  ? "cursor-default"
+                  : "hover:bg-gray-100"
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+          <button
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+            }
+            disabled={currentPage === totalPages}
+            className="px-4 py-2 text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+          >
+            Sau
+          </button>
+        </div>
+      )}
+
       {/* Đưa modal ra ngoài vòng lặp, chỉ render một lần */}
       {renderReportDetail()}
     </div>
