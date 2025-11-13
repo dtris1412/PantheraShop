@@ -1,4 +1,5 @@
 import db from "../../shared/models/index.js";
+import { Op } from "sequelize";
 
 const getAllTournaments = async () => {
   try {
@@ -255,10 +256,56 @@ const deleteTournament = async (tournament_id) => {
   }
 };
 
+// Get tournaments with pagination
+const getTournamentsPaginated = async (search, sport, limit, page) => {
+  try {
+    const offset = (page - 1) * limit;
+    const where = {};
+
+    // Search by tournament_name
+    if (search) {
+      where.tournament_name = { [Op.substring]: search };
+    }
+
+    // Filter by sport name
+    const include = [
+      {
+        model: db.Sport,
+        attributes: ["sport_id", "sport_name"],
+        ...(sport && { where: { sport_name: { [Op.substring]: sport } } }),
+      },
+    ];
+
+    // Get total count
+    const total = await db.Tournament.count({ where, include });
+
+    // Get paginated results
+    const tournaments = await db.Tournament.findAll({
+      where,
+      include,
+      limit,
+      offset,
+      order: [["tournament_id", "DESC"]],
+    });
+
+    return {
+      success: true,
+      tournaments,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  } catch (error) {
+    console.error("Error getting paginated tournaments:", error);
+    return { success: false, message: error.message };
+  }
+};
+
 export {
   getAllTournaments,
   getTournamentById,
   getTournamentsBySport,
+  getTournamentsPaginated,
   createTournament,
   updateTournament,
   deleteTournament,

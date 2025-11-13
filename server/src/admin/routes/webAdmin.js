@@ -116,6 +116,7 @@ import {
   // Category routes
   getAllCategories,
   getCategoryById,
+  getCategoriesPaginated,
   createCategory,
   updateCategory,
   deleteCategory,
@@ -123,6 +124,7 @@ import {
   // Sport routes
   getAllSports,
   getSportById,
+  getSportsPaginated,
   createSport,
   updateSport,
   deleteSport,
@@ -131,6 +133,7 @@ import {
   getAllTournaments,
   getTournamentById,
   getTournamentsBySport,
+  getTournamentsPaginated,
   createTournament,
   updateTournament,
   deleteTournament,
@@ -139,6 +142,7 @@ import {
   getAllTeams,
   getTeamById,
   getTeamsByTournament,
+  getTeamsPaginated,
   createTeam,
   updateTeam,
   deleteTeam,
@@ -201,6 +205,11 @@ const initAdminRoutes = (app) => {
   );
 
   //Product Management
+  router.get(
+    "/api/admin/products/paginated",
+    verifyAdmin,
+    getProductsPaginated
+  );
   router.get("/api/admin/products", verifyAdmin, getAllProducts);
   router.get("/api/admin/products/:id", verifyAdmin, getProductById);
   router.post("/api/admin/products", verifyAdmin, createProduct);
@@ -297,6 +306,11 @@ const initAdminRoutes = (app) => {
   // =============== CATEGORY MANAGEMENT ROUTES ===============
 
   // Category routes
+  router.get(
+    "/api/admin/categories/paginated",
+    verifyAdmin,
+    getCategoriesPaginated
+  );
   router.get("/api/admin/categories", verifyAdmin, getAllCategories);
   router.get("/api/admin/categories/:id", verifyAdmin, getCategoryById);
   router.post("/api/admin/categories", verifyAdmin, createCategory);
@@ -304,6 +318,7 @@ const initAdminRoutes = (app) => {
   router.delete("/api/admin/categories/:id", verifyAdmin, deleteCategory);
 
   // Sport routes
+  router.get("/api/admin/sports/paginated", verifyAdmin, getSportsPaginated);
   router.get("/api/admin/sports", verifyAdmin, getAllSports);
   router.get("/api/admin/sports/:id", verifyAdmin, getSportById);
   router.post(
@@ -321,6 +336,11 @@ const initAdminRoutes = (app) => {
   router.delete("/api/admin/sports/:id", verifyAdmin, deleteSport);
 
   // Tournament routes
+  router.get(
+    "/api/admin/tournaments/paginated",
+    verifyAdmin,
+    getTournamentsPaginated
+  );
   router.get("/api/admin/tournaments", verifyAdmin, getAllTournaments);
   router.get("/api/admin/tournaments/:id", verifyAdmin, getTournamentById);
   router.get(
@@ -343,6 +363,7 @@ const initAdminRoutes = (app) => {
   router.delete("/api/admin/tournaments/:id", verifyAdmin, deleteTournament);
 
   // Team routes
+  router.get("/api/admin/teams/paginated", verifyAdmin, getTeamsPaginated);
   router.get("/api/admin/teams", verifyAdmin, getAllTeams);
   router.get("/api/admin/teams/:id", verifyAdmin, getTeamById);
   router.get(

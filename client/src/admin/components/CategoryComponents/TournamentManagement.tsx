@@ -7,8 +7,6 @@ import {
   Award,
   MoreHorizontal,
   ChevronRight,
-  X,
-  Upload,
 } from "lucide-react";
 import { showToast } from "../../../shared/components/Toast";
 import ConfirmDialog from "../ConfirmDialog";
@@ -41,7 +39,7 @@ interface TournamentFormData {
 
 const TournamentManagement = () => {
   const {
-    getAllTournaments,
+    getTournamentsPaginated,
     getAllSports,
     createTournament,
     updateTournament,
@@ -49,9 +47,17 @@ const TournamentManagement = () => {
     loading,
   } = useCategory();
 
-  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [paginatedTournaments, setPaginatedTournaments] = useState<
+    Tournament[]
+  >([]);
+  const [totalTournaments, setTotalTournaments] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const [sports, setSports] = useState<Sport[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [loadingPaginated, setLoadingPaginated] = useState(false);
+  const itemsPerPage = 9;
+
   const [showForm, setShowForm] = useState(false);
   const [editingTournament, setEditingTournament] = useState<Tournament | null>(
     null
@@ -81,10 +87,25 @@ const TournamentManagement = () => {
     setImagePreview("");
   };
 
+  // Debounce search
   useEffect(() => {
-    fetchTournaments();
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setCurrentPage(1);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Load sports for filter
+  useEffect(() => {
     fetchSports();
   }, []);
+
+  // Fetch paginated tournaments
+  useEffect(() => {
+    fetchPaginatedTournaments();
+  }, [debouncedSearchTerm, selectedSport, currentPage]);
 
   const fetchSports = async () => {
     try {
@@ -96,19 +117,25 @@ const TournamentManagement = () => {
     }
   };
 
-  const fetchTournaments = async () => {
+  const fetchPaginatedTournaments = async () => {
     try {
-      const data = await getAllTournaments();
-      // Transform backend data to frontend format
-      const transformedTournaments = data.map((tournament: any) => ({
-        ...tournament,
-        sport_name: tournament.Sport?.sport_name,
-        team_count: tournament.Teams?.length || 0,
-      }));
-      setTournaments(transformedTournaments);
+      setLoadingPaginated(true);
+      const selectedSportName =
+        sports.find((s) => s.sport_id.toString() === selectedSport)
+          ?.sport_name || "";
+      const data = await getTournamentsPaginated(
+        debouncedSearchTerm,
+        selectedSportName,
+        itemsPerPage,
+        currentPage
+      );
+      setPaginatedTournaments(data.tournaments);
+      setTotalTournaments(data.total);
     } catch (error) {
       console.error("Error fetching tournaments:", error);
       showToast("Không thể tải giải đấu", "error");
+    } finally {
+      setLoadingPaginated(false);
     }
   };
 
@@ -135,7 +162,7 @@ const TournamentManagement = () => {
       setShowForm(false);
       setEditingTournament(null);
       resetForm();
-      fetchTournaments();
+      fetchPaginatedTournaments();
     } catch (error) {
       console.error("Error saving tournament:", error);
       showToast("Có lỗi xảy ra", "error");
@@ -162,7 +189,7 @@ const TournamentManagement = () => {
       await deleteTournament(deletingTournament.tournament_id);
       showToast("Xóa giải đấu thành công", "success");
       setDeletingTournament(null);
-      fetchTournaments();
+      fetchPaginatedTournaments();
     } catch (error) {
       console.error("Error deleting tournament:", error);
     }
@@ -185,18 +212,129 @@ const TournamentManagement = () => {
     resetForm();
   };
 
-  const filteredTournaments = tournaments.filter((tournament) => {
-    const matchSearch =
-      tournament.tournament_name
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      tournament.tournament_description
-        ?.toLowerCase()
-        .includes(searchTerm.toLowerCase());
-    const matchSport =
-      !selectedSport || tournament.sport_id.toString() === selectedSport;
-    return matchSearch && matchSport;
-  });
+  const totalPages = Math.ceil(totalTournaments / itemsPerPage);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const renderPageNumbers = () => {
+    const pages = [];
+
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(
+          <button
+            key={i}
+            onClick={() => handlePageChange(i)}
+            className={`px-3 py-1 rounded ${
+              currentPage === i
+                ? "bg-black text-white"
+                : "bg-white text-gray-700 hover:bg-gray-100"
+            }`}
+          >
+            {i}
+          </button>
+        );
+      }
+    } else {
+      pages.push(
+        <button
+          key={1}
+          onClick={() => handlePageChange(1)}
+          className={`px-3 py-1 rounded ${
+            currentPage === 1
+              ? "bg-black text-white"
+              : "bg-white text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          1
+        </button>
+      );
+
+      pages.push(
+        <button
+          key={2}
+          onClick={() => handlePageChange(2)}
+          className={`px-3 py-1 rounded ${
+            currentPage === 2
+              ? "bg-black text-white"
+              : "bg-white text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          2
+        </button>
+      );
+
+      if (currentPage > 4) {
+        pages.push(
+          <span key="dots1" className="px-2">
+            ...
+          </span>
+        );
+      }
+
+      const start = Math.max(3, currentPage - 1);
+      const end = Math.min(totalPages - 2, currentPage + 1);
+
+      for (let i = start; i <= end; i++) {
+        if (i > 2 && i < totalPages - 1) {
+          pages.push(
+            <button
+              key={i}
+              onClick={() => handlePageChange(i)}
+              className={`px-3 py-1 rounded ${
+                currentPage === i
+                  ? "bg-black text-white"
+                  : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              {i}
+            </button>
+          );
+        }
+      }
+
+      if (currentPage < totalPages - 3) {
+        pages.push(
+          <span key="dots2" className="px-2">
+            ...
+          </span>
+        );
+      }
+
+      pages.push(
+        <button
+          key={totalPages - 1}
+          onClick={() => handlePageChange(totalPages - 1)}
+          className={`px-3 py-1 rounded ${
+            currentPage === totalPages - 1
+              ? "bg-black text-white"
+              : "bg-white text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          {totalPages - 1}
+        </button>
+      );
+
+      pages.push(
+        <button
+          key={totalPages}
+          onClick={() => handlePageChange(totalPages)}
+          className={`px-3 py-1 rounded ${
+            currentPage === totalPages
+              ? "bg-black text-white"
+              : "bg-white text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          {totalPages}
+        </button>
+      );
+    }
+
+    return pages;
+  };
 
   return (
     <div className="space-y-6">
@@ -260,7 +398,7 @@ const TournamentManagement = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredTournaments.map((tournament) => (
+          {paginatedTournaments.map((tournament) => (
             <div
               key={tournament.tournament_id}
               className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow"
@@ -336,7 +474,7 @@ const TournamentManagement = () => {
         </div>
       )}
 
-      {filteredTournaments.length === 0 && !loading && (
+      {paginatedTournaments.length === 0 && !loadingPaginated && (
         <div className="text-center py-12">
           <Award className="mx-auto text-gray-400 mb-4" size={48} />
           <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -347,6 +485,36 @@ const TournamentManagement = () => {
               ? "Thử thay đổi bộ lọc"
               : "Chưa có giải đấu nào"}
           </p>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="bg-white p-4 rounded-lg border">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-600">
+              Hiển thị {(currentPage - 1) * itemsPerPage + 1} đến{" "}
+              {Math.min(currentPage * itemsPerPage, totalTournaments)} trong
+              tổng {totalTournaments} giải đấu
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-3 py-1 rounded bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Trước
+              </button>
+              {renderPageNumbers()}
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 rounded bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Sau
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

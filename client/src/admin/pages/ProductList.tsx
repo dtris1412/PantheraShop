@@ -3,19 +3,16 @@ import {
   Search,
   Plus,
   Edit,
-  Trash2,
   Eye,
   Package,
-  DollarSign,
-  Tag,
-  AlertTriangle,
   Lock,
   FileSpreadsheet,
+  Tag,
 } from "lucide-react";
 import { useProduct } from "../contexts/productContext";
+import { useCategory } from "../contexts/categoryContext";
 import { showToast } from "../../shared/components/Toast";
 import { useNavigate } from "react-router-dom";
-import ProductFilter from "../components/ProductFilter";
 import CreateProductForm from "../components/ProductComponents/CreateProductForm";
 import EditProductForm from "../components/ProductComponents/EditProductForm";
 import ProductDetailModal from "../components/ProductComponents/ProductDetailModal";
@@ -53,20 +50,18 @@ interface Product {
 
 const ProductList = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [products, setProducts] = useState<Product[]>([]);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [paginatedProducts, setPaginatedProducts] = useState<Product[]>([]);
+  const [totalProducts, setTotalProducts] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [loadingPaginated, setLoadingPaginated] = useState(false);
+  const itemsPerPage = 10;
+
   const [filters, setFilters] = useState({
-    sport_id: null as number | null,
-    tournament_id: null as number | null,
-    team_id: null as number | null,
-    category_id: null as number | null,
-    status: "all" as "all" | "active" | "inactive",
-    sortBy: "newest" as
-      | "newest"
-      | "name_asc"
-      | "name_desc"
-      | "price_asc"
-      | "price_desc",
+    sport: "",
+    tournament: "",
+    team: "",
+    category: "",
   });
 
   // Modal states
@@ -77,40 +72,79 @@ const ProductList = () => {
   const [showImportModal, setShowImportModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  const { getAllProducts, loading, setProductLockStatus } = useProduct();
+  const { getProductsPaginated, setProductLockStatus } = useProduct();
+  const { getAllCategories, getAllSports, getAllTournaments, getAllTeams } =
+    useCategory();
   const navigate = useNavigate();
-  const itemsPerPage = 10;
 
-  // Fetch products on mount
+  // Filter options
+  const [categories, setCategories] = useState<any[]>([]);
+  const [sports, setSports] = useState<any[]>([]);
+  const [tournaments, setTournaments] = useState<any[]>([]);
+  const [teams, setTeams] = useState<any[]>([]);
+
+  // Debounce search
   useEffect(() => {
-    fetchData();
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setCurrentPage(1);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Load filter options
+  useEffect(() => {
+    const loadFilterOptions = async () => {
+      try {
+        const [categoriesData, sportsData, tournamentsData, teamsData] =
+          await Promise.all([
+            getAllCategories(),
+            getAllSports(),
+            getAllTournaments(),
+            getAllTeams(),
+          ]);
+        setCategories(categoriesData);
+        setSports(sportsData);
+        setTournaments(tournamentsData);
+        setTeams(teamsData);
+      } catch (error) {
+        console.error("Error loading filter options:", error);
+      }
+    };
+    loadFilterOptions();
   }, []);
 
-  const fetchData = async () => {
+  // Fetch paginated products
+  useEffect(() => {
+    fetchPaginatedProducts();
+  }, [debouncedSearchTerm, currentPage, filters]);
+
+  const fetchPaginatedProducts = async () => {
     try {
-      const productsData = await getAllProducts();
-      console.log("Products loaded:", productsData);
-      console.log("First product:", productsData[0]);
-      console.log("Products length:", productsData.length);
-      // Add default is_active property if it doesn't exist
-      const productsWithActiveStatus = productsData.map((product) => ({
-        ...product,
-        is_active: product.is_active !== undefined ? product.is_active : true,
-      }));
-      setProducts(productsWithActiveStatus);
+      setLoadingPaginated(true);
+      const data = await getProductsPaginated(
+        debouncedSearchTerm,
+        itemsPerPage,
+        currentPage,
+        filters.category,
+        filters.sport,
+        filters.tournament,
+        filters.team
+      );
+      setPaginatedProducts(data.products);
+      setTotalProducts(data.total);
     } catch (error) {
-      console.error("Failed to fetch data:", error);
-      showToast("Không thể tải dữ liệu", "error");
+      console.error("Error fetching products:", error);
+      showToast("Không thể tải sản phẩm", "error");
+    } finally {
+      setLoadingPaginated(false);
     }
   };
 
   // CRUD handlers
   const handleCreateProduct = () => {
     setShowCreateModal(true);
-  };
-
-  const handleImportExcel = () => {
-    setShowImportModal(true);
   };
 
   const handleEditProduct = (product: Product) => {
@@ -139,21 +173,21 @@ const ProductList = () => {
 
   const handleProductCreated = () => {
     setShowCreateModal(false);
-    fetchData(); // Reload products
+    fetchPaginatedProducts(); // Reload products
     showToast("Tạo sản phẩm thành công", "success");
   };
 
   const handleProductUpdated = () => {
     setShowEditModal(false);
     setSelectedProduct(null);
-    fetchData(); // Reload products
+    fetchPaginatedProducts(); // Reload products
     showToast("Cập nhật sản phẩm thành công", "success");
   };
 
   const handleLockProduct = async (product: Product) => {
     try {
       await setProductLockStatus(product.product_id, !product.is_active);
-      fetchData(); // Reload products to reflect the change
+      fetchPaginatedProducts(); // Reload products to reflect the change
       showToast(
         `${product.is_active ? "Ngừng bán" : "Đang bán"} sản phẩm thành công`,
         "success"
@@ -176,127 +210,131 @@ const ProductList = () => {
     return new Date(dateString).toLocaleDateString("vi-VN");
   };
 
-  // ✅ Hàm lấy trạng thái sản phẩm
-  const getStockStatus = (stock: number) => {
-    if (stock === 0) {
-      return {
-        label: "Hết hàng",
-        color: "bg-red-100 text-red-800",
-        icon: "text-red-600",
-      };
-    } else if (stock < 20) {
-      return {
-        label: "Sắp hết",
-        color: "bg-yellow-100 text-yellow-800",
-        icon: "text-yellow-600",
-      };
-    } else {
-      return {
-        label: "Còn hàng",
-        color: "bg-green-100 text-green-800",
-        icon: "text-green-600",
-      };
-    }
+  const totalPages = Math.ceil(totalProducts / itemsPerPage);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Filter and sort products
-  const filteredProducts = products
-    .filter((product) => {
-      // Search filter
-      const matchSearch =
-        product.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (product.product_description &&
-          product.product_description
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase()));
+  const renderPageNumbers = () => {
+    const pages = [];
 
-      // Category filter
-      const matchCategory =
-        !filters.category_id || product.category_id === filters.category_id;
-
-      // Team filter (assumes product has team_id)
-      const matchTeam =
-        !filters.team_id ||
-        (product.Team && product.Team.team_id === filters.team_id);
-
-      // Tournament filter (through team)
-      const matchTournament =
-        !filters.tournament_id ||
-        (product.Team &&
-          product.Team.Tournament &&
-          product.Team.Tournament.tournament_id === filters.tournament_id);
-
-      // Sport filter (through team -> tournament)
-      const matchSport =
-        !filters.sport_id ||
-        (product.Team &&
-          product.Team.Tournament &&
-          product.Team.Tournament.Sport &&
-          product.Team.Tournament.Sport.sport_id === filters.sport_id);
-
-      // Status filter
-      let matchStatus = true;
-      if (filters.status !== "all") {
-        if (filters.status === "active") {
-          matchStatus = product.is_active === true;
-        } else if (filters.status === "inactive") {
-          matchStatus = product.is_active === false;
-        }
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(
+          <button
+            key={i}
+            onClick={() => handlePageChange(i)}
+            className={`px-3 py-1 rounded ${
+              currentPage === i
+                ? "bg-black text-white"
+                : "bg-white text-gray-700 hover:bg-gray-100"
+            }`}
+          >
+            {i}
+          </button>
+        );
       }
-
-      return (
-        matchSearch &&
-        matchCategory &&
-        matchTeam &&
-        matchTournament &&
-        matchSport &&
-        matchStatus
+    } else {
+      pages.push(
+        <button
+          key={1}
+          onClick={() => handlePageChange(1)}
+          className={`px-3 py-1 rounded ${
+            currentPage === 1
+              ? "bg-black text-white"
+              : "bg-white text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          1
+        </button>
       );
-    })
-    .sort((a, b) => {
-      // Apply sorting
-      switch (filters.sortBy) {
-        case "name_asc":
-          return a.product_name.localeCompare(b.product_name, "vi");
-        case "name_desc":
-          return b.product_name.localeCompare(a.product_name, "vi");
-        case "price_asc": {
-          const priceA =
-            typeof a.product_price === "string"
-              ? parseFloat(a.product_price)
-              : a.product_price;
-          const priceB =
-            typeof b.product_price === "string"
-              ? parseFloat(b.product_price)
-              : b.product_price;
-          return priceA - priceB;
-        }
-        case "price_desc": {
-          const priceA =
-            typeof a.product_price === "string"
-              ? parseFloat(a.product_price)
-              : a.product_price;
-          const priceB =
-            typeof b.product_price === "string"
-              ? parseFloat(b.product_price)
-              : b.product_price;
-          return priceB - priceA;
-        }
-        case "newest":
-        default:
-          return (
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-          );
+
+      pages.push(
+        <button
+          key={2}
+          onClick={() => handlePageChange(2)}
+          className={`px-3 py-1 rounded ${
+            currentPage === 2
+              ? "bg-black text-white"
+              : "bg-white text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          2
+        </button>
+      );
+
+      if (currentPage > 4) {
+        pages.push(
+          <span key="dots1" className="px-2">
+            ...
+          </span>
+        );
       }
-    });
 
-  // Pagination
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentProducts = filteredProducts.slice(startIndex, endIndex);
+      const start = Math.max(3, currentPage - 1);
+      const end = Math.min(totalPages - 2, currentPage + 1);
 
-  if (loading) {
+      for (let i = start; i <= end; i++) {
+        if (i > 2 && i < totalPages - 1) {
+          pages.push(
+            <button
+              key={i}
+              onClick={() => handlePageChange(i)}
+              className={`px-3 py-1 rounded ${
+                currentPage === i
+                  ? "bg-black text-white"
+                  : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              {i}
+            </button>
+          );
+        }
+      }
+
+      if (currentPage < totalPages - 3) {
+        pages.push(
+          <span key="dots2" className="px-2">
+            ...
+          </span>
+        );
+      }
+
+      pages.push(
+        <button
+          key={totalPages - 1}
+          onClick={() => handlePageChange(totalPages - 1)}
+          className={`px-3 py-1 rounded ${
+            currentPage === totalPages - 1
+              ? "bg-black text-white"
+              : "bg-white text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          {totalPages - 1}
+        </button>
+      );
+
+      pages.push(
+        <button
+          key={totalPages}
+          onClick={() => handlePageChange(totalPages)}
+          className={`px-3 py-1 rounded ${
+            currentPage === totalPages
+              ? "bg-black text-white"
+              : "bg-white text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          {totalPages}
+        </button>
+      );
+    }
+
+    return pages;
+  };
+
+  if (loadingPaginated) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-lg font-medium">Đang tải...</div>
@@ -342,22 +380,119 @@ const ProductList = () => {
         </div>
       </div>
 
-      {/* Filter Component */}
-      <ProductFilter
-        filters={filters}
-        onFilterChange={setFilters}
-        onReset={() =>
-          setFilters({
-            sport_id: null,
-            tournament_id: null,
-            team_id: null,
-            category_id: null,
-            status: "all",
-            sortBy: "newest",
-          })
-        }
-        products={products}
-      />
+      {/* Filter Component - Dropdowns */}
+      <div className="bg-white p-4 border border-gray-200">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Danh mục
+            </label>
+            <select
+              value={filters.category}
+              onChange={(e) => {
+                setFilters({ ...filters, category: e.target.value });
+                setCurrentPage(1);
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-black"
+            >
+              <option value="">Tất cả danh mục</option>
+              {categories.map((cat) => (
+                <option key={cat.category_id} value={cat.category_name}>
+                  {cat.category_name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Môn thể thao
+            </label>
+            <select
+              value={filters.sport}
+              onChange={(e) => {
+                setFilters({ ...filters, sport: e.target.value });
+                setCurrentPage(1);
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-black"
+            >
+              <option value="">Tất cả môn thể thao</option>
+              {sports.map((sport) => (
+                <option key={sport.sport_id} value={sport.sport_name}>
+                  {sport.sport_name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Giải đấu
+            </label>
+            <select
+              value={filters.tournament}
+              onChange={(e) => {
+                setFilters({ ...filters, tournament: e.target.value });
+                setCurrentPage(1);
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-black"
+            >
+              <option value="">Tất cả giải đấu</option>
+              {tournaments.map((tournament) => (
+                <option
+                  key={tournament.tournament_id}
+                  value={tournament.tournament_name}
+                >
+                  {tournament.tournament_name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Đội/CLB
+            </label>
+            <select
+              value={filters.team}
+              onChange={(e) => {
+                setFilters({ ...filters, team: e.target.value });
+                setCurrentPage(1);
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-black"
+            >
+              <option value="">Tất cả đội</option>
+              {teams.map((team) => (
+                <option key={team.team_id} value={team.team_name}>
+                  {team.team_name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {(filters.category ||
+          filters.sport ||
+          filters.tournament ||
+          filters.team) && (
+          <div className="mt-4">
+            <button
+              onClick={() => {
+                setFilters({
+                  sport: "",
+                  tournament: "",
+                  team: "",
+                  category: "",
+                });
+                setCurrentPage(1);
+              }}
+              className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
+            >
+              Xóa bộ lọc
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Search Bar */}
       <div className="bg-white p-4 border border-gray-200 border-t-0">
@@ -387,7 +522,7 @@ const ProductList = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Tổng sản phẩm</p>
-              <p className="text-2xl font-bold text-black">{products.length}</p>
+              <p className="text-2xl font-bold text-black">{totalProducts}</p>
             </div>
             <Package className="w-8 h-8 text-gray-400" />
           </div>
@@ -396,9 +531,9 @@ const ProductList = () => {
         <div className="bg-white p-4 border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Đang bán</p>
+              <p className="text-sm text-gray-600">Trang hiện tại</p>
               <p className="text-2xl font-bold text-green-600">
-                {products.filter((p) => p.is_active).length}
+                {paginatedProducts.length}
               </p>
             </div>
             <Package className="w-8 h-8 text-green-400" />
@@ -408,10 +543,8 @@ const ProductList = () => {
         <div className="bg-white p-4 border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Ngừng bán</p>
-              <p className="text-2xl font-bold text-gray-600">
-                {products.filter((p) => !p.is_active).length}
-              </p>
+              <p className="text-sm text-gray-600">Tổng trang</p>
+              <p className="text-2xl font-bold text-gray-600">{totalPages}</p>
             </div>
             <Lock className="w-8 h-8 text-gray-400" />
           </div>
@@ -419,13 +552,13 @@ const ProductList = () => {
       </div>
 
       {/* Empty State */}
-      {filteredProducts.length === 0 ? (
+      {paginatedProducts.length === 0 ? (
         <div className="bg-white border border-gray-200 p-12 text-center">
           <div className="text-gray-400 mb-2 text-lg font-medium">
             Không tìm thấy sản phẩm
           </div>
           <div className="text-sm text-gray-500">
-            {products.length === 0
+            {totalProducts === 0
               ? "Chưa có sản phẩm nào trong hệ thống"
               : "Thử thay đổi bộ lọc hoặc tìm kiếm với từ khóa khác"}
           </div>
@@ -447,7 +580,7 @@ const ProductList = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {currentProducts.map((product) => (
+                {paginatedProducts.map((product) => (
                   <tr
                     key={product.product_id}
                     className={`hover:bg-gray-50 transition-colors duration-200 ${
@@ -554,44 +687,25 @@ const ProductList = () => {
           {totalPages > 1 && (
             <div className="flex items-center justify-between bg-white p-4 border border-gray-200">
               <p className="text-sm text-gray-600">
-                Hiển thị{" "}
-                <span className="font-medium">
-                  {startIndex + 1}-{Math.min(endIndex, filteredProducts.length)}
-                </span>{" "}
-                của{" "}
-                <span className="font-medium">{filteredProducts.length}</span>{" "}
-                sản phẩm
+                Hiển thị {(currentPage - 1) * itemsPerPage + 1} đến{" "}
+                {Math.min(currentPage * itemsPerPage, totalProducts)} trong tổng{" "}
+                {totalProducts} sản phẩm
               </p>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setCurrentPage(currentPage - 1)}
+                  onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="px-4 py-2 border border-gray-300 text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                  className="px-3 py-1 rounded bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Trước
                 </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                  (page) => (
-                    <button
-                      type="button"
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`px-4 py-2 text-sm font-medium transition-colors duration-200 ${
-                        currentPage === page
-                          ? "bg-black text-white"
-                          : "border border-gray-300 hover:bg-gray-50"
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  )
-                )}
+                {renderPageNumbers()}
                 <button
                   type="button"
-                  onClick={() => setCurrentPage(currentPage + 1)}
+                  onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="px-4 py-2 border border-gray-300 text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                  className="px-3 py-1 rounded bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Sau
                 </button>
@@ -659,7 +773,8 @@ const ProductList = () => {
           onClose={() => setShowImportModal(false)}
           onSuccess={() => {
             setShowImportModal(false);
-            fetchData();
+            fetchPaginatedProducts();
+            showToast("Import sản phẩm thành công", "success");
           }}
         />
       )}

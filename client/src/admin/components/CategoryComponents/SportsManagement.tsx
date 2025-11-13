@@ -16,9 +16,10 @@ import ImageUpload from "../ImageUpload";
 interface Sport {
   sport_id: number;
   sport_name: string;
-  has_teams: number;
+  has_teams: boolean | number;
   sport_icon?: string;
-  has_tournament: number;
+  has_tournaments?: boolean | number;
+  has_tournament?: number;
   created_at?: string;
   tournament_count?: number;
   team_count?: number;
@@ -32,11 +33,17 @@ interface SportFormData {
 }
 
 const SportsManagement = () => {
-  const { getAllSports, createSport, updateSport, deleteSport, loading } =
+  const { getSportsPaginated, createSport, updateSport, deleteSport, loading } =
     useCategory();
 
-  const [sports, setSports] = useState<Sport[]>([]);
+  const [paginatedSports, setPaginatedSports] = useState<Sport[]>([]);
+  const [totalSports, setTotalSports] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [loadingPaginated, setLoadingPaginated] = useState(false);
+  const itemsPerPage = 9;
+
   const [showForm, setShowForm] = useState(false);
   const [editingSport, setEditingSport] = useState<Sport | null>(null);
   const [deletingSport, setDeletingSport] = useState<Sport | null>(null);
@@ -52,28 +59,36 @@ const SportsManagement = () => {
     sport_icon: "",
   });
 
+  // Debounce search
   useEffect(() => {
-    fetchSports();
-  }, []);
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setCurrentPage(1);
+    }, 500);
 
-  const fetchSports = async () => {
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Fetch paginated sports
+  useEffect(() => {
+    fetchPaginatedSports();
+  }, [debouncedSearchTerm, currentPage]);
+
+  const fetchPaginatedSports = async () => {
     try {
-      const data = await getAllSports();
-      // Transform backend data to frontend format
-      const transformedSports = data.map((sport: any) => ({
-        ...sport,
-        tournament_count: sport.Tournaments?.length || 0,
-        team_count:
-          sport.Tournaments?.reduce(
-            (acc: number, tournament: any) =>
-              acc + (tournament.Teams?.length || 0),
-            0
-          ) || 0,
-      }));
-      setSports(transformedSports);
+      setLoadingPaginated(true);
+      const data = await getSportsPaginated(
+        debouncedSearchTerm,
+        itemsPerPage,
+        currentPage
+      );
+      setPaginatedSports(data.sports);
+      setTotalSports(data.total);
     } catch (error) {
       console.error("Error fetching sports:", error);
       showToast("Không thể tải môn thể thao", "error");
+    } finally {
+      setLoadingPaginated(false);
     }
   };
 
@@ -103,7 +118,7 @@ const SportsManagement = () => {
       setShowForm(false);
       setEditingSport(null);
       resetForm();
-      fetchSports();
+      fetchPaginatedSports();
     } catch (error) {
       console.error("Error saving sport:", error);
     }
@@ -129,7 +144,7 @@ const SportsManagement = () => {
       await deleteSport(deletingSport.sport_id);
       showToast("Xóa môn thể thao thành công", "success");
       setDeletingSport(null);
-      fetchSports();
+      fetchPaginatedSports();
     } catch (error) {
       console.error("Error deleting sport:", error);
     }
@@ -166,24 +181,129 @@ const SportsManagement = () => {
     resetForm();
   };
 
-  const handleIconChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData((prev) => ({
-          ...prev,
-          sport_icon: reader.result as string,
-        }));
-      };
-      reader.readAsDataURL(file);
-    }
+  const totalPages = Math.ceil(totalSports / itemsPerPage);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const filteredSports = sports.filter((sport) =>
-    sport.sport_name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const renderPageNumbers = () => {
+    const pages = [];
+
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(
+          <button
+            key={i}
+            onClick={() => handlePageChange(i)}
+            className={`px-3 py-1 rounded ${
+              currentPage === i
+                ? "bg-black text-white"
+                : "bg-white text-gray-700 hover:bg-gray-100"
+            }`}
+          >
+            {i}
+          </button>
+        );
+      }
+    } else {
+      pages.push(
+        <button
+          key={1}
+          onClick={() => handlePageChange(1)}
+          className={`px-3 py-1 rounded ${
+            currentPage === 1
+              ? "bg-black text-white"
+              : "bg-white text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          1
+        </button>
+      );
+
+      pages.push(
+        <button
+          key={2}
+          onClick={() => handlePageChange(2)}
+          className={`px-3 py-1 rounded ${
+            currentPage === 2
+              ? "bg-black text-white"
+              : "bg-white text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          2
+        </button>
+      );
+
+      if (currentPage > 4) {
+        pages.push(
+          <span key="dots1" className="px-2">
+            ...
+          </span>
+        );
+      }
+
+      const start = Math.max(3, currentPage - 1);
+      const end = Math.min(totalPages - 2, currentPage + 1);
+
+      for (let i = start; i <= end; i++) {
+        if (i > 2 && i < totalPages - 1) {
+          pages.push(
+            <button
+              key={i}
+              onClick={() => handlePageChange(i)}
+              className={`px-3 py-1 rounded ${
+                currentPage === i
+                  ? "bg-black text-white"
+                  : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              {i}
+            </button>
+          );
+        }
+      }
+
+      if (currentPage < totalPages - 3) {
+        pages.push(
+          <span key="dots2" className="px-2">
+            ...
+          </span>
+        );
+      }
+
+      pages.push(
+        <button
+          key={totalPages - 1}
+          onClick={() => handlePageChange(totalPages - 1)}
+          className={`px-3 py-1 rounded ${
+            currentPage === totalPages - 1
+              ? "bg-black text-white"
+              : "bg-white text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          {totalPages - 1}
+        </button>
+      );
+
+      pages.push(
+        <button
+          key={totalPages}
+          onClick={() => handlePageChange(totalPages)}
+          className={`px-3 py-1 rounded ${
+            currentPage === totalPages
+              ? "bg-black text-white"
+              : "bg-white text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          {totalPages}
+        </button>
+      );
+    }
+
+    return pages;
+  };
 
   return (
     <div className="space-y-6">
@@ -225,13 +345,13 @@ const SportsManagement = () => {
       </div>
 
       {/* Sports Grid */}
-      {loading ? (
+      {loadingPaginated ? (
         <div className="flex items-center justify-center h-64">
           <div className="text-gray-500">Đang tải...</div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredSports.map((sport) => (
+          {paginatedSports.map((sport) => (
             <div
               key={sport.sport_id}
               className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow"
@@ -326,7 +446,7 @@ const SportsManagement = () => {
         </div>
       )}
 
-      {filteredSports.length === 0 && !loading && (
+      {paginatedSports.length === 0 && !loadingPaginated && (
         <div className="text-center py-12">
           <Trophy className="mx-auto text-gray-400 mb-4" size={48} />
           <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -337,6 +457,36 @@ const SportsManagement = () => {
               ? "Thử tìm kiếm với từ khóa khác"
               : "Chưa có môn thể thao nào"}
           </p>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="bg-white p-4 rounded-lg border">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-600">
+              Hiển thị {(currentPage - 1) * itemsPerPage + 1} đến{" "}
+              {Math.min(currentPage * itemsPerPage, totalSports)} trong tổng{" "}
+              {totalSports} môn thể thao
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-3 py-1 rounded bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Trước
+              </button>
+              {renderPageNumbers()}
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 rounded bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Sau
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

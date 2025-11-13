@@ -1,4 +1,5 @@
 import db from "../../shared/models/index.js";
+import { Op } from "sequelize";
 
 const getAllTeams = async () => {
   try {
@@ -316,10 +317,79 @@ const deleteTeam = async (team_id) => {
   }
 };
 
+// Get teams with pagination
+const getTeamsPaginated = async (search, sport, tournament, limit, page) => {
+  try {
+    const offset = (page - 1) * limit;
+    const where = {};
+
+    // Search by team_name
+    if (search) {
+      where.team_name = { [Op.substring]: search };
+    }
+
+    // Build includes with optional filters
+    const include = [
+      {
+        model: db.Tournament,
+        attributes: ["tournament_id", "tournament_name"],
+        ...(tournament && {
+          where: { tournament_name: { [Op.substring]: tournament } },
+        }),
+        include: [
+          {
+            model: db.Sport,
+            attributes: ["sport_id", "sport_name"],
+            ...(sport && { where: { sport_name: { [Op.substring]: sport } } }),
+          },
+        ],
+      },
+    ];
+
+    // Get total count
+    const total = await db.Team.count({ where, include });
+
+    // Get paginated results
+    const teams = await db.Team.findAll({
+      where,
+      include,
+      limit,
+      offset,
+      order: [["team_id", "DESC"]],
+    });
+
+    // Add product count for each team
+    const teamsWithProductCount = await Promise.all(
+      teams.map(async (team) => {
+        const productCount = await db.Product.count({
+          where: { team_id: team.team_id },
+        });
+
+        return {
+          ...team.toJSON(),
+          product_count: productCount,
+        };
+      })
+    );
+
+    return {
+      success: true,
+      teams: teamsWithProductCount,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  } catch (error) {
+    console.error("Error getting paginated teams:", error);
+    return { success: false, message: error.message };
+  }
+};
+
 export {
   getAllTeams,
   getTeamById,
   getTeamsByTournament,
+  getTeamsPaginated,
   createTeam,
   updateTeam,
   deleteTeam,

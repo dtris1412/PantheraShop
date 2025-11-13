@@ -1,6 +1,7 @@
 import {
   getAllCategories as getAllCategoriesService,
   getCategoryById as getCategoryByIdService,
+  getCategoriesPaginated as getCategoriesPaginatedService,
   createCategory as createCategoryService,
   updateCategory as updateCategoryService,
   deleteCategory as deleteCategoryService,
@@ -9,6 +10,7 @@ import {
 import {
   getAllSports as getAllSportsService,
   getSportById as getSportByIdService,
+  getSportsPaginated as getSportsPaginatedService,
   createSport as createSportService,
   updateSport as updateSportService,
   deleteSport as deleteSportService,
@@ -18,6 +20,7 @@ import {
   getAllTournaments as getAllTournamentsService,
   getTournamentById as getTournamentByIdService,
   getTournamentsBySport as getTournamentsBySportService,
+  getTournamentsPaginated as getTournamentsPaginatedService,
   createTournament as createTournamentService,
   updateTournament as updateTournamentService,
   deleteTournament as deleteTournamentService,
@@ -27,6 +30,7 @@ import {
   getAllTeams as getAllTeamsService,
   getTeamById as getTeamByIdService,
   getTeamsByTournament as getTeamsByTournamentService,
+  getTeamsPaginated as getTeamsPaginatedService,
   createTeam as createTeamService,
   updateTeam as updateTeamService,
   deleteTeam as deleteTeamService,
@@ -47,6 +51,28 @@ const getAllCategories = async (req, res) => {
     res.status(200).json(result);
   } catch (error) {
     console.error("Error in getAllCategories controller:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+const getCategoriesPaginated = async (req, res) => {
+  try {
+    const { search, limit = 9, page = 1 } = req.query;
+    const result = await getCategoriesPaginatedService(
+      search,
+      parseInt(limit),
+      parseInt(page)
+    );
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error in getCategoriesPaginated controller:", error);
     res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -167,6 +193,28 @@ const getSportById = async (req, res) => {
     res.status(200).json(result);
   } catch (error) {
     console.error("Error in getSportById controller:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+const getSportsPaginated = async (req, res) => {
+  try {
+    const { search, limit = 10, page = 1 } = req.query;
+    const result = await getSportsPaginatedService(
+      search,
+      parseInt(limit),
+      parseInt(page)
+    );
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error in getSportsPaginated controller:", error);
     res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -319,6 +367,29 @@ const getTournamentsBySport = async (req, res) => {
     res.status(200).json(result);
   } catch (error) {
     console.error("Error in getTournamentsBySport controller:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+const getTournamentsPaginated = async (req, res) => {
+  try {
+    const { search, sport, limit = 10, page = 1 } = req.query;
+    const result = await getTournamentsPaginatedService(
+      search,
+      sport,
+      parseInt(limit),
+      parseInt(page)
+    );
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error in getTournamentsPaginated controller:", error);
     res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -485,6 +556,30 @@ const getTeamsByTournament = async (req, res) => {
   }
 };
 
+const getTeamsPaginated = async (req, res) => {
+  try {
+    const { search, sport, tournament, limit = 10, page = 1 } = req.query;
+    const result = await getTeamsPaginatedService(
+      search,
+      sport,
+      tournament,
+      parseInt(limit),
+      parseInt(page)
+    );
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error in getTeamsPaginated controller:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
 const createTeam = async (req, res) => {
   try {
     let teamData = { ...req.body };
@@ -580,6 +675,7 @@ export {
   // Category exports
   getAllCategories,
   getCategoryById,
+  getCategoriesPaginated,
   createCategory,
   updateCategory,
   deleteCategory,
@@ -587,6 +683,7 @@ export {
   // Sport exports
   getAllSports,
   getSportById,
+  getSportsPaginated,
   createSport,
   updateSport,
   deleteSport,
@@ -595,6 +692,7 @@ export {
   getAllTournaments,
   getTournamentById,
   getTournamentsBySport,
+  getTournamentsPaginated,
   createTournament,
   updateTournament,
   deleteTournament,
@@ -603,6 +701,7 @@ export {
   getAllTeams,
   getTeamById,
   getTeamsByTournament,
+  getTeamsPaginated,
   createTeam,
   updateTeam,
   deleteTeam,

@@ -1,4 +1,5 @@
 import db from "../../shared/models/index.js";
+import { Op } from "sequelize";
 
 const getAllCategories = async () => {
   try {
@@ -178,9 +179,59 @@ const deleteCategory = async (category_id) => {
   }
 };
 
+// Get categories with pagination
+const getCategoriesPaginated = async (search, limit, page) => {
+  try {
+    const offset = (page - 1) * limit;
+    const where = {};
+
+    // Search by category_name only
+    if (search) {
+      where.category_name = { [Op.substring]: search };
+    }
+
+    // Get total count
+    const total = await db.Category.count({ where });
+
+    // Get paginated results
+    const categories = await db.Category.findAll({
+      where,
+      limit,
+      offset,
+      order: [["category_id", "DESC"]],
+    });
+
+    // Add product count for each category
+    const categoriesWithProductCount = await Promise.all(
+      categories.map(async (category) => {
+        const productCount = await db.Product.count({
+          where: { category_id: category.category_id },
+        });
+
+        return {
+          ...category.toJSON(),
+          product_count: productCount,
+        };
+      })
+    );
+
+    return {
+      success: true,
+      categories: categoriesWithProductCount,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  } catch (error) {
+    console.error("Error getting paginated categories:", error);
+    return { success: false, message: error.message };
+  }
+};
+
 export {
   getAllCategories,
   getCategoryById,
+  getCategoriesPaginated,
   createCategory,
   updateCategory,
   deleteCategory,

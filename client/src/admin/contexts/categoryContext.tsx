@@ -68,6 +68,16 @@ interface CategoryContextType {
   // Categories
   getAllCategories: (forceRefresh?: boolean) => Promise<Category[]>;
   getCategoryById: (id: number) => Promise<Category | null>;
+  getCategoriesPaginated: (
+    search: string,
+    limit: number,
+    page: number
+  ) => Promise<{
+    categories: Category[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }>;
   createCategory: (categoryData: Partial<Category>) => Promise<Category>;
   updateCategory: (
     id: number,
@@ -77,6 +87,16 @@ interface CategoryContextType {
 
   // Sports
   getAllSports: (forceRefresh?: boolean) => Promise<Sport[]>;
+  getSportsPaginated: (
+    search: string,
+    limit: number,
+    page: number
+  ) => Promise<{
+    sports: Sport[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }>;
   createSport: (sportData: Partial<Sport>, imageFile?: File) => Promise<Sport>;
   updateSport: (
     id: number,
@@ -88,6 +108,17 @@ interface CategoryContextType {
   // Tournaments
   getAllTournaments: () => Promise<Tournament[]>;
   getTournamentsBySport: (sportId: number) => Promise<Tournament[]>;
+  getTournamentsPaginated: (
+    search: string,
+    sport: string,
+    limit: number,
+    page: number
+  ) => Promise<{
+    tournaments: Tournament[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }>;
   createTournament: (
     tournamentData: Partial<Tournament>
   ) => Promise<Tournament>;
@@ -100,6 +131,18 @@ interface CategoryContextType {
   // Teams
   getAllTeams: () => Promise<Team[]>;
   getTeamsByTournament: (tournamentId: number) => Promise<Team[]>;
+  getTeamsPaginated: (
+    search: string,
+    sport: string,
+    tournament: string,
+    limit: number,
+    page: number
+  ) => Promise<{
+    teams: Team[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }>;
   createTeam: (teamData: Partial<Team>) => Promise<Team>;
   updateTeam: (id: number, teamData: Partial<Team>) => Promise<Team>;
   deleteTeam: (id: number) => Promise<boolean>;
@@ -134,20 +177,44 @@ const defaultContextValue: CategoryContextType = {
   }),
   getAllCategories: async () => [],
   getCategoryById: async () => null,
+  getCategoriesPaginated: async () => ({
+    categories: [],
+    total: 0,
+    page: 1,
+    totalPages: 0,
+  }),
   createCategory: async () => ({} as Category),
   updateCategory: async () => ({} as Category),
   deleteCategory: async () => false,
   getAllSports: async () => [],
+  getSportsPaginated: async () => ({
+    sports: [],
+    total: 0,
+    page: 1,
+    totalPages: 0,
+  }),
   createSport: async () => ({} as Sport),
   updateSport: async () => ({} as Sport),
   deleteSport: async () => false,
   getAllTournaments: async () => [],
   getTournamentsBySport: async () => [],
+  getTournamentsPaginated: async () => ({
+    tournaments: [],
+    total: 0,
+    page: 1,
+    totalPages: 0,
+  }),
   createTournament: async () => ({} as Tournament),
   updateTournament: async () => ({} as Tournament),
   deleteTournament: async () => false,
   getAllTeams: async () => [],
   getTeamsByTournament: async () => [],
+  getTeamsPaginated: async () => ({
+    teams: [],
+    total: 0,
+    page: 1,
+    totalPages: 0,
+  }),
   createTeam: async () => ({} as Team),
   updateTeam: async () => ({} as Team),
   deleteTeam: async () => false,
@@ -298,6 +365,52 @@ export const CategoryProvider = ({ children }: CategoryProviderProps) => {
     }
   };
 
+  const getCategoriesPaginated = async (
+    search: string = "",
+    limit: number = 9,
+    page: number = 1
+  ): Promise<{
+    categories: Category[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        search: search.trim(),
+        limit: limit.toString(),
+        page: page.toString(),
+      });
+
+      const response = await fetch(
+        `${apiUrl}/admin/categories/paginated?${params}`,
+        {
+          method: "GET",
+          headers: getAuthHeaders(),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to fetch categories");
+      }
+
+      return {
+        categories: data.categories || [],
+        total: data.total || 0,
+        page: data.page || page,
+        totalPages: data.totalPages || 0,
+      };
+    } catch (error) {
+      handleError(error, "Lỗi khi tải danh mục");
+      return { categories: [], total: 0, page: 1, totalPages: 0 };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const createCategory = async (
     categoryData: Partial<Category>
   ): Promise<Category> => {
@@ -420,6 +533,51 @@ export const CategoryProvider = ({ children }: CategoryProviderProps) => {
     } catch (error) {
       handleError(error, "Lỗi khi tải môn thể thao");
       return cache.sports || [];
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getSportsPaginated = async (
+    search: string = "",
+    limit: number = 10,
+    page: number = 1
+  ): Promise<{
+    sports: Sport[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (search) params.append("search", search);
+      params.append("limit", limit.toString());
+      params.append("page", page.toString());
+
+      const response = await fetch(
+        `${apiUrl}/admin/sports/paginated?${params.toString()}`,
+        {
+          method: "GET",
+          headers: getAuthHeaders(),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to fetch paginated sports");
+      }
+
+      return {
+        sports: data.sports || [],
+        total: data.total || 0,
+        page: data.page || 1,
+        totalPages: data.totalPages || 0,
+      };
+    } catch (error) {
+      handleError(error, "Lỗi khi tải môn thể thao");
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -630,6 +788,55 @@ export const CategoryProvider = ({ children }: CategoryProviderProps) => {
     }
   };
 
+  const getTournamentsPaginated = async (
+    search: string = "",
+    sport: string = "",
+    limit: number = 10,
+    page: number = 1
+  ): Promise<{
+    tournaments: Tournament[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (search) params.append("search", search);
+      if (sport) params.append("sport", sport);
+      params.append("limit", limit.toString());
+      params.append("page", page.toString());
+
+      const response = await fetch(
+        `${apiUrl}/admin/tournaments/paginated?${params.toString()}`,
+        {
+          method: "GET",
+          headers: getAuthHeaders(),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Failed to fetch paginated tournaments"
+        );
+      }
+
+      return {
+        tournaments: data.tournaments || [],
+        total: data.total || 0,
+        page: data.page || 1,
+        totalPages: data.totalPages || 0,
+      };
+    } catch (error) {
+      handleError(error, "Lỗi khi tải giải đấu");
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const createTournament = async (
     tournamentData: Partial<Tournament> & { imageFile?: File }
   ): Promise<Tournament> => {
@@ -801,6 +1008,55 @@ export const CategoryProvider = ({ children }: CategoryProviderProps) => {
     }
   };
 
+  const getTeamsPaginated = async (
+    search: string = "",
+    sport: string = "",
+    tournament: string = "",
+    limit: number = 10,
+    page: number = 1
+  ): Promise<{
+    teams: Team[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (search) params.append("search", search);
+      if (sport) params.append("sport", sport);
+      if (tournament) params.append("tournament", tournament);
+      params.append("limit", limit.toString());
+      params.append("page", page.toString());
+
+      const response = await fetch(
+        `${apiUrl}/admin/teams/paginated?${params.toString()}`,
+        {
+          method: "GET",
+          headers: getAuthHeaders(),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to fetch paginated teams");
+      }
+
+      return {
+        teams: data.teams || [],
+        total: data.total || 0,
+        page: data.page || 1,
+        totalPages: data.totalPages || 0,
+      };
+    } catch (error) {
+      handleError(error, "Lỗi khi tải đội");
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const createTeam = async (teamData: Partial<Team>): Promise<Team> => {
     setLoading(true);
     try {
@@ -884,12 +1140,14 @@ export const CategoryProvider = ({ children }: CategoryProviderProps) => {
     // Categories
     getAllCategories,
     getCategoryById,
+    getCategoriesPaginated,
     createCategory,
     updateCategory,
     deleteCategory,
 
     // Sports
     getAllSports,
+    getSportsPaginated,
     createSport,
     updateSport,
     deleteSport,
@@ -897,6 +1155,7 @@ export const CategoryProvider = ({ children }: CategoryProviderProps) => {
     // Tournaments
     getAllTournaments,
     getTournamentsBySport,
+    getTournamentsPaginated,
     createTournament,
     updateTournament,
     deleteTournament,
@@ -904,6 +1163,7 @@ export const CategoryProvider = ({ children }: CategoryProviderProps) => {
     // Teams
     getAllTeams,
     getTeamsByTournament,
+    getTeamsPaginated,
     createTeam,
     updateTeam,
     deleteTeam,

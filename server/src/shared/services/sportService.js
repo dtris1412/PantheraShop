@@ -1,4 +1,5 @@
 import db from "../../shared/models/index.js";
+import { Op } from "sequelize";
 
 const getAllSports = async () => {
   try {
@@ -176,4 +177,46 @@ const deleteSport = async (sport_id) => {
   }
 };
 
-export { getAllSports, getSportById, createSport, updateSport, deleteSport };
+// Get sports with pagination
+const getSportsPaginated = async (search, limit, page) => {
+  try {
+    const offset = (page - 1) * limit;
+    const where = {};
+
+    // Search by sport_name only
+    if (search) {
+      where.sport_name = { [Op.substring]: search };
+    }
+
+    // Get total count
+    const total = await db.Sport.count({ where });
+
+    // Get paginated results
+    const sports = await db.Sport.findAll({
+      where,
+      limit,
+      offset,
+      order: [["sport_id", "DESC"]],
+    });
+
+    return {
+      success: true,
+      sports,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  } catch (error) {
+    console.error("Error getting paginated sports:", error);
+    return { success: false, message: error.message };
+  }
+};
+
+export {
+  getAllSports,
+  getSportById,
+  getSportsPaginated,
+  createSport,
+  updateSport,
+  deleteSport,
+};

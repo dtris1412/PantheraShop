@@ -47,6 +47,22 @@ interface CreateProductData {
 interface ProductContextType {
   getAllProducts: () => Promise<Product[]>;
   getProductById: (id: number) => Promise<Product | null>;
+  getProductsPaginated: (
+    search: string,
+    limit: number,
+    page: number,
+    category?: string,
+    sport?: string,
+    tournament?: string,
+    team?: string,
+    minPrice?: number,
+    maxPrice?: number
+  ) => Promise<{
+    products: Product[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }>;
   createProduct: (
     productData: CreateProductData,
     imageFile?: File | null
@@ -334,6 +350,71 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
     }
   };
 
+  const getProductsPaginated = async (
+    search: string = "",
+    limit: number = 10,
+    page: number = 1,
+    category?: string,
+    sport?: string,
+    tournament?: string,
+    team?: string,
+    minPrice?: number,
+    maxPrice?: number
+  ): Promise<{
+    products: Product[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        search: search.trim(),
+        limit: limit.toString(),
+        page: page.toString(),
+      });
+
+      if (category) params.append("category", category);
+      if (sport) params.append("sport", sport);
+      if (tournament) params.append("tournament", tournament);
+      if (team) params.append("team", team);
+      if (minPrice !== undefined)
+        params.append("minPrice", minPrice.toString());
+      if (maxPrice !== undefined)
+        params.append("maxPrice", maxPrice.toString());
+
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `${apiUrl}/admin/products/paginated?${params}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch products");
+      }
+
+      const data = await response.json();
+
+      return {
+        products: data.products || [],
+        total: data.totalProducts || 0,
+        page: page,
+        totalPages: Math.ceil((data.totalProducts || 0) / limit),
+      };
+    } catch (error) {
+      console.error("Error fetching paginated products:", error);
+      return { products: [], total: 0, page: 1, totalPages: 0 };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // ============= VARIANT FUNCTIONS =============
 
   const getVariantsByProductId = async (
@@ -484,6 +565,7 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
       value={{
         getAllProducts,
         getProductById,
+        getProductsPaginated,
         createProduct,
         updateProduct,
         deleteProduct,

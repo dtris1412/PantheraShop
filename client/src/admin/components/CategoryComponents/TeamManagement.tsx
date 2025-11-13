@@ -42,7 +42,8 @@ interface TeamFormData {
 
 const TeamManagement = () => {
   const {
-    getAllTeams,
+    getTeamsPaginated,
+    getAllSports,
     getAllTournaments,
     createTeam,
     updateTeam,
@@ -50,13 +51,22 @@ const TeamManagement = () => {
     loading,
   } = useCategory();
 
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [paginatedTeams, setPaginatedTeams] = useState<Team[]>([]);
+  const [totalTeams, setTotalTeams] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [sports, setSports] = useState<
+    { sport_id: number; sport_name: string }[]
+  >([]);
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [selectedSport, setSelectedSport] = useState<string>("");
+  const [selectedTournament, setSelectedTournament] = useState<string>("");
   const [showForm, setShowForm] = useState(false);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
   const [deletingTeam, setDeletingTeam] = useState<Team | null>(null);
-  const [selectedTournament, setSelectedTournament] = useState<string>("");
+  const [loadingPaginated, setLoadingPaginated] = useState(false);
+  const itemsPerPage = 9;
 
   const [formData, setFormData] = useState<TeamFormData>({
     team_name: "",
@@ -66,9 +76,37 @@ const TeamManagement = () => {
   });
 
   useEffect(() => {
-    fetchTeams();
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setCurrentPage(1);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    fetchSports();
     fetchTournaments();
   }, []);
+
+  useEffect(() => {
+    fetchPaginatedTeams();
+  }, [debouncedSearchTerm, selectedSport, selectedTournament, currentPage]);
+
+  const fetchSports = async () => {
+    try {
+      const data = await getAllSports();
+      setSports(
+        data.map((sport: any) => ({
+          sport_id: sport.sport_id,
+          sport_name: sport.sport_name,
+        }))
+      );
+    } catch (error) {
+      console.error("Error fetching sports:", error);
+      showToast("Không thể tải môn thể thao", "error");
+    }
+  };
 
   const fetchTournaments = async () => {
     try {
@@ -87,19 +125,29 @@ const TeamManagement = () => {
     }
   };
 
-  const fetchTeams = async () => {
+  const fetchPaginatedTeams = async () => {
     try {
-      const data = await getAllTeams();
+      setLoadingPaginated(true);
+      const result = await getTeamsPaginated(
+        debouncedSearchTerm,
+        selectedSport,
+        selectedTournament,
+        itemsPerPage,
+        currentPage
+      );
       // Transform backend data to frontend format
-      const transformedTeams = data.map((team: any) => ({
+      const transformedTeams = result.teams.map((team: any) => ({
         ...team,
         tournament_name: team.Tournament?.tournament_name,
         sport_name: team.Tournament?.Sport?.sport_name,
       }));
-      setTeams(transformedTeams);
+      setPaginatedTeams(transformedTeams);
+      setTotalTeams(result.total);
     } catch (error) {
       console.error("Error fetching teams:", error);
       showToast("Không thể tải đội/CLB", "error");
+    } finally {
+      setLoadingPaginated(false);
     }
   };
 
@@ -125,7 +173,7 @@ const TeamManagement = () => {
       setShowForm(false);
       setEditingTeam(null);
       resetForm();
-      fetchTeams();
+      fetchPaginatedTeams();
     } catch (error) {
       console.error("Error saving team:", error);
     }
@@ -149,7 +197,7 @@ const TeamManagement = () => {
       await deleteTeam(deletingTeam.team_id);
       showToast("Xóa đội/CLB thành công", "success");
       setDeletingTeam(null);
-      fetchTeams();
+      fetchPaginatedTeams();
     } catch (error) {
       console.error("Error deleting team:", error);
     }
@@ -170,6 +218,48 @@ const TeamManagement = () => {
     resetForm();
   };
 
+  const totalPages = Math.ceil(totalTeams / itemsPerPage);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const renderPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 7;
+
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        pages.push(1, 2, 3, 4, "...", totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(
+          1,
+          "...",
+          totalPages - 3,
+          totalPages - 2,
+          totalPages - 1,
+          totalPages
+        );
+      } else {
+        pages.push(
+          1,
+          "...",
+          currentPage - 1,
+          currentPage,
+          currentPage + 1,
+          "...",
+          totalPages
+        );
+      }
+    }
+
+    return pages;
+  };
+
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -183,16 +273,6 @@ const TeamManagement = () => {
       reader.readAsDataURL(file);
     }
   };
-
-  const filteredTeams = teams.filter((team) => {
-    const matchSearch =
-      team.team_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      team.team_description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchTournament =
-      !selectedTournament ||
-      team.tournament_id.toString() === selectedTournament;
-    return matchSearch && matchTournament;
-  });
 
   return (
     <div className="space-y-6">
@@ -230,34 +310,59 @@ const TeamManagement = () => {
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-black"
             />
           </div>
+          <div className="w-48">
+            <select
+              value={selectedSport}
+              onChange={(e) => {
+                setSelectedSport(e.target.value);
+                setSelectedTournament("");
+                setCurrentPage(1);
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-black"
+            >
+              <option value="">Tất cả môn</option>
+              {sports.map((sport) => (
+                <option key={sport.sport_id} value={sport.sport_id}>
+                  {sport.sport_name}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="w-64">
             <select
               value={selectedTournament}
-              onChange={(e) => setSelectedTournament(e.target.value)}
+              onChange={(e) => {
+                setSelectedTournament(e.target.value);
+                setCurrentPage(1);
+              }}
               className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-black"
             >
               <option value="">Tất cả giải đấu</option>
-              {tournaments.map((tournament) => (
-                <option
-                  key={tournament.tournament_id}
-                  value={tournament.tournament_id}
-                >
-                  {tournament.tournament_name} ({tournament.sport_name})
-                </option>
-              ))}
+              {tournaments
+                .filter(
+                  (t) =>
+                    !selectedSport || t.sport_id.toString() === selectedSport
+                )
+                .map((tournament) => (
+                  <option
+                    key={tournament.tournament_id}
+                    value={tournament.tournament_id}
+                  >
+                    {tournament.tournament_name}
+                  </option>
+                ))}
             </select>
           </div>
         </div>
       </div>
 
-      {/* Teams Grid */}
-      {loading ? (
+      {loadingPaginated ? (
         <div className="flex items-center justify-center h-64">
           <div className="text-gray-500">Đang tải...</div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredTeams.map((team) => (
+          {paginatedTeams.map((team) => (
             <div
               key={team.team_id}
               className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow"
@@ -334,17 +439,59 @@ const TeamManagement = () => {
         </div>
       )}
 
-      {filteredTeams.length === 0 && !loading && (
+      {paginatedTeams.length === 0 && !loadingPaginated && (
         <div className="text-center py-12">
           <Shield className="mx-auto text-gray-400 mb-4" size={48} />
           <h3 className="text-lg font-medium text-gray-900 mb-2">
             Không tìm thấy đội/CLB
           </h3>
           <p className="text-gray-500">
-            {searchTerm || selectedTournament
+            {searchTerm || selectedSport || selectedTournament
               ? "Thử thay đổi bộ lọc"
               : "Chưa có đội/CLB nào"}
           </p>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="bg-white p-4 rounded-lg border">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Trước
+            </button>
+            <div className="flex gap-2">
+              {renderPageNumbers().map((page, index) => (
+                <button
+                  key={index}
+                  onClick={() =>
+                    typeof page === "number" && handlePageChange(page)
+                  }
+                  disabled={page === "..."}
+                  className={`px-3 py-1 rounded ${
+                    page === currentPage
+                      ? "bg-black text-white"
+                      : page === "..."
+                      ? "cursor-default"
+                      : "border border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Sau
+            </button>
+          </div>
         </div>
       )}
 
