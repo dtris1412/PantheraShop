@@ -15,6 +15,13 @@ interface SupplierContextType {
   suppliers: Supplier[];
   loading: boolean;
   fetchSuppliers: () => Promise<void>;
+  fetchSuppliersPaginated: (params: {
+    search?: string;
+    supplier_type?: string;
+    is_connected?: string;
+    limit?: number;
+    page?: number;
+  }) => Promise<any>;
   createSupplier: (data: Partial<Supplier>) => Promise<void>;
   updateSupplier: (
     id: number | string,
@@ -65,6 +72,41 @@ export const SupplierProvider = ({
       setSuppliers(mapped);
     } catch (e) {
       setSuppliers([]);
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchSuppliersPaginated = async (params: {
+    search?: string;
+    supplier_type?: string;
+    is_connected?: string;
+    limit?: number;
+    page?: number;
+  }) => {
+    setLoading(true);
+    try {
+      const queryParams = new URLSearchParams();
+      if (params.search) queryParams.append("search", params.search);
+      if (params.supplier_type)
+        queryParams.append("supplier_type", params.supplier_type);
+      if (params.is_connected !== undefined && params.is_connected !== "")
+        queryParams.append("is_connected", params.is_connected);
+      if (params.limit) queryParams.append("limit", params.limit.toString());
+      if (params.page) queryParams.append("page", params.page.toString());
+
+      const res = await fetch(
+        `${apiUrl}/admin/suppliers/paginated?${queryParams.toString()}`,
+        {
+          method: "GET",
+          headers: getAuthHeaders(),
+        }
+      );
+      if (!res.ok) throw new Error("Failed to fetch paginated suppliers");
+      const data = await res.json();
+      return data;
+    } catch (e) {
       throw e;
     } finally {
       setLoading(false);
@@ -131,6 +173,7 @@ export const SupplierProvider = ({
         suppliers,
         loading,
         fetchSuppliers,
+        fetchSuppliersPaginated,
         createSupplier,
         updateSupplier,
         setConnectionStatus,

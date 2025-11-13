@@ -1,4 +1,5 @@
 import db from "../models/index.js";
+import { Op } from "sequelize";
 
 const getAllSuppliers = async () => {
   try {
@@ -7,6 +8,66 @@ const getAllSuppliers = async () => {
     return { success: true, suppliers };
   } catch (err) {
     console.error("Error in getAllSuppliers:", err);
+    return { success: false, message: "Internal server error" };
+  }
+};
+
+const getSuppliersPaginated = async ({
+  search = "",
+  supplier_type = "",
+  is_connected = "",
+  limit = 10,
+  page = 1,
+}) => {
+  try {
+    const offset = (page - 1) * limit;
+
+    // Build where conditions
+    const where = {};
+
+    // Search across multiple fields
+    if (search) {
+      where[Op.or] = [
+        { supplier_name: { [Op.substring]: search } },
+        { supplier_email: { [Op.substring]: search } },
+        { supplier_phone: { [Op.substring]: search } },
+        { supplier_address: { [Op.substring]: search } },
+      ];
+    }
+
+    // Filter by supplier type
+    if (supplier_type) {
+      where.supplier_type = supplier_type;
+    }
+
+    // Filter by connection status
+    if (is_connected !== "") {
+      where.is_connected = is_connected === "true";
+    }
+
+    // Get total count
+    const totalCount = await db.Supplier.count({ where });
+
+    // Get paginated suppliers
+    const suppliers = await db.Supplier.findAll({
+      where,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      order: [["created_at", "DESC"]],
+    });
+
+    return {
+      success: true,
+      suppliers,
+      pagination: {
+        total: totalCount,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(totalCount / limit),
+      },
+    };
+  } catch (err) {
+    console.error("Error in getSuppliersPaginated:", err);
     return { success: false, message: "Internal server error" };
   }
 };
@@ -94,6 +155,7 @@ const setSupplierConnectionStatus = async (supplier_id, is_connected) => {
 
 export {
   getAllSuppliers,
+  getSuppliersPaginated,
   createSupplier,
   updateSupplier,
   //   cancelTerminalConnection,

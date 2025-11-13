@@ -1,5 +1,6 @@
 import {
   getAllSuppliers as getAllSuppliersService,
+  getSuppliersPaginated as getSuppliersPaginatedService,
   createSupplier as createSupplierService,
   updateSupplier as updateSupplierService,
   //   cancelTerminalConnection as cancelTerminalConnectionService,
@@ -16,6 +17,31 @@ const getAllSuppliers = async (req, res) => {
     res.status(200).json(result);
   } catch (err) {
     console.error("Error in getAllSuppliers: ", err);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: err.message,
+    });
+  }
+};
+
+const getSuppliersPaginated = async (req, res) => {
+  try {
+    const { search, supplier_type, is_connected, limit, page } = req.query;
+    const result = await getSuppliersPaginatedService({
+      search,
+      supplier_type,
+      is_connected,
+      limit,
+      page,
+    });
+
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+    res.status(200).json(result);
+  } catch (err) {
+    console.error("Error in getSuppliersPaginated:", err);
     res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -128,6 +154,7 @@ const setSupplierConnectionStatus = async (req, res) => {
 };
 export {
   getAllSuppliers,
+  getSuppliersPaginated,
   createSupplier,
   updateSupplier,
   //   cancelTerminalConnection,

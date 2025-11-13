@@ -9,8 +9,8 @@ import { showToast } from "../../shared/components/Toast";
 const SupplierList: React.FC = () => {
   const {
     suppliers,
-    loading,
     fetchSuppliers,
+    fetchSuppliersPaginated,
     createSupplier,
     updateSupplier,
     setConnectionStatus,
@@ -22,6 +22,64 @@ const SupplierList: React.FC = () => {
     null
   );
 
+  // Pagination state
+  const [paginatedSuppliers, setPaginatedSuppliers] = useState<Supplier[]>([]);
+  const [totalSuppliers, setTotalSuppliers] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loadingPaginated, setLoadingPaginated] = useState(false);
+  const itemsPerPage = 10;
+
+  // Search & filter state
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [filterType, setFilterType] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setCurrentPage(1); // Reset to page 1 on search
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterType, filterStatus]);
+
+  // Fetch paginated suppliers
+  useEffect(() => {
+    fetchSuppliersPaginatedData();
+  }, [currentPage, debouncedSearch, filterType, filterStatus]);
+
+  const fetchSuppliersPaginatedData = async () => {
+    setLoadingPaginated(true);
+    try {
+      const result = await fetchSuppliersPaginated({
+        search: debouncedSearch,
+        supplier_type: filterType,
+        is_connected: filterStatus,
+        limit: itemsPerPage,
+        page: currentPage,
+      });
+      if (result.success) {
+        // Map is_connected to is_active for consistency
+        const mapped = result.suppliers.map((s: any) => ({
+          ...s,
+          is_active: s.is_connected,
+        }));
+        setPaginatedSuppliers(mapped);
+        setTotalSuppliers(result.pagination.total);
+      }
+    } catch (error) {
+      console.error("Error fetching paginated suppliers:", error);
+    } finally {
+      setLoadingPaginated(false);
+    }
+  };
+
   useEffect(() => {
     fetchSuppliers();
   }, []);
@@ -30,6 +88,42 @@ const SupplierList: React.FC = () => {
   const total = suppliers.length;
   const active = suppliers.filter((s) => s.is_active).length;
   const inactive = total - active;
+
+  // Pagination logic
+  const totalPages = Math.ceil(totalSuppliers / itemsPerPage);
+
+  const renderPageNumbers = () => {
+    const pages = [];
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        pages.push(1, 2, 3, 4, "...", totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(
+          1,
+          "...",
+          totalPages - 3,
+          totalPages - 2,
+          totalPages - 1,
+          totalPages
+        );
+      } else {
+        pages.push(
+          1,
+          "...",
+          currentPage - 1,
+          currentPage,
+          currentPage + 1,
+          "...",
+          totalPages
+        );
+      }
+    }
+    return pages;
+  };
 
   return (
     <div className="space-y-8">
@@ -83,6 +177,61 @@ const SupplierList: React.FC = () => {
         </div>
       </div>
 
+      {/* Search & Filter */}
+      <div className="bg-white border border-gray-200 p-6 space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Search */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Tìm kiếm
+            </label>
+            <input
+              type="text"
+              placeholder="Tên, email, số điện thoại, địa chỉ..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 focus:outline-none focus:border-black"
+              style={{ borderRadius: 0 }}
+            />
+          </div>
+
+          {/* Filter by Type */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Loại nhà cung cấp
+            </label>
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 focus:outline-none focus:border-black"
+              style={{ borderRadius: 0 }}
+            >
+              <option value="">Tất cả</option>
+              <option value="Manufacturer">Nhà sản xuất</option>
+              <option value="Distributor">Nhà phân phối</option>
+              <option value="Wholesaler">Nhà bán sỉ</option>
+            </select>
+          </div>
+
+          {/* Filter by Status */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Trạng thái
+            </label>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 focus:outline-none focus:border-black"
+              style={{ borderRadius: 0 }}
+            >
+              <option value="">Tất cả</option>
+              <option value="true">Đang liên kết</option>
+              <option value="false">Đã hủy</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
       {/* Table */}
       <div
         className="bg-white border border-gray-200 overflow-hidden"
@@ -100,125 +249,182 @@ const SupplierList: React.FC = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {suppliers.map((s: Supplier) => (
-              <tr
-                key={s.supplier_id}
-                className={`transition-colors duration-200 ${
-                  s.is_active ? "hover:bg-gray-50" : "bg-gray-50 text-gray-400"
-                }`}
-              >
-                <td className="px-6 py-4 text-base font-medium text-black">
-                  {s.supplier_name}
-                </td>
-                <td className="px-6 py-4 text-base">
-                  {s.supplier_phone || "-"}
-                </td>
-                <td className="px-6 py-4 text-base">
-                  {s.supplier_email || "-"}
-                </td>
-                <td className="px-6 py-4 text-base">
-                  {s.supplier_address || "-"}
-                </td>
-                <td className="px-6 py-4">
-                  {Boolean(s.is_active) ? (
-                    <span
-                      className="px-3 py-1 text-xs font-medium bg-green-100 text-green-800"
-                      style={{ borderRadius: 0 }}
-                    >
-                      Đang liên kết
-                    </span>
-                  ) : (
-                    <span
-                      className="px-3 py-1 text-xs font-medium bg-gray-100 text-gray-600"
-                      style={{ borderRadius: 0 }}
-                    >
-                      Đã hủy
-                    </span>
-                  )}
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedSupplier(s);
-                        setShowDetailModal(true);
-                      }}
-                      className="p-2 hover:bg-blue-50 transition-colors"
-                      style={{ borderRadius: 0 }}
-                      title="Xem chi tiết"
-                      // Nếu muốn disable luôn xem chi tiết thì thêm disabled={!s.is_active}
-                    >
-                      <Eye size={18} className="text-blue-600" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedSupplier(s);
-                        setShowEditModal(true);
-                      }}
-                      className={`p-2 hover:bg-gray-100 transition-colors ${
-                        !s.is_active ? "opacity-50 cursor-not-allowed" : ""
-                      }`}
-                      style={{ borderRadius: 0 }}
-                      title="Chỉnh sửa"
-                      disabled={!s.is_active}
-                    >
-                      <Edit size={18} className="text-gray-600" />
-                    </button>
-                    {s.is_active ? (
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          if (
-                            window.confirm(
-                              "Bạn chắc chắn muốn hủy liên kết nhà cung cấp này? Sau khi hủy sẽ không thể mở lại."
-                            )
-                          ) {
-                            await setConnectionStatus(s.supplier_id, false);
-                            showToast(
-                              "Đã hủy liên kết nhà cung cấp!",
-                              "success"
-                            );
-                          }
-                        }}
-                        className="p-2 hover:bg-red-50 transition-colors"
-                        style={{ borderRadius: 0 }}
-                        title="Hủy liên kết"
-                      >
-                        <XCircle size={18} className="text-red-600" />
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          await setConnectionStatus(s.supplier_id, true);
-                          showToast(
-                            "Đã khôi phục liên kết nhà cung cấp!",
-                            "success"
-                          );
-                        }}
-                        className="p-2 hover:bg-green-50 transition-colors"
-                        style={{ borderRadius: 0 }}
-                        title="Khôi phục liên kết"
-                      >
-                        <CheckCircle size={18} className="text-green-600" />
-                      </button>
-                    )}
-                  </div>
+            {loadingPaginated ? (
+              <tr>
+                <td colSpan={6} className="text-center text-gray-400 py-8">
+                  Đang tải...
                 </td>
               </tr>
-            ))}
-            {suppliers.length === 0 && (
+            ) : paginatedSuppliers.length === 0 ? (
               <tr>
                 <td colSpan={6} className="text-center text-gray-400 py-8">
                   Không có nhà cung cấp nào
                 </td>
               </tr>
+            ) : (
+              paginatedSuppliers.map((s: Supplier) => (
+                <tr
+                  key={s.supplier_id}
+                  className={`transition-colors duration-200 ${
+                    s.is_active
+                      ? "hover:bg-gray-50"
+                      : "bg-gray-50 text-gray-400"
+                  }`}
+                >
+                  <td className="px-6 py-4 text-base font-medium text-black">
+                    {s.supplier_name}
+                  </td>
+                  <td className="px-6 py-4 text-base">
+                    {s.supplier_phone || "-"}
+                  </td>
+                  <td className="px-6 py-4 text-base">
+                    {s.supplier_email || "-"}
+                  </td>
+                  <td className="px-6 py-4 text-base">
+                    {s.supplier_address || "-"}
+                  </td>
+                  <td className="px-6 py-4">
+                    {Boolean(s.is_active) ? (
+                      <span
+                        className="px-3 py-1 text-xs font-medium bg-green-100 text-green-800"
+                        style={{ borderRadius: 0 }}
+                      >
+                        Đang liên kết
+                      </span>
+                    ) : (
+                      <span
+                        className="px-3 py-1 text-xs font-medium bg-gray-100 text-gray-600"
+                        style={{ borderRadius: 0 }}
+                      >
+                        Đã hủy
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedSupplier(s);
+                          setShowDetailModal(true);
+                        }}
+                        className="p-2 hover:bg-blue-50 transition-colors"
+                        style={{ borderRadius: 0 }}
+                        title="Xem chi tiết"
+                        // Nếu muốn disable luôn xem chi tiết thì thêm disabled={!s.is_active}
+                      >
+                        <Eye size={18} className="text-blue-600" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedSupplier(s);
+                          setShowEditModal(true);
+                        }}
+                        className={`p-2 hover:bg-gray-100 transition-colors ${
+                          !s.is_active ? "opacity-50 cursor-not-allowed" : ""
+                        }`}
+                        style={{ borderRadius: 0 }}
+                        title="Chỉnh sửa"
+                        disabled={!s.is_active}
+                      >
+                        <Edit size={18} className="text-gray-600" />
+                      </button>
+                      {s.is_active ? (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (
+                              window.confirm(
+                                "Bạn chắc chắn muốn hủy liên kết nhà cung cấp này? Sau khi hủy sẽ không thể mở lại."
+                              )
+                            ) {
+                              await setConnectionStatus(s.supplier_id, false);
+                              fetchSuppliersPaginatedData(); // Refresh paginated list
+                              showToast(
+                                "Đã hủy liên kết nhà cung cấp!",
+                                "success"
+                              );
+                            }
+                          }}
+                          className="p-2 hover:bg-red-50 transition-colors"
+                          style={{ borderRadius: 0 }}
+                          title="Hủy liên kết"
+                        >
+                          <XCircle size={18} className="text-red-600" />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await setConnectionStatus(s.supplier_id, true);
+                            fetchSuppliersPaginatedData(); // Refresh paginated list
+                            showToast(
+                              "Đã khôi phục liên kết nhà cung cấp!",
+                              "success"
+                            );
+                          }}
+                          className="p-2 hover:bg-green-50 transition-colors"
+                          style={{ borderRadius: 0 }}
+                          title="Khôi phục liên kết"
+                        >
+                          <CheckCircle size={18} className="text-green-600" />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))
             )}
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2">
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-4 py-2 text-sm text-gray-700 disabled:text-gray-300 hover:text-black disabled:cursor-not-allowed"
+          >
+            Trước
+          </button>
+
+          {renderPageNumbers().map((page, index) => {
+            if (page === "...") {
+              return (
+                <span key={`ellipsis-${index}`} className="px-2 text-gray-400">
+                  ...
+                </span>
+              );
+            }
+            return (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page as number)}
+                className={`px-4 py-2 text-sm ${
+                  currentPage === page
+                    ? "text-black font-bold underline"
+                    : "text-gray-600 hover:text-black"
+                }`}
+              >
+                {page}
+              </button>
+            );
+          })}
+
+          <button
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+            }
+            disabled={currentPage === totalPages}
+            className="px-4 py-2 text-sm text-gray-700 disabled:text-gray-300 hover:text-black disabled:cursor-not-allowed"
+          >
+            Sau
+          </button>
+        </div>
+      )}
 
       {/* Modal Create */}
       {showCreateModal && (
@@ -228,6 +434,7 @@ const SupplierList: React.FC = () => {
           onSubmit={async (data) => {
             await createSupplier(data);
             setShowCreateModal(false);
+            fetchSuppliersPaginatedData(); // Refresh paginated list
             showToast("Thêm nhà cung cấp thành công!", "success");
           }}
         />
@@ -244,6 +451,7 @@ const SupplierList: React.FC = () => {
             await updateSupplier(selectedSupplier.supplier_id, data);
             setShowEditModal(false);
             setSelectedSupplier(null);
+            fetchSuppliersPaginatedData(); // Refresh paginated list
             showToast("Cập nhật nhà cung cấp thành công!", "success");
           }}
           initialData={selectedSupplier}

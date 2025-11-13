@@ -61,6 +61,7 @@ import {
 //Import supplier Controllers
 import {
   getAllSuppliers,
+  getSuppliersPaginated,
   createSupplier,
   updateSupplier,
   // cancelTerminalConnection,
@@ -252,6 +253,11 @@ const initAdminRoutes = (app) => {
   router.put("/api/admin/inventory/:id", verifyAdmin, updateVariantInventory);
 
   // =============== SUPPLIER MANAGEMENT ROUTES ===============
+  router.get(
+    "/api/admin/suppliers/paginated",
+    verifyAdmin,
+    getSuppliersPaginated
+  );
   router.get("/api/admin/suppliers", verifyAdmin, getAllSuppliers);
   router.post("/api/admin/suppliers", verifyAdmin, createSupplier);
   router.put("/api/admin/suppliers/:supplier_id", verifyAdmin, updateSupplier);
