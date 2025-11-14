@@ -5,13 +5,26 @@ import {
   createVnpayPayment,
 } from "../../shared/services/paymentService.js";
 
+// In-memory cache for temporary order data (before payment confirmation)
+// In production, consider using Redis or similar solution
+const tempOrderCache = new Map();
+
 const createMomoPaymentController = async (req, res) => {
   try {
     console.log("req.body:", req.body);
 
-    const { amount, orderId, orderInfo } = req.body;
+    const { amount, orderId, orderInfo, orderData } = req.body;
     if (!amount || !orderId || !orderInfo) {
       return res.status(400).json({ message: "Thiếu dữ liệu thanh toán!" });
+    }
+
+    // Store order data temporarily (before payment confirmation)
+    if (orderData) {
+      tempOrderCache.set(orderId, {
+        ...orderData,
+        createdAt: Date.now(),
+      });
+      console.log(`✅ Stored temp order data for orderId: ${orderId}`);
     }
 
     const result = await createMomoPayment({ amount, orderId, orderInfo });
@@ -59,6 +72,24 @@ const createPayment = async (req, res) => {
   }
 };
 
+// Helper function to get temp order data from cache
+const getTempOrderData = (orderId) => {
+  const data = tempOrderCache.get(orderId);
+  if (data) {
+    console.log(`✅ Found temp order data for orderId: ${orderId}`);
+    // Clean up old entries (older than 1 hour)
+    const oneHourAgo = Date.now() - 60 * 60 * 1000;
+    if (data.createdAt < oneHourAgo) {
+      tempOrderCache.delete(orderId);
+      console.log(`🗑️  Cleaned up old temp order data for orderId: ${orderId}`);
+      return null;
+    }
+    return data;
+  }
+  console.log(`⚠️  No temp order data found for orderId: ${orderId}`);
+  return null;
+};
+
 const momoIpnHandler = async (req, res) => {
   try {
     console.log("========== MOMO IPN RECEIVED ==========");
@@ -67,8 +98,23 @@ const momoIpnHandler = async (req, res) => {
     console.log("=======================================");
 
     const ipnData = req.body;
-    const tempOrderData = await getTempOrderData(ipnData.orderId);
+    const tempOrderData = getTempOrderData(ipnData.orderId);
+
+    if (!tempOrderData) {
+      console.log(
+        "⚠️  Processing IPN without temp order data (order may already exist)"
+      );
+    }
+
     const status = await handleMomoIpn(ipnData, tempOrderData);
+
+    // Clean up cache after successful processing
+    if (tempOrderData) {
+      tempOrderCache.delete(ipnData.orderId);
+      console.log(
+        `🗑️  Deleted temp order data for orderId: ${ipnData.orderId}`
+      );
+    }
 
     console.log("✅ IPN handled successfully, status:", status);
     res.status(200).json({ message: "IPN received", status });

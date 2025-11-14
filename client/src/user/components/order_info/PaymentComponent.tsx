@@ -58,6 +58,19 @@ export default function PaymentComponent({
     async function fetchMomo() {
       setLoading(true);
       try {
+        // Prepare order data to store temporarily
+        const orderData = {
+          order_date: new Date().toISOString(),
+          total_amount: total,
+          user_id: user?.user_id || null,
+          voucher_id: null, // Add voucher if available
+          products: cartItems.map((item) => ({
+            variant_id: item.id,
+            quantity: item.quantity,
+            price_at_time: item.price,
+          })),
+        };
+
         const res = await fetch(`${apiUrl}/payment/momo`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -65,6 +78,7 @@ export default function PaymentComponent({
             amount: total,
             orderId,
             orderInfo: `Thanh toán đơn hàng #${orderId}`,
+            orderData, // Send order data to store in cache
           }),
         });
 
@@ -77,7 +91,7 @@ export default function PaymentComponent({
       setLoading(false);
     }
     fetchMomo();
-  }, [total, orderId]);
+  }, [total, orderId, user, cartItems]);
 
   useEffect(() => {
     const interval = setInterval(async () => {
