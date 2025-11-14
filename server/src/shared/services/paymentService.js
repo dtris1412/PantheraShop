@@ -102,9 +102,12 @@ const handleMomoIpn = async (ipnData, tempOrderData) => {
   const { orderId, resultCode, payType } = ipnData;
   const status = resultCode === 0 ? "paid" : "failed";
 
-  // 1. Tạo Order nếu chưa có
+  // 1. Kiểm tra Order đã tồn tại chưa
   let order = await db.Order.findOne({ where: { order_id: orderId } });
+
+  // 2. Nếu chưa có order và có tempOrderData, tạo mới
   if (!order && tempOrderData) {
+    console.log(`📝 Creating new order: ${orderId}`);
     await createOrder(
       orderId,
       tempOrderData.order_date,
@@ -113,7 +116,8 @@ const handleMomoIpn = async (ipnData, tempOrderData) => {
       tempOrderData.user_id,
       tempOrderData.voucher_id
     );
-    // 2. Tạo OrderProduct cho từng sản phẩm
+
+    // Tạo OrderProduct cho từng sản phẩm
     for (const product of tempOrderData.products) {
       await createOrderProduct(
         orderId,
@@ -124,27 +128,45 @@ const handleMomoIpn = async (ipnData, tempOrderData) => {
         tempOrderData.voucher_id
       );
     }
+
+    order = await db.Order.findOne({ where: { order_id: orderId } });
+  } else if (!order) {
+    // Order không tồn tại và không có tempOrderData
+    console.error(`❌ Order ${orderId} not found and no temp data available`);
+    throw new Error(`Order ${orderId} not found and no temp data available`);
+  } else {
+    console.log(`✅ Order already exists: ${orderId}, updating payment status`);
+    // Cập nhật trạng thái order nếu cần
+    if (order.order_status !== status) {
+      await order.update({ order_status: status });
+    }
   }
 
   // 3. Cập nhật hoặc tạo Payment
   let payment = await db.Payment.findOne({ where: { order_id: orderId } });
   if (payment) {
+    console.log(`📝 Updating existing payment for order: ${orderId}`);
     await payment.update({
       payment_status: status,
       paid_at: new Date(),
       payment_info: JSON.stringify(ipnData),
     });
   } else {
+    console.log(`📝 Creating new payment for order: ${orderId}`);
     await db.Payment.create({
       payment_method: payType || "momo",
       payment_status: status,
       paid_at: new Date(),
       payment_info: JSON.stringify(ipnData),
       order_id: orderId,
-      user_id: tempOrderData.user_id,
-      voucher_id: tempOrderData.voucher_id,
+      user_id: order.user_id,
+      voucher_id: order.voucher_id,
     });
   }
+
+  console.log(
+    `✅ Payment processed successfully for order: ${orderId}, status: ${status}`
+  );
   return status;
 };
 
