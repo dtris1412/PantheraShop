@@ -18,7 +18,7 @@ export default (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: "Category",
-      tableName: "Categories",
+      tableName: "categories",
       freezeTableName: true,
       timestamps: false, // Nếu bạn không dùng createdAt/updatedAt mặc định
     }

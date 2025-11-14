@@ -45,7 +45,7 @@ export default (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: "Order",
-      tableName: "Orders",
+      tableName: "orders",
       freezeTableName: true,
       timestamps: false,
     }

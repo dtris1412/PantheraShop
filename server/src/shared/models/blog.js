@@ -69,7 +69,7 @@ export default (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: "Blog",
-      tableName: "Blogs",
+      tableName: "blogs",
       freezeTableName: true,
       timestamps: false, // Nếu bạn không dùng createdAt/updatedAt mặc định
     }

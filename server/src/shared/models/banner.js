@@ -21,7 +21,7 @@ export default (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: "Banner",
-      tableName: "Banners",
+      tableName: "banners",
       freezeTableName: true,
       timestamps: false, // Nếu bạn không dùng createdAt/updatedAt mặc định
     }

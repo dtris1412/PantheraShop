@@ -27,7 +27,7 @@ export default (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: "Supplier",
-      tableName: "Suppliers",
+      tableName: "suppliers",
       freezeTableName: true,
       timestamps: false,
     }

@@ -50,7 +50,7 @@ export default (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: "Payment",
-      tableName: "Payments",
+      tableName: "payments",
       freezeTableName: true,
       timestamps: false,
     }

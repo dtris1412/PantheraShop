@@ -24,7 +24,7 @@ export default (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: "Sport",
-      tableName: "Sports",
+      tableName: "sports",
       freezeTableName: true,
       timestamps: false, // Nếu bạn không dùng createdAt/updatedAt mặc định
     }

@@ -30,7 +30,7 @@ export default (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: "Product_Image",
-      tableName: "Product_Images",
+      tableName: "product_images",
       freezeTableName: true,
       timestamps: false,
     }

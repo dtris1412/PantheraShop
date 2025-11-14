@@ -28,7 +28,7 @@ export default (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: "Cart",
-      tableName: "Carts",
+      tableName: "carts",
       freezeTableName: true,
       timestamps: false, // Nếu bạn không dùng createdAt/updatedAt mặc định
     }
