@@ -122,11 +122,8 @@ const handleMomoIpn = async (ipnData, tempOrderData) => {
     `✅ Found order: ${orderId}, current status: ${order.order_status}`
   );
 
-  // 2. Cập nhật trạng thái order
-  if (order.order_status !== status) {
-    await order.update({ order_status: status });
-    console.log(`📝 Updated order status: ${order.order_status} -> ${status}`);
-  }
+  // 2. KHÔNG update order_status (giữ nguyên "Chờ xác nhận"), chỉ update payment
+  // Order status sẽ được admin cập nhật thủ công sau
 
   // 3. Cập nhật hoặc tạo Payment
   let payment = await db.Payment.findOne({ where: { order_id: orderId } });

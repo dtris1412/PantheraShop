@@ -188,13 +188,13 @@ export default function OrderInfo() {
       const orderData = await orderRes.json();
       if (!orderData.success) throw new Error(orderData.message);
 
-      // 2. Tạo thanh toán
+      // 2. Tạo thanh toán COD (pending - sẽ thanh khi nhận hàng)
       const paymentRes = await fetch(`${apiUrl}/payment`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           payment_method: "cod",
-          payment_status: "Đã thanh toán",
+          payment_status: "pending",
           payment_info: "Thanh toán khi nhận hàng",
           paid_at: null,
           order_id: orderId,
