@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon src/app.js"
+    "dev": "nodemon src/app.js",
+    "start": "node src/app.js"
   },
   "repository": {
     "type": "git",
@@ -35,8 +36,6 @@
     "multer": "^2.0.2",
     "mysql2": "^3.14.3",
     "nodemailer": "^7.0.9",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
     "sequelize": "^6.37.7"
   },
   "devDependencies": {

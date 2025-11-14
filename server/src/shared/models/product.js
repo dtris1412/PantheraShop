@@ -6,7 +6,10 @@ export default (sequelize, DataTypes) => {
       // define association here
       Product.belongsTo(models.Team, { foreignKey: "team_id" });
       Product.belongsTo(models.Category, { foreignKey: "category_id" });
-      // Product.hasMany(models.Variant, { foreignKey: "product_id" });
+      Product.hasMany(models.Variant, {
+        foreignKey: "product_id",
+        as: "Variants",
+      });
       Product.hasMany(models.Product_Image, { foreignKey: "product_id" });
       Product.belongsTo(models.Variant, { foreignKey: "product_id" });
       Product.belongsTo(models.Supplier, { foreignKey: "supplier_id" });

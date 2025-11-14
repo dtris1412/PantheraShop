@@ -26,6 +26,7 @@ import {
   getProductsPaginated,
 } from "../controllers/productController.js";
 import { getAllSports } from "../controllers/sportController.js";
+import { getAllTournaments } from "../../admin/controllers/categoryController.js";
 
 import {
   getCartByUserId,
@@ -68,7 +69,10 @@ import {
 } from "../controllers/orderController.js";
 
 //Blog APIs
-import { getAllBlogs } from "../controllers/blogController.js";
+import {
+  getAllBlogs,
+  getBlogsPaginated,
+} from "../controllers/blogController.js";
 const router = express.Router();
 const upload = multer({ dest: "uploads/" });
 
@@ -122,6 +126,9 @@ const initWebRoutes = (app) => {
 
   router.get("/api/sports", getAllSports);
 
+  //tournament APIs
+  router.get("/api/tournaments", getAllTournaments);
+
   //cart APIs
   router.get("/api/cart/:user_id", verifyToken, getCartByUserId);
   router.get("/api/cart/items/:cart_id", verifyToken, getCartItems);
@@ -165,6 +172,7 @@ const initWebRoutes = (app) => {
   router.get("/api/orders/user/:user_id", verifyToken, getOrderHistoryByUserId);
 
   //Blog APIs
+  router.get("/api/blogs/paginated", getBlogsPaginated);
   router.get("/api/blogs", getAllBlogs);
 
   //Wishlist APIs

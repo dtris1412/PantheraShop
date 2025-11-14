@@ -12,9 +12,40 @@ const config = JSON.parse(
 const db = {};
 
 let sequelize;
-if (config.use_env_variable) {
+
+// Ưu tiên đọc từ environment variables
+if (process.env.DB_NAME) {
+  sequelize = new Sequelize(
+    process.env.DB_NAME,
+    process.env.DB_USER || "root",
+    process.env.DB_PASSWORD || null,
+    {
+      host: process.env.DB_HOST || "localhost",
+      port: parseInt(process.env.DB_PORT || "3306"),
+      dialect: process.env.DB_DIALECT || "mysql",
+      logging: process.env.NODE_ENV === "development" ? console.log : false,
+      pool: {
+        max: 5,
+        min: 0,
+        acquire: 30000,
+        idle: 10000,
+      },
+      dialectOptions:
+        process.env.NODE_ENV === "production" && process.env.DB_SSL === "true"
+          ? {
+              ssl: {
+                require: true,
+                rejectUnauthorized: false,
+              },
+            }
+          : {},
+    }
+  );
+} else if (config.use_env_variable) {
+  // Fallback: DATABASE_URL
   sequelize = new Sequelize(process.env[config.use_env_variable], config);
 } else {
+  // Fallback: config.json
   sequelize = new Sequelize(
     config.database,
     config.username,

@@ -1,5 +1,6 @@
 import {
   getAllInventory as getAllVariantsService,
+  getInventoryPaginated as getInventoryPaginatedService,
   createVariant as createVariantService,
   getVariantsById as getVariantsByIdService,
   updateVariant as updateVariantService,
@@ -14,6 +15,28 @@ const getAllInventories = async (req, res) => {
     res.status(200).json(result);
   } catch (err) {
     console.error("Error in getAllInventories controller: ", err);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: err.message,
+    });
+  }
+};
+
+const getInventoryPaginated = async (req, res) => {
+  try {
+    const { search, limit = 10, page = 1 } = req.query;
+    const result = await getInventoryPaginatedService(
+      search,
+      parseInt(limit),
+      parseInt(page)
+    );
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+    res.status(200).json(result);
+  } catch (err) {
+    console.error("Error in getInventoryPaginated controller: ", err);
     res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -89,6 +112,7 @@ const updateVariantInventory = async (req, res) => {
 
 export {
   getAllInventories,
+  getInventoryPaginated,
   getVariantsByIdInventory,
   createVariantInventory,
   updateVariantInventory,

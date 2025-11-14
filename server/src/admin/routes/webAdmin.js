@@ -75,6 +75,7 @@ import {
 //Import inventory Controllers
 import {
   getAllInventories,
+  getInventoryPaginated,
   createVariantInventory,
   getVariantsByIdInventory,
   updateVariantInventory,
@@ -261,6 +262,11 @@ const initAdminRoutes = (app) => {
   router.delete("/api/admin/variants/:id", verifyAdmin, deleteVariant);
 
   // =============== INVENTORY MANAGEMENT ROUTES ===============
+  router.get(
+    "/api/admin/inventory/paginated",
+    verifyAdmin,
+    getInventoryPaginated
+  );
   router.get("/api/admin/inventory", verifyAdmin, getAllInventories);
   router.get("/api/admin/inventory/:id", verifyAdmin, getVariantsByIdInventory);
   router.post("/api/admin/inventory", verifyAdmin, createVariantInventory);
