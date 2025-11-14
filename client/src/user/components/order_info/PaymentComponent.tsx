@@ -29,15 +29,35 @@ interface MomoResponse {
   message?: string;
 }
 
+interface Voucher {
+  voucher_id: string | number;
+  voucher_code: string;
+  discount_value: number;
+}
+
 export default function PaymentComponent({
   cartItems,
   recipient,
   amount,
+  subtotal,
+  shipping,
+  orderDiscount,
+  selectedOrderVoucher,
+  selectedShippingVoucher,
+  orderSource,
+  userId,
   onBack,
 }: {
   cartItems: CartItem[];
   recipient: RecipientInfo;
   amount: number;
+  subtotal: number;
+  shipping: number;
+  orderDiscount: number;
+  selectedOrderVoucher: Voucher | null;
+  selectedShippingVoucher: Voucher | null;
+  orderSource: "cart" | "buyAgain";
+  userId: number | null;
   onBack: () => void;
 }) {
   const [momo, setMomo] = useState<MomoResponse | null>(null);
@@ -61,18 +81,29 @@ export default function PaymentComponent({
     async function fetchMomo() {
       setLoading(true);
       try {
-        // Prepare order data to store temporarily
+        // Prepare full order data (same as COD)
         const orderData = {
           order_date: new Date().toISOString(),
-          total_amount: total,
-          user_id: user?.user_id || null,
-          voucher_id: null, // Add voucher if available
+          order_status: "pending",
+          total_amount: amount,
+          order_discount: orderDiscount,
+          shipping_fee: shipping,
+          user_id: user?.user_id ?? userId,
+          voucher_id: selectedOrderVoucher?.voucher_id ?? null,
+          shipping_voucher_id: selectedShippingVoucher?.voucher_id ?? null,
+          recipient_name: recipient.name,
+          recipient_phone: recipient.phone,
+          recipient_email: recipient.email,
+          recipient_address: recipient.address,
+          notes: recipient.note,
           products: cartItems.map((item) => ({
-            variant_id: item.id,
+            variant_id: parseInt(item.id),
             quantity: item.quantity,
-            price_at_time: item.price,
+            price_at_time: item.price * item.quantity,
           })),
         };
+
+        console.log("Sending orderData:", orderData);
 
         const res = await fetch(`${apiUrl}/payment/momo`, {
           method: "POST",
@@ -81,7 +112,9 @@ export default function PaymentComponent({
             amount: total,
             orderId,
             orderInfo: `Thanh toán đơn hàng #${orderId}`,
-            orderData, // Send order data to store in cache
+            orderData,
+            orderSource, // Truyền orderSource để backend biết có xóa cart không
+            userId: user?.user_id ?? userId,
           }),
         });
 
@@ -94,7 +127,15 @@ export default function PaymentComponent({
       setLoading(false);
     }
     fetchMomo();
-  }, [total, orderId, user, cartItems]);
+  }, [
+    total,
+    orderId,
+    user,
+    cartItems,
+    recipient,
+    selectedOrderVoucher,
+    selectedShippingVoucher,
+  ]);
 
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -110,6 +151,31 @@ export default function PaymentComponent({
 
           if (orderStatus === "paid") {
             clearInterval(interval);
+
+            // Xóa cart nếu orderSource là "cart"
+            if (orderSource === "cart") {
+              try {
+                if (userId) {
+                  const token = localStorage.getItem("token");
+                  const cartRes = await fetch(`${apiUrl}/cart/${userId}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                  });
+                  const cartData = await cartRes.json();
+                  const cartId = cartData?.cart_id;
+                  if (cartId) {
+                    await fetch(`${apiUrl}/cart/clear/${cartId}`, {
+                      method: "DELETE",
+                      headers: { Authorization: `Bearer ${token}` },
+                    });
+                  }
+                } else {
+                  localStorage.removeItem("cart");
+                }
+              } catch (err) {
+                console.error("Error clearing cart:", err);
+              }
+            }
+
             setTimeout(() => {
               alert("✅ Thanh toán thành công!");
               window.location.href = "/cart";

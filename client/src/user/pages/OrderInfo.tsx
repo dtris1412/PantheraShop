@@ -312,7 +312,14 @@ export default function OrderInfo() {
             <PaymentComponent
               cartItems={cartItems}
               recipient={recipient}
-              amount={finalTotal} // <-- giá cuối cùng đã trừ voucher
+              amount={finalTotal}
+              subtotal={subtotal}
+              shipping={shipping}
+              orderDiscount={orderDiscount}
+              selectedOrderVoucher={selectedOrderVoucher}
+              selectedShippingVoucher={selectedShippingVoucher}
+              orderSource={orderSource}
+              userId={userId}
               onBack={() => setShowPayment(false)}
             />
           ) : payment === "VnPay" ? (

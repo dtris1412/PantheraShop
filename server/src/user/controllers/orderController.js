@@ -97,16 +97,20 @@ const createOrder = async (req, res) => {
 
 const getStatusOrder = async (req, res) => {
   try {
-    console.log("==> [getStatusOrder] order_id:", req.params.order_id); // Log đầu vào
+    console.log("==> [getStatusOrder] order_id:", req.params.order_id);
     const statusResult = await getStatusOrderService(req.params.order_id);
-    console.log("==> [getStatusOrder] statusResult:", statusResult); // Log kết quả
+    console.log("==> [getStatusOrder] statusResult:", statusResult);
 
     if (!statusResult.success) {
       console.error("==> [getStatusOrder] statusResult error:", statusResult);
       return res.status(400).json(statusResult);
     }
 
-    res.status(200).json(statusResult);
+    // Frontend expects { success: true, order: {...} }
+    res.status(200).json({
+      success: true,
+      order: statusResult.data,
+    });
   } catch (err) {
     console.error("==> [getStatusOrder] Error:", err);
     res.status(500).json({ success: false, message: "Internal server error" });
