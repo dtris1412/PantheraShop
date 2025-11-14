@@ -136,7 +136,8 @@ export default function MomoPaymentComponent({
       setLoading(false);
     }
     fetchMomoQR();
-  }, [total, orderId, orderData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Chỉ chạy 1 lần khi mount để tránh tạo order duplicate
 
   // Auto-polling: Kiểm tra payment status mỗi 3s
   useEffect(() => {
