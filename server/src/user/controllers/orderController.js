@@ -86,7 +86,13 @@ const createOrder = async (req, res) => {
         req.body.total_amount ?? orderResult.data.dataValues.total_amount,
     };
     const html = renderOrderReceipt(orderData);
-    await sendOrderMail(req.body.recipient_email, "Biên lai đơn hàng", html);
+
+    // Gửi email không đồng bộ - không chặn response
+    sendOrderMail(req.body.recipient_email, "Biên lai đơn hàng", html).catch(
+      (err) => {
+        console.error("⚠️ Email sending failed (non-blocking):", err.message);
+      }
+    );
 
     res.status(201).json({ success: true, data: orderResult.data });
   } catch (err) {
