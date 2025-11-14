@@ -40,7 +40,7 @@ const createOrder = async (req, res) => {
     const orderResult = await createOrderService(
       order_id,
       order_date,
-      order_status || "paid",
+      order_status || "Chờ xử lý",
       total_amount,
       user_id,
       voucher_id,
