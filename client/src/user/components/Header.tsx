@@ -249,6 +249,65 @@ export default function Header({
             </div>
           </div>
         </div>
+
+        {/* Mobile Menu */}
+        <div
+          className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out bg-white ${
+            isMenuOpen ? "max-h-96 opacity-100 pb-4" : "max-h-0 opacity-0"
+          }`}
+        >
+          <nav className="py-4 space-y-2 border-t border-gray-200">
+            {navLinks.map((link) => {
+              const active = selectedKey === link.key;
+              return (
+                <button
+                  key={link.key}
+                  onClick={() => handleNavClick(link.key, link.path)}
+                  className={`block w-full text-left px-4 py-3 text-sm font-medium transition-colors ${
+                    active
+                      ? "bg-black text-white"
+                      : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                >
+                  {link.name}
+                </button>
+              );
+            })}
+
+            {/* Mobile Search */}
+            <div
+              className="mx-4 mt-4 flex items-center bg-gray-100 rounded-full px-4 py-2 cursor-pointer md:hidden"
+              onClick={() => {
+                setSearchOpen(true);
+                setIsMenuOpen(false);
+              }}
+            >
+              <Search className="w-4 h-4 text-gray-500 mr-2" />
+              <input
+                type="text"
+                placeholder="Tìm kiếm"
+                readOnly
+                className="bg-transparent outline-none text-sm w-full placeholder-gray-500 cursor-pointer"
+              />
+            </div>
+
+            {/* Mobile Wishlist (only on small screens) */}
+            <button
+              className="md:hidden flex items-center justify-between w-full px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-100"
+              onClick={() => handleIconClick("wish", "/wishlist")}
+            >
+              <span className="flex items-center">
+                <Heart className="w-5 h-5 mr-3" />
+                Yêu thích
+              </span>
+              {count > 0 && (
+                <span className="bg-black text-white text-xs px-2 py-1 rounded-full">
+                  {count}
+                </span>
+              )}
+            </button>
+          </nav>
+        </div>
       </div>
 
       <HeaderSearchPopup
