@@ -65,7 +65,7 @@ export default function OrderInfo() {
   const [showResult, setShowResult] = useState<"success" | "fail" | null>(null);
   const [recipientError, setRecipientError] = useState("");
   const [showPayment, setShowPayment] = useState(false);
-  const [orderId, setOrderId] = useState(() => uuidv4());
+  const [orderId, setOrderId] = useState(() => uuidv4().replace(/-/g, ""));
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
   const [selectedOrderVoucher, setSelectedOrderVoucher] =
