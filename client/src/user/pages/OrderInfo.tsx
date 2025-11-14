@@ -430,7 +430,11 @@ export default function OrderInfo() {
                   items={cartItems}
                   vouchers={vouchers} // <-- truyền đúng mảng voucher
                   onConfirmPayment={() => {
-                    if (validateRecipient()) setShowPayment(true);
+                    if (validateRecipient()) {
+                      // Tạo orderId mới mỗi khi vào màn hình thanh toán
+                      setOrderId(uuidv4().replace(/-/g, ""));
+                      setShowPayment(true);
+                    }
                   }}
                   onTotalChange={setFinalTotal} // truyền hàm này
                   onOrderVoucherChange={setSelectedOrderVoucher}
