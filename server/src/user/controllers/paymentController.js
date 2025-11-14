@@ -14,19 +14,47 @@ const createMomoPaymentController = async (req, res) => {
     console.log("req.body:", req.body);
 
     const { amount, orderId, orderInfo, orderData } = req.body;
-    if (!amount || !orderId || !orderInfo) {
+    if (!amount || !orderId || !orderInfo || !orderData) {
       return res.status(400).json({ message: "Thiếu dữ liệu thanh toán!" });
     }
 
-    // Store order data temporarily (before payment confirmation)
-    if (orderData) {
-      tempOrderCache.set(orderId, {
-        ...orderData,
-        createdAt: Date.now(),
+    // Import service để tạo order
+    const { createOrder: createOrderService, createOrderProduct } =
+      await import("../../shared/services/orderService.js");
+
+    // Tạo order với status "pending" TRƯỚC khi gọi MoMo API
+    try {
+      await createOrderService(
+        orderId,
+        orderData.order_date,
+        "pending", // Status ban đầu là pending
+        orderData.total_amount,
+        orderData.user_id,
+        orderData.voucher_id
+      );
+
+      // Tạo OrderProduct cho từng sản phẩm
+      for (const product of orderData.products) {
+        await createOrderProduct(
+          orderId,
+          orderData.user_id,
+          product.variant_id,
+          product.quantity,
+          product.price_at_time,
+          orderData.voucher_id
+        );
+      }
+
+      console.log(`✅ Created order with status "pending": ${orderId}`);
+    } catch (orderErr) {
+      console.error("Error creating order:", orderErr);
+      return res.status(500).json({
+        message: "Không thể tạo đơn hàng!",
+        error: orderErr.message,
       });
-      console.log(`✅ Stored temp order data for orderId: ${orderId}`);
     }
 
+    // Gọi MoMo API để tạo payment
     const result = await createMomoPayment({ amount, orderId, orderInfo });
     console.log("MOMO API response:", result);
     res.json(result);
@@ -98,23 +126,9 @@ const momoIpnHandler = async (req, res) => {
     console.log("=======================================");
 
     const ipnData = req.body;
-    const tempOrderData = getTempOrderData(ipnData.orderId);
 
-    if (!tempOrderData) {
-      console.log(
-        "⚠️  Processing IPN without temp order data (order may already exist)"
-      );
-    }
-
-    const status = await handleMomoIpn(ipnData, tempOrderData);
-
-    // Clean up cache after successful processing
-    if (tempOrderData) {
-      tempOrderCache.delete(ipnData.orderId);
-      console.log(
-        `🗑️  Deleted temp order data for orderId: ${ipnData.orderId}`
-      );
-    }
+    // Không cần tempOrderData nữa vì order đã được tạo sẵn
+    const status = await handleMomoIpn(ipnData, null);
 
     console.log("✅ IPN handled successfully, status:", status);
     res.status(200).json({ message: "IPN received", status });

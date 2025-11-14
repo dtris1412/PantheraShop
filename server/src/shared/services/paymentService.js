@@ -102,44 +102,22 @@ const handleMomoIpn = async (ipnData, tempOrderData) => {
   const { orderId, resultCode, payType } = ipnData;
   const status = resultCode === 0 ? "paid" : "failed";
 
-  // 1. Kiểm tra Order đã tồn tại chưa
+  // 1. Tìm order (phải tồn tại vì đã được tạo trước)
   let order = await db.Order.findOne({ where: { order_id: orderId } });
 
-  // 2. Nếu chưa có order và có tempOrderData, tạo mới
-  if (!order && tempOrderData) {
-    console.log(`📝 Creating new order: ${orderId}`);
-    await createOrder(
-      orderId,
-      tempOrderData.order_date,
-      status,
-      tempOrderData.total_amount,
-      tempOrderData.user_id,
-      tempOrderData.voucher_id
-    );
+  if (!order) {
+    console.error(`❌ Order ${orderId} not found in database`);
+    throw new Error(`Order ${orderId} not found`);
+  }
 
-    // Tạo OrderProduct cho từng sản phẩm
-    for (const product of tempOrderData.products) {
-      await createOrderProduct(
-        orderId,
-        tempOrderData.user_id,
-        product.variant_id,
-        product.quantity,
-        product.price_at_time,
-        tempOrderData.voucher_id
-      );
-    }
+  console.log(
+    `✅ Found order: ${orderId}, current status: ${order.order_status}`
+  );
 
-    order = await db.Order.findOne({ where: { order_id: orderId } });
-  } else if (!order) {
-    // Order không tồn tại và không có tempOrderData
-    console.error(`❌ Order ${orderId} not found and no temp data available`);
-    throw new Error(`Order ${orderId} not found and no temp data available`);
-  } else {
-    console.log(`✅ Order already exists: ${orderId}, updating payment status`);
-    // Cập nhật trạng thái order nếu cần
-    if (order.order_status !== status) {
-      await order.update({ order_status: status });
-    }
+  // 2. Cập nhật trạng thái order
+  if (order.order_status !== status) {
+    await order.update({ order_status: status });
+    console.log(`📝 Updated order status: ${order.order_status} -> ${status}`);
   }
 
   // 3. Cập nhật hoặc tạo Payment

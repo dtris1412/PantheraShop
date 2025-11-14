@@ -42,6 +42,9 @@ export default function PaymentComponent({
 }) {
   const [momo, setMomo] = useState<MomoResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [paymentStatus, setPaymentStatus] = useState<
+    "pending" | "paid" | "failed"
+  >("pending");
   const { user } = useAuth();
 
   const fee = Math.round(amount * 0.05); // Phí giao dịch 5%
@@ -95,18 +98,36 @@ export default function PaymentComponent({
 
   useEffect(() => {
     const interval = setInterval(async () => {
-      const res = await fetch(`/api/order/?orderId=${orderId}`);
-      const data = await res.json();
-      if (data.status === "paid") {
-        clearInterval(interval);
-        window.location.href = "/payment/success";
+      try {
+        const res = await fetch(`${apiUrl}/order/${orderId}`);
+        const data = await res.json();
+
+        console.log("Polling order status:", data);
+
+        if (data.success && data.order) {
+          const orderStatus = data.order.order_status;
+          setPaymentStatus(orderStatus);
+
+          if (orderStatus === "paid") {
+            clearInterval(interval);
+            setTimeout(() => {
+              alert("✅ Thanh toán thành công!");
+              window.location.href = "/cart";
+            }, 500);
+          } else if (orderStatus === "failed") {
+            clearInterval(interval);
+            setTimeout(() => {
+              alert("❌ Thanh toán thất bại!");
+              window.location.href = "/cart";
+            }, 500);
+          }
+          // Nếu "pending" thì tiếp tục polling
+        }
+      } catch (err) {
+        console.error("Error polling order status:", err);
       }
-      if (data.status === "failed") {
-        clearInterval(interval);
-        window.location.href = "/payment/fail";
-      }
-      // Nếu "pending" hoặc "not_found" thì tiếp tục polling
-    }, 4000);
+    }, 3000); // Poll mỗi 3 giây
+
     return () => clearInterval(interval);
   }, [orderId]);
 
@@ -160,6 +181,21 @@ export default function PaymentComponent({
               Thanh toán đơn hàng{" "}
               <span className="text-pink-600 font-bold">#{orderId}</span>
             </div>
+            {paymentStatus === "pending" && (
+              <div className="text-orange-600 font-semibold animate-pulse">
+                ⏳ Đang chờ thanh toán...
+              </div>
+            )}
+            {paymentStatus === "paid" && (
+              <div className="text-green-600 font-semibold">
+                ✅ Thanh toán thành công!
+              </div>
+            )}
+            {paymentStatus === "failed" && (
+              <div className="text-red-600 font-semibold">
+                ❌ Thanh toán thất bại!
+              </div>
+            )}
           </div>
           {/* QR và hướng dẫn */}
           <div className="flex flex-col md:flex-row gap-10 items-start justify-center">
