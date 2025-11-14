@@ -3,7 +3,7 @@ import { ArrowRight, CheckCircle2, XCircle, ArrowLeft } from "lucide-react";
 import OrderProductList from "../components/order_info/OrderProductList";
 import OrderRecipientForm from "../components/order_info/OrderRecipientForm";
 import OrderPaymentMethod from "../components/order_info/OrderPaymentMethod";
-import PaymentComponent from "../components/order_info/PaymentComponent";
+import MomoPaymentComponent from "../components/order_info/MomoPaymentComponent";
 import VnpayPaymentComponent from "../components/order_info/VnpayPaymentComponent";
 import CashPaymentComponent from "../components/order_info/CashPaymentComponent";
 import { v4 as uuidv4 } from "uuid";
@@ -228,6 +228,8 @@ export default function OrderInfo() {
             });
             setCartItems([]);
           }
+
+          // Remove this inner definition, move it outside to component scope
         } else {
           localStorage.removeItem("cart");
           setCartItems([]);
@@ -238,6 +240,61 @@ export default function OrderInfo() {
 
       // Xử lý chuyển trang hoặc thông báo thành công ở đây
     } catch (err) {
+      setShowResult("fail");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleCreateOrderMomo = async () => {
+    setIsProcessing(true);
+    try {
+      // Order đã được tạo "pending" ở MomoPaymentComponent
+      // Khi nhấn "Xác nhận", kiểm tra order đã "paid" chưa (đã được verify ở component)
+      // Chỉ cần tạo payment record và xóa giỏ hàng
+
+      const paymentRes = await fetch(`${apiUrl}/payment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          payment_method: "momo",
+          payment_status: "Đã thanh toán",
+          payment_info: `Thanh toán MoMo - Đơn hàng #${orderId}`,
+          paid_at: new Date().toISOString(),
+          order_id: orderId,
+          user_id: user?.user_id ?? userId,
+          voucher_id: null,
+        }),
+      });
+      const paymentData = await paymentRes.json();
+      if (paymentData.success === false) throw new Error(paymentData.message);
+
+      setShowResult("success");
+
+      // === XÓA GIỎ HÀNG SAU KHI ĐẶT HÀNG THÀNH CÔNG ===
+      if (orderSource === "cart") {
+        if (isLoggedIn && userId) {
+          const token = localStorage.getItem("token");
+          const cartRes = await fetch(`${apiUrl}/cart/${userId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const cartData = await cartRes.json();
+          const cartId = cartData?.cart_id;
+          if (cartId) {
+            await fetch(`${apiUrl}/cart/clear/${cartId}`, {
+              method: "DELETE",
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            setCartItems([]);
+          }
+        } else {
+          localStorage.removeItem("cart");
+          setCartItems([]);
+        }
+      }
+      // === KẾT THÚC XÓA GIỎ HÀNG ===
+    } catch (err) {
+      console.error("Error:", err);
       setShowResult("fail");
     } finally {
       setIsProcessing(false);
@@ -309,18 +366,33 @@ export default function OrderInfo() {
       <div className="max-w-5xl mx-auto px-6">
         {showPayment ? (
           payment === "momo" ? (
-            <PaymentComponent
+            <MomoPaymentComponent
               cartItems={cartItems}
               recipient={recipient}
-              amount={finalTotal}
-              subtotal={subtotal}
-              shipping={shipping}
-              orderDiscount={orderDiscount}
-              selectedOrderVoucher={selectedOrderVoucher}
-              selectedShippingVoucher={selectedShippingVoucher}
-              orderSource={orderSource}
-              userId={userId}
+              amount={total}
+              orderId={orderId}
+              orderData={{
+                order_date: new Date().toISOString(),
+                total_amount: total,
+                order_discount: orderDiscount,
+                shipping_fee: shipping,
+                user_id: user?.user_id ?? userId,
+                voucher_id: selectedOrderVoucher?.voucher_id ?? null,
+                shipping_voucher_id:
+                  selectedShippingVoucher?.voucher_id ?? null,
+                recipient_name: recipient.name,
+                recipient_phone: recipient.phone,
+                recipient_email: recipient.email,
+                recipient_address: recipient.address,
+                notes: recipient.note,
+                products: cartItems.map((item) => ({
+                  variant_id: item.id,
+                  quantity: item.quantity,
+                  price_at_time: item.price * item.quantity,
+                })),
+              }}
               onBack={() => setShowPayment(false)}
+              onConfirm={handleCreateOrderMomo}
             />
           ) : payment === "VnPay" ? (
             <VnpayPaymentComponent

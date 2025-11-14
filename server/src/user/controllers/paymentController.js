@@ -22,58 +22,7 @@ const createMomoPaymentController = async (req, res) => {
         .json({ message: "Thiếu thông tin cơ bản thanh toán!" });
     }
 
-    if (!orderData) {
-      console.error("❌ Missing orderData");
-      return res.status(400).json({ message: "Thiếu thông tin đơn hàng!" });
-    }
-
-    // user_id có thể null (guest user), không bắt buộc
-
-    if (!orderData.products || orderData.products.length === 0) {
-      console.error("❌ Missing or empty products array");
-      return res.status(400).json({ message: "Giỏ hàng trống!" });
-    }
-
-    // Import service để tạo order
-    const { createOrder: createOrderService, createOrderProduct } =
-      await import("../../shared/services/orderService.js");
-
-    // Tạo order với status "pending" TRƯỚC khi gọi MoMo API
-    try {
-      // Tạo order với đầy đủ thông tin như COD
-      await createOrderService(
-        orderId,
-        orderData.order_date,
-        "pending",
-        orderData.total_amount,
-        orderData.user_id,
-        orderData.voucher_id,
-        orderData.recipient_name,
-        orderData.recipient_phone,
-        orderData.recipient_address,
-        orderData.notes
-      );
-
-      // Tạo OrderProduct cho từng sản phẩm
-      for (const product of orderData.products) {
-        await createOrderProduct(
-          orderId,
-          product.variant_id,
-          product.quantity,
-          product.price_at_time
-        );
-      }
-
-      console.log(`✅ Created order with status "pending": ${orderId}`);
-    } catch (orderErr) {
-      console.error("Error creating order:", orderErr);
-      return res.status(500).json({
-        message: "Không thể tạo đơn hàng!",
-        error: orderErr.message,
-      });
-    }
-
-    // Gọi MoMo API để tạo payment
+    // Gọi MoMo API để tạo payment link
     const result = await createMomoPayment({ amount, orderId, orderInfo });
     console.log("MOMO API response:", result);
     res.json(result);
