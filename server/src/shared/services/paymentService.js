@@ -99,8 +99,16 @@ const updatePaymentStatusByIpn = async (ipnData) => {
 };
 
 const handleMomoIpn = async (ipnData, tempOrderData) => {
-  const { orderId, resultCode, payType } = ipnData;
+  const { orderId, resultCode, payType, transId, message } = ipnData;
   const status = resultCode === 0 ? "paid" : "failed";
+
+  // Rút gọn payment_info để tránh vượt quá độ dài column
+  const shortPaymentInfo = JSON.stringify({
+    transId: transId,
+    resultCode: resultCode,
+    message: message,
+    payType: payType,
+  });
 
   // 1. Tìm order (phải tồn tại vì đã được tạo trước)
   let order = await db.Order.findOne({ where: { order_id: orderId } });
@@ -127,7 +135,7 @@ const handleMomoIpn = async (ipnData, tempOrderData) => {
     await payment.update({
       payment_status: status,
       paid_at: new Date(),
-      payment_info: JSON.stringify(ipnData),
+      payment_info: shortPaymentInfo,
     });
   } else {
     console.log(`📝 Creating new payment for order: ${orderId}`);
@@ -135,7 +143,7 @@ const handleMomoIpn = async (ipnData, tempOrderData) => {
       payment_method: payType || "momo",
       payment_status: status,
       paid_at: new Date(),
-      payment_info: JSON.stringify(ipnData),
+      payment_info: shortPaymentInfo,
       order_id: orderId,
       user_id: order.user_id,
       voucher_id: order.voucher_id,
