@@ -50,34 +50,36 @@ const getProductsPaginated = async ({
     };
   }
 
-  // Xây dựng include cho filter liên quan (để count)
-  const includeForCount = [
+  // OPTIMIZATION: Build efficient includes with minimal fields
+  const includeConfig = [
     {
       model: db.Category,
-      attributes: ["category_id", "category_name"],
+      attributes: ["category_id", "category_name"], // Only needed fields
       ...(category
         ? { where: { category_name: category }, required: true }
         : {}),
     },
     {
       model: db.Team,
+      attributes: ["team_id", "team_name"], // Only needed fields
       ...(team ? { where: { team_name: team }, required: true } : {}),
-      required: !!(sport || tournament || team), // Required nếu filter sport/tournament/team
+      required: !!(sport || tournament || team),
       include: [
         {
           model: db.Tournament,
+          attributes: ["tournament_id", "tournament_name"], // Only needed fields
           ...(tournament
             ? { where: { tournament_name: tournament }, required: true }
             : {}),
-          required: !!(sport || tournament), // Required nếu filter sport/tournament
+          required: !!(sport || tournament),
           include: [
             {
               model: db.Sport,
+              attributes: ["sport_id", "sport_name"], // Only needed fields
               ...(sport
                 ? { where: { sport_name: sport }, required: true }
                 : {}),
-              attributes: ["sport_id", "sport_name"],
-              required: !!sport, // Required nếu filter sport
+              required: !!sport,
             },
           ],
         },
@@ -85,60 +87,50 @@ const getProductsPaginated = async ({
     },
   ];
 
-  // Xây dựng include đầy đủ cho findAll (bao gồm images)
-  const includeForFindAll = [
-    {
-      model: db.Category,
-      attributes: ["category_id", "category_name"],
-      ...(category
-        ? { where: { category_name: category }, required: true }
-        : {}),
-    },
-    {
-      model: db.Product_Image,
-      attributes: ["product_image_id", "image_url", "order"],
-    },
-    {
-      model: db.Team,
-      ...(team ? { where: { team_name: team }, required: true } : {}),
-      required: !!(sport || tournament || team), // Required nếu filter sport/tournament/team
-      include: [
-        {
-          model: db.Tournament,
-          ...(tournament
-            ? { where: { tournament_name: tournament }, required: true }
-            : {}),
-          required: !!(sport || tournament), // Required nếu filter sport/tournament
-          include: [
-            {
-              model: db.Sport,
-              ...(sport
-                ? { where: { sport_name: sport }, required: true }
-                : {}),
-              attributes: ["sport_id", "sport_name"],
-              required: !!sport, // Required nếu filter sport
-            },
-          ],
-        },
-      ],
-    },
-  ];
+  // OPTIMIZATION 1: Use separate query for images to avoid duplicate rows
+  // OPTIMIZATION 2: Use single findAndCountAll instead of count + findAll
+  const { count: totalProducts, rows: products } =
+    await db.Product.findAndCountAll({
+      where,
+      attributes: [
+        "product_id",
+        "product_name",
+        "product_price",
+        "product_description",
+        "product_image",
+        "release_date",
+        "is_active",
+        "team_id",
+        "category_id",
+      ], // Select only needed fields
+      include: includeConfig,
+      limit: Number(limit),
+      offset,
+      distinct: true, // Avoid counting duplicates
+      subQuery: false, // Use LEFT JOIN instead of subquery for better performance
+    });
 
-  // Đếm tổng số sản phẩm khớp điều kiện (không include Product_Image để tránh duplicate)
-  const totalProducts = await db.Product.count({
-    where,
-    include: includeForCount,
-    distinct: true,
-    col: "product_id",
-  });
+  // OPTIMIZATION 3: Fetch images separately to avoid N+1 and duplicate rows
+  if (products.length > 0) {
+    const productIds = products.map((p) => p.product_id);
+    const images = await db.Product_Image.findAll({
+      where: { product_id: { [Op.in]: productIds } },
+      attributes: ["product_image_id", "image_url", "order", "product_id"],
+      order: [["order", "ASC"]],
+    });
 
-  // Lấy danh sách sản phẩm theo phân trang
-  const products = await db.Product.findAll({
-    where,
-    include: includeForFindAll,
-    limit: Number(limit),
-    offset,
-  });
+    // Map images to products
+    const imagesByProduct = images.reduce((acc, img) => {
+      if (!acc[img.product_id]) acc[img.product_id] = [];
+      acc[img.product_id].push(img);
+      return acc;
+    }, {});
+
+    products.forEach((product) => {
+      product.dataValues.Product_Images =
+        imagesByProduct[product.product_id] || [];
+    });
+  }
 
   console.log("[Service] getProductsPaginated result:", {
     totalProducts,
