@@ -69,24 +69,23 @@ export default function MomoPaymentComponent({
 }) {
   const [momo, setMomo] = useState<MomoResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [checking, setChecking] = useState(false);
   const [error, setError] = useState("");
 
   const fee = Math.round(amount * 0.05); // Phí 5%
   const total = amount + fee;
 
-  // Gọi API MoMo để lấy QR code và tạo order pending
+  // Gọi API MoMo để lấy QR code, tạo order "Chờ xác nhận" + payment "pending"
   useEffect(() => {
     async function fetchMomoQR() {
       setLoading(true);
       try {
-        // 1. Tạo order với status "pending"
+        // 1. Tạo order với status "Chờ xác nhận"
         const orderRes = await fetch(`${apiUrl}/order`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             order_id: orderId,
-            order_status: "pending",
+            order_status: "Chờ xác nhận",
             ...orderData,
           }),
         });
@@ -94,9 +93,29 @@ export default function MomoPaymentComponent({
         if (!orderResult.success) {
           throw new Error(orderResult.message || "Không thể tạo đơn hàng");
         }
-        console.log("✅ Created order with status pending:", orderId);
+        console.log("✅ Created order with status 'Chờ xác nhận':", orderId);
 
-        // 2. Gọi MoMo API để lấy QR
+        // 2. Tạo payment với status "pending"
+        const paymentRes = await fetch(`${apiUrl}/payment`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            payment_method: "momo",
+            payment_status: "pending",
+            payment_info: `Đang chờ thanh toán MoMo - Đơn hàng #${orderId}`,
+            paid_at: null,
+            order_id: orderId,
+            user_id: orderData.user_id,
+            voucher_id: null,
+          }),
+        });
+        const paymentResult = await paymentRes.json();
+        if (!paymentResult.success && paymentResult.success !== undefined) {
+          throw new Error(paymentResult.message || "Không thể tạo payment");
+        }
+        console.log("✅ Created payment with status 'pending'");
+
+        // 3. Gọi MoMo API để lấy QR
         const res = await fetch(`${apiUrl}/payment/momo`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -119,37 +138,47 @@ export default function MomoPaymentComponent({
     fetchMomoQR();
   }, [total, orderId, orderData]);
 
-  // Kiểm tra trạng thái thanh toán
-  const handleCheckPayment = async () => {
-    setChecking(true);
-    setError("");
-    try {
-      const res = await fetch(`${apiUrl}/order/status/${orderId}`);
-      const data = await res.json();
+  // Auto-polling: Kiểm tra payment status mỗi 3s
+  useEffect(() => {
+    if (!momo?.qrCodeUrl) return; // Chỉ poll khi đã có QR
 
-      console.log("Order status:", data);
+    let pollCount = 0;
+    const maxPolls = 100; // 100 x 3s = 5 phút timeout
 
-      if (data.success && data.order) {
-        const status = data.order.order_status;
-        if (status === "paid" || status === "Đã thanh toán") {
-          // Thanh toán thành công
-          onConfirm();
-        } else {
-          // Chưa thanh toán
-          setError(
-            "Chưa nhận được thanh toán từ MoMo. Vui lòng quét mã QR và thanh toán."
-          );
+    const intervalId = setInterval(async () => {
+      pollCount++;
+      console.log(`🔄 Polling payment status... (${pollCount}/${maxPolls})`);
+
+      try {
+        const res = await fetch(`${apiUrl}/payment/status/${orderId}`);
+        const data = await res.json();
+
+        if (data.success && data.payment) {
+          const paymentStatus = data.payment.payment_status;
+          console.log("Payment status:", paymentStatus);
+
+          if (paymentStatus === "paid" || paymentStatus === "Đã thanh toán") {
+            clearInterval(intervalId);
+            console.log("✅ Payment successful! Calling onConfirm...");
+            onConfirm();
+          } else if (paymentStatus === "failed") {
+            clearInterval(intervalId);
+            setError("Thanh toán thất bại. Vui lòng thử lại.");
+          }
         }
-      } else {
-        setError("Không thể kiểm tra trạng thái đơn hàng.");
+      } catch (err) {
+        console.error("Polling error:", err);
       }
-    } catch (err) {
-      console.error("Check payment error:", err);
-      setError("Lỗi khi kiểm tra trạng thái thanh toán.");
-    } finally {
-      setChecking(false);
-    }
-  };
+
+      // Timeout sau 5 phút
+      if (pollCount >= maxPolls) {
+        clearInterval(intervalId);
+        setError("Hết thời gian chờ thanh toán. Vui lòng thử lại.");
+      }
+    }, 3000); // Poll mỗi 3 giây
+
+    return () => clearInterval(intervalId);
+  }, [momo, orderId, onConfirm]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-200 py-10">
@@ -247,22 +276,15 @@ export default function MomoPaymentComponent({
           <p className="mt-4 text-sm text-gray-600 text-center">
             Mở ứng dụng MoMo → Quét mã → Xác nhận thanh toán
           </p>
+          <div className="mt-4 flex items-center justify-center gap-2 text-blue-600">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span className="text-sm font-medium">Đang chờ thanh toán...</span>
+          </div>
           {error && (
             <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm text-center">
               {error}
             </div>
           )}
-        </div>
-
-        <div className="flex justify-center">
-          <button
-            className="px-10 py-3 bg-pink-600 text-white rounded-lg font-bold text-lg shadow hover:bg-pink-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            onClick={handleCheckPayment}
-            disabled={checking}
-          >
-            {checking && <Loader2 className="w-5 h-5 animate-spin" />}
-            {checking ? "Đang kiểm tra..." : "Xác nhận đã thanh toán"}
-          </button>
         </div>
       </div>
     </div>

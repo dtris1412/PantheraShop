@@ -126,9 +126,37 @@ const createVnpayPaymentController = async (req, res) => {
   }
 };
 
+const getPaymentStatus = async (req, res) => {
+  try {
+    const { order_id } = req.params;
+    console.log("==> [getPaymentStatus] order_id:", order_id);
+
+    const { getMethodByOrderId } = await import(
+      "../../shared/services/paymentService.js"
+    );
+    const result = await getMethodByOrderId(order_id);
+
+    if (!result.success) {
+      return res.status(404).json({
+        success: false,
+        message: "Payment not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      payment: result.payment,
+    });
+  } catch (err) {
+    console.error("==> [getPaymentStatus] Error:", err);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
 export {
   createMomoPaymentController as createMomoPayment,
   createPayment,
   momoIpnHandler,
   createVnpayPaymentController,
+  getPaymentStatus,
 };

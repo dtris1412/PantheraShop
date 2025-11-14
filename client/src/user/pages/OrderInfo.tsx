@@ -249,25 +249,9 @@ export default function OrderInfo() {
   const handleCreateOrderMomo = async () => {
     setIsProcessing(true);
     try {
-      // Order đã được tạo "pending" ở MomoPaymentComponent
-      // Khi nhấn "Xác nhận", kiểm tra order đã "paid" chưa (đã được verify ở component)
-      // Chỉ cần tạo payment record và xóa giỏ hàng
-
-      const paymentRes = await fetch(`${apiUrl}/payment`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          payment_method: "momo",
-          payment_status: "Đã thanh toán",
-          payment_info: `Thanh toán MoMo - Đơn hàng #${orderId}`,
-          paid_at: new Date().toISOString(),
-          order_id: orderId,
-          user_id: user?.user_id ?? userId,
-          voucher_id: null,
-        }),
-      });
-      const paymentData = await paymentRes.json();
-      if (paymentData.success === false) throw new Error(paymentData.message);
+      // Order + Payment đã được tạo ở MomoPaymentComponent (status "Chờ xác nhận" + "pending")
+      // IPN đã update payment thành "paid"
+      // Chỉ cần xóa giỏ hàng và hiển thị thành công
 
       setShowResult("success");
 

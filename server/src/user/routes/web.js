@@ -51,6 +51,7 @@ import {
   createMomoPayment,
   createPayment,
   momoIpnHandler,
+  getPaymentStatus,
 } from "../controllers/paymentController.js";
 import { createVnpayPaymentController } from "../controllers/paymentController.js";
 
@@ -162,6 +163,7 @@ const initWebRoutes = (app) => {
   //Payment APIs
   router.post("/api/payment/momo", createMomoPayment);
   router.post("/api/payment", createPayment);
+  router.get("/api/payment/status/:order_id", getPaymentStatus); // Get payment status by order_id
 
   router.post("/api/payment/momo/ipn", momoIpnHandler);
   router.post("/api/payment/vnpay", createVnpayPaymentController);
