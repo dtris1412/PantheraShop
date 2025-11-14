@@ -61,18 +61,19 @@ const createPayment = async (req, res) => {
 
 const momoIpnHandler = async (req, res) => {
   try {
+    console.log("========== MOMO IPN RECEIVED ==========");
+    console.log("Headers:", req.headers);
+    console.log("Body:", req.body);
+    console.log("=======================================");
+
     const ipnData = req.body;
-    console.log("MoMo IPN received at controller:", ipnData); // Log dữ liệu IPN
-
-    // Lấy tempOrderData từ cache/extraData hoặc nơi bạn lưu tạm
-    const tempOrderData = await getTempOrderData(ipnData.orderId); // bạn tự cài hàm này
-
+    const tempOrderData = await getTempOrderData(ipnData.orderId);
     const status = await handleMomoIpn(ipnData, tempOrderData);
-    console.log("MoMo IPN handled, status:", status); // Log kết quả xử lý
 
+    console.log("✅ IPN handled successfully, status:", status);
     res.status(200).json({ message: "IPN received", status });
   } catch (err) {
-    console.error("MoMo IPN error at controller:", err);
+    console.error("❌ MoMo IPN error:", err);
     res.status(500).json({ message: "IPN error", error: err.message });
   }
 };

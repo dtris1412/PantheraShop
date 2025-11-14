@@ -3,8 +3,14 @@ export const momoConfig = {
   partnerCode: "MOMOBKUN20180529",
   accessKey: "klm05TvNBzhg7h7j",
   secretKey: "at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa",
-  redirectUrl: "http://localhost:3000/cart",
-  ipnUrl: "http://localhost:8080/api/payment/momo/ipn",
+  redirectUrl:
+    process.env.NODE_ENV === "production"
+      ? "https://pantherashop.onrender.com/cart"
+      : "http://localhost:3000/cart",
+  ipnUrl:
+    process.env.NODE_ENV === "production"
+      ? "https://pantherashop.onrender.com/api/payment/momo/ipn"
+      : "http://localhost:8080/api/payment/momo/ipn",
 };
 
 // export const paypalConfig = {
