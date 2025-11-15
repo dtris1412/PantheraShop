@@ -88,11 +88,18 @@ const createOrder = async (req, res) => {
     const html = renderOrderReceipt(orderData);
 
     // Gửi email không đồng bộ - không chặn response
-    sendOrderMail(req.body.recipient_email, "Biên lai đơn hàng", html).catch(
-      (err) => {
-        console.error("⚠️ Email sending failed (non-blocking):", err.message);
-      }
-    );
+    console.log("📧 Attempting to send email to:", req.body.recipient_email);
+    sendOrderMail(req.body.recipient_email, "Biên lai đơn hàng", html)
+      .then((result) => {
+        if (result.success) {
+          console.log("✅ Email sent successfully:", result.data);
+        } else {
+          console.error("⚠️ Email sending failed:", result.message);
+        }
+      })
+      .catch((err) => {
+        console.error("⚠️ Email sending error (non-blocking):", err);
+      });
 
     res.status(201).json({ success: true, data: orderResult.data });
   } catch (err) {
