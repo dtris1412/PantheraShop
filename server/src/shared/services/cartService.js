@@ -12,6 +12,7 @@ const createCart = async (user_id) => {
   return newCart;
 };
 
+const removeCart = async () => {};
 const getCartByUserId = async (user_id) => {
   if (!user_id) throw new Error("User ID is required to get a cart");
   const cart = await db.Cart.findOne({
@@ -87,7 +88,7 @@ const changeVariantInCart = async (
   cart_id,
   old_variant_id,
   new_variant_id,
-  quantity
+  quantity,
 ) => {
   if (!cart_id || !old_variant_id || !new_variant_id || !quantity)
     throw new Error("All fields are required");
